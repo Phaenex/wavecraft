@@ -111,7 +111,18 @@ public:
      */
     void                SetDevices(const BGMAudioDevice* __nullable inInputDevice,
                                    const BGMAudioDevice* __nullable inOutputDevice);
-    
+
+    /*!
+     By default, Activate() asserts (and logs a warning even in release builds) that the input
+     device is BGMDevice -- that's the only case this class has ever been used for, and the
+     check exists to catch it being pointed at the wrong device by accident. Pass false here,
+     before calling Activate(), to intentionally use a different kind of input device (e.g. an
+     aggregate device wrapping a CoreAudio Process Tap, for per-app output routing -- see
+     docs/PROCESS-TAP-ROUTING.md). Defaults to true, so every existing caller's behavior is
+     unchanged unless they explicitly opt out.
+     */
+    void                SetRequireBGMDeviceInput(bool inRequire) { mRequireBGMDeviceInput = inRequire; }
+
     /*! @throws CAException */
     void                Start();
     
@@ -207,6 +218,10 @@ private:
     
     bool                mActive = false;
     bool                mPlayingThrough = false;
+
+    // See SetRequireBGMDeviceInput. Defaults to true, matching this class's only use before
+    // per-app output routing existed.
+    bool                mRequireBGMDeviceInput = true;
 
     std::atomic<IOState>    mInputDeviceIOProcState { IOState::Stopped };
     std::atomic<IOState>    mOutputDeviceIOProcState { IOState::Stopped };

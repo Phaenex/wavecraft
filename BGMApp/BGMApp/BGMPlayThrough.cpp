@@ -151,13 +151,17 @@ void    BGMPlayThrough::Activate()
                        e.GetError());
         }
         
-        if(!mInputDevice.IsBGMDeviceInstance())
+        if(mRequireBGMDeviceInput)
         {
-            LogWarning("BGMPlayThrough::Activate: Playthrough activated with an input device other "
-                       "than BGMDevice. This hasn't been tested and is almost definitely a bug.");
+            if(!mInputDevice.IsBGMDeviceInstance())
+            {
+                LogWarning("BGMPlayThrough::Activate: Playthrough activated with an input device "
+                           "other than BGMDevice. This hasn't been tested and is almost "
+                           "definitely a bug.");
+            }
+            BGMAssert(mInputDevice.IsBGMDeviceInstance(),
+                      "BGMPlayThrough::Activate: !mInputDevice.IsBGMDeviceInstance()");
         }
-        BGMAssert(mInputDevice.IsBGMDeviceInstance(),
-                  "BGMPlayThrough::Activate: !mInputDevice.IsBGMDeviceInstance()");
     }
 }
 
