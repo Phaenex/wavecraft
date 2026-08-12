@@ -41,8 +41,8 @@ xcodebuild -workspace BGM.xcworkspace -scheme "Background Music Device" -configu
 python3 tools/verify-icons.py
 ```
 
-All three targets build clean. 43/43 unit tests passing as of the per-app EQ DSP core
-(27 BGMAppUnitTests + 16 BGMDriverTests — 9 original + 7 for `BGM_Biquad`/`BGM_AppEQ`, verified by
+All three targets build clean. 49/49 unit tests passing as of the per-app EQ property wiring
+(27 BGMAppUnitTests + 22 BGMDriverTests — 9 original + 13 for the EQ work, verified by
 measuring actual RMS gain from a real sine wave, not just checking the code runs), 0 failures.
 
 ## The one step that always needs a human
@@ -93,11 +93,17 @@ root-owned driver bundle and needs a real reinstall to update.
 
 Two features being built on top of upstream, past parity with SoundSource:
 
-- **Per-app EQ** — DSP core done and tested (`BGMDriver/BGMDriver/DeviceClients/BGM_Biquad.*`,
-  `BGMDriverTests/BGM_BiquadTests.mm`). Not yet wired to a settable property or the real-time IO
-  path — see `docs/LESSONS.md` for the filter-state-ownership design decision that has to hold
-  before that wiring goes in (real-time delay-line state can't live where `BGM_Client` gets copied
-  by value).
+- **Per-app EQ** — driver-side work complete: DSP core
+  (`BGMDriver/BGMDriver/DeviceClients/BGM_Biquad.*`), the
+  `kAudioDeviceCustomPropertyAppEQ` device property (get/set/validate, mirroring how
+  `AppVolumes` already works), and real-time application in `BGM_Device::ApplyClientEQ`
+  (called from `DoIOOperation`, before `ApplyClientRelativeVolume`). 22/22 `BGMDriverTests`
+  passing. **Not yet done: `BGMApp` has no UI to actually set gains** — only reachable by
+  calling `AudioObjectSetPropertyData` directly (e.g. from a test or a script) until a slider
+  gets added to the menu. Hasn't been installed+listened to yet either — see
+  `docs/LESSONS.md` for the filter-state-ownership design decision this was built around
+  (real-time delay-line state can't live where `BGM_Client` gets copied by value; it's owned
+  by `BGM_Device` instead, in `mClientEQProcessors`).
 - **Per-app output routing** (send one app to headphones while another stays on speakers) — not
   possible in upstream's architecture at all (one virtual device, one `PlayThrough` output). Being
   built via CoreAudio Process Taps instead — see `docs/PROCESS-TAP-ROUTING.md` for the verified API
