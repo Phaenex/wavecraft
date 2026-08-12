@@ -33,6 +33,7 @@
 #include "CACFArray.h"
 
 // System Includes
+#include <array>
 #include <atomic>
 #include <CoreAudio/AudioServerPlugIn.h>
 #include <dispatch/dispatch.h>
@@ -136,7 +137,24 @@ public:
     //
     // Returns true if any clients' relative volumes were changed.
     bool                                SetClientsRelativeVolumes(const CACFArray inAppVolumes);
-    
+
+    // The client's persisted per-band EQ gains, in dB. Returns all zeros (flat) if the client
+    // isn't found. This is only the target values a real-time caller should apply to its own
+    // live BGM_AppEQ processor -- BGM_Clients/BGM_ClientMap/BGM_Client never own the actual
+    // filter state, see docs/LESSONS.md.
+    std::array<Float32, BGM_AppEQ::kNumBands>
+                                        GetClientEQBandGainsRT(UInt32 inClientID) const;
+
+    // Same idea as CopyClientRelativeVolumesAsAppVolumes, for kAudioDeviceCustomPropertyAppEQ.
+    CACFArray                           CopyClientEQGainsAsAppEQ() const { return mClientMap.CopyClientEQGainsAsAppEQ(); };
+
+    // inAppEQ is an array of dicts with the keys kBGMAppEQKey_ProcessID, kBGMAppEQKey_BundleID
+    // and kBGMAppEQKey_BandGains (a kBGMAppEQNumBands-length array of per-band gains in dB).
+    // Finds the client for each app by PID or bundle ID and sets its persisted gains.
+    //
+    // Returns true if any clients' EQ gains were changed.
+    bool                                SetClientsEQ(const CACFArray inAppEQ);
+
 private:
     const AudioObjectID                 mOwnerDeviceID;
     BGM_ClientMap                       mClientMap;

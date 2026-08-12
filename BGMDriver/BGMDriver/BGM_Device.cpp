@@ -325,9 +325,10 @@ bool	BGM_Device::Device_HasProperty(AudioObjectID inObjectID, pid_t inClientPID,
         case kAudioDeviceCustomPropertyAppVolumes:
         case kAudioDeviceCustomPropertyEnabledOutputControls:
         case kAudioDeviceCustomPropertyDebugLoggingEnabled:
+        case kAudioDeviceCustomPropertyAppEQ:
 			theAnswer = true;
 			break;
-			
+
 		case kAudioDevicePropertyLatency:
 		case kAudioDevicePropertySafetyOffset:
 		case kAudioDevicePropertyPreferredChannelsForStereo:
@@ -373,9 +374,10 @@ bool	BGM_Device::Device_IsPropertySettable(AudioObjectID inObjectID, pid_t inCli
         case kAudioDeviceCustomPropertyAppVolumes:
         case kAudioDeviceCustomPropertyEnabledOutputControls:
         case kAudioDeviceCustomPropertyDebugLoggingEnabled:
+        case kAudioDeviceCustomPropertyAppEQ:
 			theAnswer = true;
 			break;
-		
+
 		default:
 			theAnswer = BGM_AbstractDevice::IsPropertySettable(inObjectID, inClientPID, inAddress);
 			break;
@@ -479,6 +481,10 @@ UInt32	BGM_Device::Device_GetPropertyDataSize(AudioObjectID inObjectID, pid_t in
             break;
             
         case kAudioDeviceCustomPropertyAppVolumes:
+            theAnswer = sizeof(CFPropertyListRef);
+            break;
+
+        case kAudioDeviceCustomPropertyAppEQ:
             theAnswer = sizeof(CFPropertyListRef);
             break;
 
@@ -888,11 +894,11 @@ void	BGM_Device::Device_GetPropertyData(AudioObjectID inObjectID, pid_t inClient
             
         case kAudioObjectPropertyCustomPropertyInfoList:
             theNumberItemsToFetch = inDataSize / sizeof(AudioServerPlugInCustomPropertyInfo);
-            
+
             //	clamp it to the number of items we have
-            if(theNumberItemsToFetch > 7)
+            if(theNumberItemsToFetch > 8)
             {
-                theNumberItemsToFetch = 7;
+                theNumberItemsToFetch = 8;
             }
             
             if(theNumberItemsToFetch > 0)
@@ -936,6 +942,12 @@ void	BGM_Device::Device_GetPropertyData(AudioObjectID inObjectID, pid_t inClient
                 ((AudioServerPlugInCustomPropertyInfo*)outData)[6].mSelector = kAudioDeviceCustomPropertyDebugLoggingEnabled;
                 ((AudioServerPlugInCustomPropertyInfo*)outData)[6].mPropertyDataType = kAudioServerPlugInCustomPropertyDataTypeCFPropertyList;
                 ((AudioServerPlugInCustomPropertyInfo*)outData)[6].mQualifierDataType = kAudioServerPlugInCustomPropertyDataTypeNone;
+            }
+            if(theNumberItemsToFetch > 7)
+            {
+                ((AudioServerPlugInCustomPropertyInfo*)outData)[7].mSelector = kAudioDeviceCustomPropertyAppEQ;
+                ((AudioServerPlugInCustomPropertyInfo*)outData)[7].mPropertyDataType = kAudioServerPlugInCustomPropertyDataTypeCFPropertyList;
+                ((AudioServerPlugInCustomPropertyInfo*)outData)[7].mQualifierDataType = kAudioServerPlugInCustomPropertyDataTypeNone;
             }
 
             outDataSize = theNumberItemsToFetch * sizeof(AudioServerPlugInCustomPropertyInfo);
@@ -989,6 +1001,15 @@ void	BGM_Device::Device_GetPropertyData(AudioObjectID inObjectID, pid_t inClient
                 ThrowIf(inDataSize < sizeof(CFArrayRef), CAException(kAudioHardwareBadPropertySizeError), "BGM_Device::Device_GetPropertyData: not enough space for the return value of kAudioDeviceCustomPropertyAppVolumes for the device");
                 CAMutex::Locker theStateLocker(mStateMutex);
                 *reinterpret_cast<CFArrayRef*>(outData) = mClients.CopyClientRelativeVolumesAsAppVolumes().GetCFArray();
+                outDataSize = sizeof(CFArrayRef);
+            }
+            break;
+
+        case kAudioDeviceCustomPropertyAppEQ:
+            {
+                ThrowIf(inDataSize < sizeof(CFArrayRef), CAException(kAudioHardwareBadPropertySizeError), "BGM_Device::Device_GetPropertyData: not enough space for the return value of kAudioDeviceCustomPropertyAppEQ for the device");
+                CAMutex::Locker theStateLocker(mStateMutex);
+                *reinterpret_cast<CFArrayRef*>(outData) = mClients.CopyClientEQGainsAsAppEQ().GetCFArray();
                 outDataSize = sizeof(CFArrayRef);
             }
             break;
@@ -1079,6 +1100,89 @@ static void ValidateAppVolumesProperty(const CACFArray& inAppVolumes)
             ThrowIf(thePan < kAppPanLeftRawValue || thePan > kAppPanRightRawValue,
                     CAException(kAudioHardwareIllegalOperationError),
                     "BGM_Device::ValidateAppVolumesProperty: PanPosition out of range");
+        }
+    }
+}
+
+// Validates inAppEQ for the kAudioDeviceCustomPropertyAppEQ property as described in
+// BGM_Types.h. Throws CAException(kAudioHardwareIllegalOperationError) if invalid.
+static void ValidateAppEQProperty(const CACFArray& inAppEQ)
+{
+    UInt32 theCount = inAppEQ.GetNumberItems();
+
+    for(UInt32 i = 0; i < theCount; i++)
+    {
+        // Each element must be a CFDictionary.
+        CFTypeRef theElement = nullptr;
+        bool didGetValue = inAppEQ.GetCFType(i, theElement);
+        ThrowIf(!didGetValue || theElement == nullptr,
+                CAException(kAudioHardwareIllegalOperationError),
+                "BGM_Device::ValidateAppEQProperty: Could not get element from array");
+        ThrowIf(CFGetTypeID(theElement) != CFDictionaryGetTypeID(),
+                CAException(kAudioHardwareIllegalOperationError),
+                "BGM_Device::ValidateAppEQProperty: Element is not a CFDictionary");
+
+        CACFDictionary theDict(static_cast<CFDictionaryRef>(theElement), false);
+
+        // Check for ProcessID. Must be a CFNumber if present.
+        CFTypeRef thePIDValue = nullptr;
+        bool hasPID = theDict.GetCFType(CFSTR(kBGMAppEQKey_ProcessID), thePIDValue);
+        if(hasPID && thePIDValue != nullptr)
+        {
+            ThrowIf(CFGetTypeID(thePIDValue) != CFNumberGetTypeID(),
+                    CAException(kAudioHardwareIllegalOperationError),
+                    "BGM_Device::ValidateAppEQProperty: ProcessID is not a CFNumber");
+        }
+
+        // Check for BundleID. Must be a CFString if present.
+        CFTypeRef theBundleIDValue = nullptr;
+        bool hasBundleID = theDict.GetCFType(CFSTR(kBGMAppEQKey_BundleID), theBundleIDValue);
+        if(hasBundleID && theBundleIDValue != nullptr)
+        {
+            ThrowIf(CFGetTypeID(theBundleIDValue) != CFStringGetTypeID(),
+                    CAException(kAudioHardwareIllegalOperationError),
+                    "BGM_Device::ValidateAppEQProperty: BundleID is not a CFString");
+        }
+
+        // At least one of ProcessID or BundleID must be present.
+        ThrowIf(!hasPID && !hasBundleID,
+                CAException(kAudioHardwareIllegalOperationError),
+                "BGM_Device::ValidateAppEQProperty: Neither ProcessID nor BundleID present");
+
+        // BandGains is required (unlike AppVolumes' RelativeVolume/PanPosition, which are both
+        // optional -- there's no meaningful "partial" EQ update, since bands aren't independently
+        // addressable in this property). Must be a CFArray of exactly kBGMAppEQNumBands
+        // CFNumbers, each within [kBGMAppEQMinGainDB, kBGMAppEQMaxGainDB].
+        CFTypeRef theBandGainsValue = nullptr;
+        bool hasBandGains = theDict.GetCFType(CFSTR(kBGMAppEQKey_BandGains), theBandGainsValue);
+        ThrowIf(!hasBandGains || theBandGainsValue == nullptr,
+                CAException(kAudioHardwareIllegalOperationError),
+                "BGM_Device::ValidateAppEQProperty: BandGains not present");
+        ThrowIf(CFGetTypeID(theBandGainsValue) != CFArrayGetTypeID(),
+                CAException(kAudioHardwareIllegalOperationError),
+                "BGM_Device::ValidateAppEQProperty: BandGains is not a CFArray");
+
+        CACFArray theBandGains(static_cast<CFArrayRef>(theBandGainsValue), false);
+        ThrowIf(theBandGains.GetNumberItems() != kBGMAppEQNumBands,
+                CAException(kAudioHardwareIllegalOperationError),
+                "BGM_Device::ValidateAppEQProperty: BandGains must have exactly kBGMAppEQNumBands items");
+
+        for(UInt32 band = 0; band < kBGMAppEQNumBands; band++)
+        {
+            CFTypeRef theBandValue = nullptr;
+            bool didGetBand = theBandGains.GetCFType(band, theBandValue);
+            ThrowIf(!didGetBand || theBandValue == nullptr,
+                    CAException(kAudioHardwareIllegalOperationError),
+                    "BGM_Device::ValidateAppEQProperty: Could not get band gain from array");
+            ThrowIf(CFGetTypeID(theBandValue) != CFNumberGetTypeID(),
+                    CAException(kAudioHardwareIllegalOperationError),
+                    "BGM_Device::ValidateAppEQProperty: Band gain is not a CFNumber");
+
+            Float64 theGain = 0.0;
+            theBandGains.GetFloat64(band, theGain);
+            ThrowIf(theGain < kBGMAppEQMinGainDB || theGain > kBGMAppEQMaxGainDB,
+                    CAException(kAudioHardwareIllegalOperationError),
+                    "BGM_Device::ValidateAppEQProperty: Band gain out of range");
         }
     }
 }
@@ -1194,6 +1298,34 @@ void	BGM_Device::Device_SetPropertyData(AudioObjectID inObjectID, pid_t inClient
                     // Send notification
                     CADispatchQueue::GetGlobalSerialQueue().Dispatch(false,	^{
                         AudioObjectPropertyAddress theChangedProperties[] = { kBGMAppVolumesAddress };
+                        BGM_PlugIn::Host_PropertiesChanged(inObjectID, 1, theChangedProperties);
+                    });
+                }
+            }
+            break;
+
+        case kAudioDeviceCustomPropertyAppEQ:
+            {
+                ThrowIf(inDataSize < sizeof(CFArrayRef), CAException(kAudioHardwareBadPropertySizeError), "BGM_Device::Device_SetPropertyData: wrong size for the data for kAudioDeviceCustomPropertyAppEQ");
+
+                CFArrayRef arrayRef = *reinterpret_cast<const CFArrayRef*>(inData);
+
+                ThrowIfNULL(arrayRef, CAException(kAudioHardwareIllegalOperationError), "BGM_Device::Device_SetPropertyData: kAudioDeviceCustomPropertyAppEQ cannot be set to NULL");
+                ThrowIf(CFGetTypeID(arrayRef) != CFArrayGetTypeID(), CAException(kAudioHardwareIllegalOperationError), "BGM_Device::Device_SetPropertyData: CFType given for kAudioDeviceCustomPropertyAppEQ was not a CFArray");
+
+                CACFArray array(arrayRef, false);
+
+                ValidateAppEQProperty(array);
+
+                CAMutex::Locker theStateLocker(mStateMutex);
+
+                bool propertyWasChanged = mClients.SetClientsEQ(array);
+
+                if(propertyWasChanged)
+                {
+                    // Send notification
+                    CADispatchQueue::GetGlobalSerialQueue().Dispatch(false,	^{
+                        AudioObjectPropertyAddress theChangedProperties[] = { kBGMAppEQAddress };
                         BGM_PlugIn::Host_PropertiesChanged(inObjectID, 1, theChangedProperties);
                     });
                 }
@@ -1487,6 +1619,11 @@ void	BGM_Device::DoIOOperation(AudioObjectID inStreamObjectID, UInt32 inClientID
 			//       kAudioServerPlugInIOOperationProcessMix would be more efficient.
             mClients.RecordNonBGMAppIO(inClientID);
 
+            // EQ before volume/pan, not after: ApplyClientRelativeVolume's clamp to [-1, 1] is
+            // the one place clipping safety happens for this whole chain, and a peaking boost
+            // can push samples outside that range on its own (a +12dB boost multiplies passband
+            // amplitude by roughly 4x). Running EQ first means that clamp still catches it.
+            ApplyClientEQ(inClientID, inIOBufferFrameSize, ioMainBuffer);
             ApplyClientRelativeVolume(inClientID, inIOBufferFrameSize, ioMainBuffer);
             break;
 
@@ -1648,6 +1785,51 @@ void	BGM_Device::ApplyClientRelativeVolume(UInt32 inClientID, UInt32 inIOBufferF
             const Float32 theAdjustedSampleClippedBelow = theAdjustedSample < -1.0f ? -1.0f : theAdjustedSample;
             theBuffer[i] = theAdjustedSampleClippedBelow > 1.0f ? 1.0f : theAdjustedSampleClippedBelow;
         }
+    }
+}
+
+void	BGM_Device::ApplyClientEQ(UInt32 inClientID, UInt32 inIOBufferFrameSize, void* ioBuffer)
+{
+    // Real-time safe: only ever finds an existing entry, never inserts/erases.
+    // AddClient/RemoveClient own the entry's lifecycle, both on the non-real-time thread that
+    // adds/removes clients. See BGM_Device.h and docs/LESSONS.md.
+    auto theEQEntry = mClientEQProcessors.find(inClientID);
+    if (theEQEntry == mClientEQProcessors.end())
+    {
+        return;
+    }
+
+    std::array<Float32, BGM_AppEQ::kNumBands> theGainsDB = mClients.GetClientEQBandGainsRT(inClientID);
+
+    // Skip entirely for the overwhelmingly common case: an app nobody's touched the EQ for.
+    bool isFlat = true;
+    for (Float32 theGain : theGainsDB)
+    {
+        if (theGain != 0.0f)
+        {
+            isFlat = false;
+            break;
+        }
+    }
+    if (isFlat)
+    {
+        return;
+    }
+
+    // GetSampleRate() briefly takes mStateMutex, a second lock beyond the mIOMutex this
+    // function's caller already holds -- unlike ApplyClientRelativeVolume just above, which
+    // deliberately never touches mStateMutex on this real-time path. Only call it when gains
+    // have actually changed since this processor was last configured (a rare, user-driven
+    // event), not on every audio callback for every app with active EQ.
+    if (theEQEntry->second.NeedsGainUpdate(theGainsDB))
+    {
+        theEQEntry->second.SetAllBandGainsDB(theGainsDB, GetSampleRate());
+    }
+
+    Float32* theBuffer = reinterpret_cast<Float32*>(ioBuffer);
+    for (UInt32 i = 0; i < inIOBufferFrameSize; i++)
+    {
+        theEQEntry->second.ProcessStereoSample(theBuffer[i * 2], theBuffer[i * 2 + 1]);
     }
 }
 
@@ -1868,6 +2050,15 @@ void	BGM_Device::AddClient(const AudioServerPlugInClientInfo* inClientInfo)
     CAMutex::Locker theStateLocker(mStateMutex);
 
     mClients.AddClient(inClientInfo);
+
+    // Create this client's EQ processor now, on this non-real-time thread, so ApplyClientEQ
+    // (called from the real-time IO thread) never has to insert into mClientEQProcessors --
+    // only ever look up an entry that's already there. Guarded by mIOMutex, not mStateMutex,
+    // since that's the mutex ApplyClientEQ's caller already holds -- see BGM_Device.h.
+    {
+        CAMutex::Locker theIOLocker(mIOMutex);
+        mClientEQProcessors[inClientInfo->mClientID];  // Default-constructs the entry (all bands flat).
+    }
 }
 
 void	BGM_Device::RemoveClient(const AudioServerPlugInClientInfo* inClientInfo)
@@ -1885,6 +2076,11 @@ void	BGM_Device::RemoveClient(const AudioServerPlugInClientInfo* inClientInfo)
     }
 
     mClients.RemoveClient(inClientInfo->mClientID);
+
+    {
+        CAMutex::Locker theIOLocker(mIOMutex);
+        mClientEQProcessors.erase(inClientInfo->mClientID);
+    }
 }
 
 void	BGM_Device::PerformConfigChange(UInt64 inChangeAction, void* inChangeInfo)

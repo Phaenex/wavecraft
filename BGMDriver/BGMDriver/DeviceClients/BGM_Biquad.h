@@ -127,7 +127,11 @@ private:
 
 };
 
-// A fixed 5-band peaking EQ chain, one instance per app (owned by BGM_Client).
+// A fixed 5-band peaking EQ chain, one instance per app. Owned by BGM_Device
+// (in mClientEQProcessors, keyed by client ID), NOT by BGM_Client -- BGM_Client
+// gets copied by value by the existing per-client access pattern (see
+// docs/LESSONS.md), which would silently reset this filter's delay-line state
+// on every IO callback if it lived there instead.
 // Bands are processed in series, low to high.
 class BGM_AppEQ
 {
@@ -143,6 +147,11 @@ public:
     // BGM_Biquad::SetParameters. inSampleRate should be the device's
     // current sample rate -- callers should re-call this for every band if
     // the device's sample rate changes.
+    //
+    // Unconditionally resets that band's filter delay-line state (see
+    // BGM_Biquad::SetParameters), so avoid calling this every IO callback
+    // with the same value -- prefer SetAllBandGainsDB, which only touches
+    // bands whose target gain actually changed.
     void SetBandGainDB(int inBandIndex, double inGainDB, double inSampleRate)
     {
         if (inBandIndex < 0 || inBandIndex >= kNumBands)
@@ -155,6 +164,36 @@ public:
         // excessive overlap.
         mBands[static_cast<size_t>(inBandIndex)].SetParameters(
                 kBandCenterFreqs[static_cast<size_t>(inBandIndex)], inSampleRate, inGainDB, 1.0);
+
+        mCurrentGainsDB[static_cast<size_t>(inBandIndex)] = static_cast<Float32>(inGainDB);
+    }
+
+    // True if any band's target gain differs from what's currently applied -- i.e. whether a
+    // SetAllBandGainsDB call with these gains would actually do anything. Callers on the
+    // real-time thread should check this before fetching a sample rate that requires taking a
+    // lock (e.g. BGM_Device::GetSampleRate, which takes mStateMutex) purely to pass into a call
+    // that would turn out to be a no-op.
+    bool NeedsGainUpdate(const std::array<Float32, kNumBands>& inGainsDB) const
+    {
+        return mCurrentGainsDB != inGainsDB;
+    }
+
+    // Sets all 5 bands' gains at once, but only actually reconfigures (and
+    // resets the delay-line state of) bands whose target gain differs from
+    // what's currently applied. Real-time safe to call every IO callback:
+    // the common case (nothing changed since last call) does no filter
+    // resets at all, just kNumBands float comparisons.
+    void SetAllBandGainsDB(const std::array<Float32, kNumBands>& inGainsDB, double inSampleRate)
+    {
+        for (int i = 0; i < kNumBands; i++)
+        {
+            const size_t idx = static_cast<size_t>(i);
+
+            if (mCurrentGainsDB[idx] != inGainsDB[idx])
+            {
+                SetBandGainDB(i, inGainsDB[idx], inSampleRate);
+            }
+        }
     }
 
     // Applies all 5 bands in series to one interleaved stereo sample pair.
@@ -169,6 +208,11 @@ public:
 
 private:
     std::array<BGM_Biquad, kNumBands> mBands;
+
+    // Tracks what's currently applied to mBands, all zeroed (0dB, unity) to
+    // match each BGM_Biquad's own default-constructed state. Compared
+    // against in SetAllBandGainsDB to avoid unnecessary filter resets.
+    std::array<Float32, kNumBands> mCurrentGainsDB { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
 
 };
 

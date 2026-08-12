@@ -237,7 +237,7 @@ void    BGM_ClientMap::CopyClientIntoAppVolumesArray(BGM_Client inClient, CAVolu
     if(inClient.mRelativeVolume != 1.0 || inClient.mPanPosition != 0)
     {
         CACFDictionary theAppVolume(false);
-        
+
         theAppVolume.AddSInt32(CFSTR(kBGMAppVolumesKey_ProcessID), inClient.mProcessID);
         theAppVolume.AddString(CFSTR(kBGMAppVolumesKey_BundleID), inClient.mBundleID.CopyCFString());
         // Reverse the volume conversion from SetClientsRelativeVolumes
@@ -245,8 +245,62 @@ void    BGM_ClientMap::CopyClientIntoAppVolumesArray(BGM_Client inClient, CAVolu
                                inVolumeCurve.ConvertScalarToRaw(inClient.mRelativeVolume / 4));
         theAppVolume.AddSInt32(CFSTR(kBGMAppVolumesKey_PanPosition),
                                inClient.mPanPosition);
-        
+
         ioAppVolumes.AppendDictionary(theAppVolume.GetDict());
+    }
+}
+
+#pragma mark App EQ
+
+CACFArray   BGM_ClientMap::CopyClientEQGainsAsAppEQ() const
+{
+    // Since this is a read-only, non-real-time operation, we can read from the shadow maps to avoid
+    // locking the main maps.
+    CAMutex::Locker theShadowMapsLocker(mShadowMapsMutex);
+
+    CACFArray theAppEQ(false);
+
+    for(auto& theClientEntry : mClientMapShadow)
+    {
+        CopyClientIntoAppEQArray(theClientEntry.second, theAppEQ);
+    }
+
+    for(auto& thePastClientEntry : mPastClientMap)
+    {
+        CopyClientIntoAppEQArray(thePastClientEntry.second, theAppEQ);
+    }
+
+    return theAppEQ;
+}
+
+void    BGM_ClientMap::CopyClientIntoAppEQArray(BGM_Client inClient, CACFArray& ioAppEQ) const
+{
+    // Only include clients with at least one band away from its 0dB default.
+    bool hasNonDefaultGain = false;
+    for(Float32 theGain : inClient.mEQBandGainsDB)
+    {
+        if(theGain != 0.0f)
+        {
+            hasNonDefaultGain = true;
+            break;
+        }
+    }
+
+    if(hasNonDefaultGain)
+    {
+        CACFDictionary theAppEQ(false);
+
+        theAppEQ.AddSInt32(CFSTR(kBGMAppEQKey_ProcessID), inClient.mProcessID);
+        theAppEQ.AddString(CFSTR(kBGMAppEQKey_BundleID), inClient.mBundleID.CopyCFString());
+
+        CACFArray theBandGains(false);
+        for(Float32 theGain : inClient.mEQBandGainsDB)
+        {
+            theBandGains.AppendFloat64(static_cast<Float64>(theGain));
+        }
+        theAppEQ.AddArray(CFSTR(kBGMAppEQKey_BandGains), theBandGains.GetCFArray());
+
+        ioAppEQ.AppendDictionary(theAppEQ.GetDict());
     }
 }
 
@@ -409,8 +463,56 @@ bool BGM_ClientMap::SetClientsPanPosition(CACFString searchKey, SInt32 inPanPosi
     theSetPansInShadowMapsFunc();
     SwapInShadowMaps();
     theSetPansInShadowMapsFunc();
-    
+
     return didChangePanPosition;
+}
+
+bool BGM_ClientMap::SetClientsEQBandGains(pid_t searchKey,
+                                           const std::array<Float32, BGM_AppEQ::kNumBands>& inGainsDB)
+{
+    bool didChangeGains = false;
+
+    CAMutex::Locker theShadowMapsLocker(mShadowMapsMutex);
+
+    auto theSetGainsInShadowMapsFunc = [&] {
+        auto theClients = GetClients(searchKey);
+        if(theClients != nullptr) {
+            for(auto theClient: *theClients) {
+                theClient->mEQBandGainsDB = inGainsDB;
+                didChangeGains = true;
+            }
+        }
+    };
+
+    theSetGainsInShadowMapsFunc();
+    SwapInShadowMaps();
+    theSetGainsInShadowMapsFunc();
+
+    return didChangeGains;
+}
+
+bool BGM_ClientMap::SetClientsEQBandGains(CACFString searchKey,
+                                           const std::array<Float32, BGM_AppEQ::kNumBands>& inGainsDB)
+{
+    bool didChangeGains = false;
+
+    CAMutex::Locker theShadowMapsLocker(mShadowMapsMutex);
+
+    auto theSetGainsInShadowMapsFunc = [&] {
+        auto theClients = GetClients(searchKey);
+        if(theClients != nullptr) {
+            for(auto theClient: *theClients) {
+                theClient->mEQBandGainsDB = inGainsDB;
+                didChangeGains = true;
+            }
+        }
+    };
+
+    theSetGainsInShadowMapsFunc();
+    SwapInShadowMaps();
+    theSetGainsInShadowMapsFunc();
+
+    return didChangeGains;
 }
 
 void    BGM_ClientMap::SwapInShadowMaps()

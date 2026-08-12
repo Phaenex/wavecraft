@@ -309,6 +309,14 @@ SInt32 BGM_Clients::GetClientPanPositionRT(UInt32 inClientID) const
     return (didGetClient ? theClient.mPanPosition : kAppPanCenterRawValue);
 }
 
+std::array<Float32, BGM_AppEQ::kNumBands> BGM_Clients::GetClientEQBandGainsRT(UInt32 inClientID) const
+{
+    BGM_Client theClient;
+    bool didGetClient = mClientMap.GetClientRT(inClientID, &theClient);
+    return (didGetClient ? theClient.mEQBandGainsDB
+                          : std::array<Float32, BGM_AppEQ::kNumBands> { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f });
+}
+
 bool    BGM_Clients::SetClientsRelativeVolumes(const CACFArray inAppVolumes)
 {
     bool didChangeAppVolumes = false;
@@ -386,7 +394,73 @@ bool    BGM_Clients::SetClientsRelativeVolumes(const CACFArray inAppVolumes)
                 BGM_InvalidClientRelativeVolumeException(),
                 "BGM_Clients::SetClientsRelativeVolumes: No volume or pan position in request");
     }
-    
+
     return didChangeAppVolumes;
+}
+
+#pragma mark App EQ
+
+bool    BGM_Clients::SetClientsEQ(const CACFArray inAppEQ)
+{
+    bool didChangeAppEQ = false;
+
+    // Each element in inAppEQ is a CFDictionary containing the process id and/or bundle id of an
+    // app, and its new per-band EQ gains.
+    for(UInt32 i = 0; i < inAppEQ.GetNumberItems(); i++)
+    {
+        CACFDictionary theAppEQ(false);
+        inAppEQ.GetCACFDictionary(i, theAppEQ);
+
+        // Get the app's PID from the dict
+        pid_t theAppPID;
+        bool didFindPID = theAppEQ.GetSInt32(CFSTR(kBGMAppEQKey_ProcessID), theAppPID);
+
+        // Get the app's bundle ID from the dict
+        CACFString theAppBundleID;
+        theAppBundleID.DontAllowRelease();
+        theAppEQ.GetCACFString(CFSTR(kBGMAppEQKey_BundleID), theAppBundleID);
+
+        BGMAssert(didFindPID || theAppBundleID.IsValid(),
+                  "BGM_Clients::SetClientsEQ: No PID or bundle ID");
+        (void)didFindPID;  // Suppress unused variable warning in release builds.
+
+        // Get the band gains array from the dict. ValidateAppEQProperty (in BGM_Device.cpp)
+        // already checked this is present and exactly kBGMAppEQNumBands items of the right
+        // type before we get here.
+        CACFArray theBandGainsArray(false);
+        theAppEQ.GetCACFArray(CFSTR(kBGMAppEQKey_BandGains), theBandGainsArray);
+
+        std::array<Float32, BGM_AppEQ::kNumBands> theGainsDB;
+        for(UInt32 band = 0; band < BGM_AppEQ::kNumBands; band++)
+        {
+            Float64 theRawGain = 0.0;
+            theBandGainsArray.GetFloat64(band, theRawGain);
+
+            // Clamp defensively even though ValidateAppEQProperty should have already, and
+            // BGM_Biquad::SetParameters clamps again -- cheap, and this is the one place a
+            // value from an external client enters the persisted state.
+            if (theRawGain < kBGMAppEQMinGainDB) theRawGain = kBGMAppEQMinGainDB;
+            if (theRawGain > kBGMAppEQMaxGainDB) theRawGain = kBGMAppEQMaxGainDB;
+
+            theGainsDB[band] = static_cast<Float32>(theRawGain);
+        }
+
+        // Try to update the client's EQ, first by PID and then by bundle ID. Always try both
+        // because apps can have multiple clients.
+        if(mClientMap.SetClientsEQBandGains(theAppPID, theGainsDB))
+        {
+            didChangeAppEQ = true;
+        }
+
+        if(mClientMap.SetClientsEQBandGains(theAppBundleID, theGainsDB))
+        {
+            didChangeAppEQ = true;
+        }
+
+        // TODO: If the app isn't currently a client, we should add it to the past clients
+        //       map, or update its past EQ gains if it's already in there.
+    }
+
+    return didChangeAppEQ;
 }
 

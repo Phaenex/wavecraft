@@ -23,11 +23,17 @@
 #ifndef __BGMDriver__BGM_Client__
 #define __BGMDriver__BGM_Client__
 
+// Local Includes
+#include "BGM_Biquad.h"
+
 // PublicUtility Includes
 #include "CACFString.h"
 
 // System Includes
 #include <CoreAudio/AudioServerPlugIn.h>
+
+// STL Includes
+#include <array>
 
 
 #pragma clang assume_nonnull begin
@@ -69,7 +75,15 @@ public:
     
     // The client's pan position, in the range [-100, 100] where -100 is left and 100 is right
     SInt32                        mPanPosition = 0;
-    
+
+    // The client's persisted per-band EQ gains, in dB, each in [kBGMAppEQMinGainDB,
+    // kBGMAppEQMaxGainDB]. Defaults to all zero (flat/unity). This is only the user-set
+    // target values -- safe to copy, unlike the actual live filter state, which BGM_Device
+    // owns separately (in mClientEQProcessors) precisely so it doesn't get reset by a copy
+    // of this class. See docs/LESSONS.md.
+    std::array<Float32, BGM_AppEQ::kNumBands>
+                                   mEQBandGainsDB { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+
 };
 
 #pragma clang assume_nonnull end

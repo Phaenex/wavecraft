@@ -123,7 +123,14 @@ enum
     // by default. This property is settable. See the array indices below for more info.
     kAudioDeviceCustomPropertyEnabledOutputControls                   = 'bgct',
     // A CFBoolean. True if debug logging is enabled in BGMDriver. Settable.
-    kAudioDeviceCustomPropertyDebugLoggingEnabled                     = 'dblg'
+    kAudioDeviceCustomPropertyDebugLoggingEnabled                     = 'dblg',
+    // A CFArray of CFDictionaries that each contain an app's pid and/or bundle ID and its 5-band EQ gains.
+    // See the dictionary keys below for more info.
+    //
+    // Getting this property will only return apps with EQ gains other than the default (all bands at 0dB).
+    // Setting this property will add new app EQ settings or replace existing ones, but there's currently
+    // no way to delete an app from the internal collection.
+    kAudioDeviceCustomPropertyAppEQ                                   = 'aeqb'
 };
 
 // The number of silent/audible frames before BGMDriver will change kAudioDeviceCustomPropertyDeviceAudibleState
@@ -155,6 +162,21 @@ enum BGMDeviceAudibleState : SInt32
 #define kBGMAppVolumesKey_ProcessID         "pid"
 // The app's bundle ID as a CFString. May be omitted if kBGMAppVolumesKey_ProcessID is present.
 #define kBGMAppVolumesKey_BundleID          "bid"
+
+// kAudioDeviceCustomPropertyAppEQ keys
+//
+// The app's pid as a CFNumber. May be omitted if kBGMAppEQKey_BundleID is present.
+#define kBGMAppEQKey_ProcessID              "pid"
+// The app's bundle ID as a CFString. May be omitted if kBGMAppEQKey_ProcessID is present.
+#define kBGMAppEQKey_BundleID               "bid"
+// A CFArray of exactly kBGMAppEQNumBands CFNumber<Float64> values, one gain in dB per band, each
+// clamped to [kBGMAppEQMinGainDB, kBGMAppEQMaxGainDB]. Band center frequencies are fixed -- see
+// BGM_AppEQ::kBandCenterFreqs in BGM_Biquad.h.
+#define kBGMAppEQKey_BandGains              "bands"
+
+#define kBGMAppEQNumBands       5
+#define kBGMAppEQMinGainDB      -12.0
+#define kBGMAppEQMaxGainDB      12.0
 
 // Volume curve range for app volumes
 #define kAppRelativeVolumeMaxRawValue   100
@@ -214,6 +236,12 @@ static const AudioObjectPropertyAddress kBGMAppVolumesAddress = {
 static const AudioObjectPropertyAddress kBGMEnabledOutputControlsAddress = {
     kAudioDeviceCustomPropertyEnabledOutputControls,
     kAudioObjectPropertyScopeOutput,
+    kAudioObjectPropertyElementMain
+};
+
+static const AudioObjectPropertyAddress kBGMAppEQAddress = {
+    kAudioDeviceCustomPropertyAppEQ,
+    kAudioObjectPropertyScopeGlobal,
     kAudioObjectPropertyElementMain
 };
 

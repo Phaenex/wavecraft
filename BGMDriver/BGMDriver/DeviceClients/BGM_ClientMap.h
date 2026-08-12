@@ -34,6 +34,7 @@
 #include "CAVolumeCurve.h"
 
 // STL Includes
+#include <array>
 #include <map>
 #include <vector>
 #include <functional>
@@ -113,10 +114,15 @@ public:
     // kAudioDeviceCustomPropertyAppVolumes. (Except that CACFArray and CACFDictionary are used instead
     // of unwrapped CFArray and CFDictionary refs.)
     CACFArray                                           CopyClientRelativeVolumesAsAppVolumes(CAVolumeCurve inVolumeCurve) const;
-    
+
+    // Same idea, but for kAudioDeviceCustomPropertyAppEQ -- only includes apps whose EQ gains
+    // differ from the default (all bands at 0dB).
+    CACFArray                                           CopyClientEQGainsAsAppEQ() const;
+
 private:
     void                                                CopyClientIntoAppVolumesArray(BGM_Client inClient, CAVolumeCurve inVolumeCurve, CACFArray& ioAppVolumes) const;
-    
+    void                                                CopyClientIntoAppEQArray(BGM_Client inClient, CACFArray& ioAppEQ) const;
+
 public:
     // Using the template function hits LLVM Bug 23987
     // TODO Switch to template function
@@ -139,7 +145,15 @@ public:
     // Returns true if a client for bundle ID inAppBundleID was found and its pan position changed.
     // inAppBundleID may contain a null CFStringRef, in which case it returns false.
     bool                                                SetClientsPanPosition(CACFString inAppBundleID, SInt32 inPanPosition);
-    
+
+    // Returns true if a client for PID inAppPID was found and its EQ gains changed.
+    bool                                                SetClientsEQBandGains(pid_t inAppPID,
+                                                                const std::array<Float32, BGM_AppEQ::kNumBands>& inGainsDB);
+    // Returns true if a client for bundle ID inAppBundleID was found and its EQ gains changed.
+    // inAppBundleID may contain a null CFStringRef, in which case it returns false.
+    bool                                                SetClientsEQBandGains(CACFString inAppBundleID,
+                                                                const std::array<Float32, BGM_AppEQ::kNumBands>& inGainsDB);
+
     // Has a real-time thread call SwapInShadowMapsRT. (Synchronously queues the call as a task on mTaskQueue.)
     // The shadow maps mutex must be locked when calling this method.
     void                                                SwapInShadowMaps();

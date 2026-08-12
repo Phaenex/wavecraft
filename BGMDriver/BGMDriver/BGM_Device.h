@@ -39,6 +39,7 @@
 #include "BGM_Stream.h"
 #include "BGM_VolumeControl.h"
 #include "BGM_MuteControl.h"
+#include "BGM_Biquad.h"
 #include "BGMThreadSafetyAnalysis.h"
 
 // PublicUtility Includes
@@ -49,6 +50,7 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <dispatch/dispatch.h>
 #include <pthread.h>
+#include <map>
 
 
 class BGM_Device
@@ -117,6 +119,16 @@ private:
 	void						ReadInputData(UInt32 inIOBufferFrameSize, Float64 inSampleTime, void* __nonnull outBuffer);
     void						WriteOutputData(UInt32 inIOBufferFrameSize, Float64 inSampleTime, const void* __nonnull inBuffer);
     void                        ApplyClientRelativeVolume(UInt32 inClientID, UInt32 inIOBufferFrameSize, void* __nonnull inBuffer) const;
+
+    // Applies inClientID's persisted per-band EQ gains (from mClients) to inBuffer, using the
+    // live BGM_AppEQ processor for that client in mClientEQProcessors. Not const, since it
+    // mutates that processor's filter state and possibly its cached gains (only when they've
+    // actually changed -- see BGM_AppEQ::SetAllBandGainsDB).
+    //
+    // Real-time safe: only ever looks up an existing entry in mClientEQProcessors (never
+    // inserts/erases -- AddClient/RemoveClient own that, on the non-RT thread that adds/removes
+    // clients) and does no heap allocation of its own.
+    void                        ApplyClientEQ(UInt32 inClientID, UInt32 inIOBufferFrameSize, void* __nonnull inBuffer);
 
 #pragma mark Accessors
 
@@ -225,7 +237,13 @@ private:
     BGM_TaskQueue               mTaskQueue;
     
     BGM_Clients                 mClients;
-    
+
+    // Live per-app EQ filter state, keyed by client ID. Deliberately NOT inside BGM_Client (see
+    // docs/LESSONS.md) -- entries are only ever inserted/erased from AddClient/RemoveClient, both
+    // non-real-time, guarded by mIOMutex. ApplyClientEQ (real-time) only ever does a read-only
+    // find() against this, guarded by the same mIOMutex its caller already holds.
+    std::map<UInt32, BGM_AppEQ> mClientEQProcessors;
+
     #define kLoopbackRingBufferFrameSize    16384
     Float64                     mLoopbackSampleRate;
     CARingBuffer                mLoopbackRingBuffer;

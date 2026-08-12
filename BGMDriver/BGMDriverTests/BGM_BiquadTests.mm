@@ -194,4 +194,76 @@ static double RatioToDB(double inRatio)
     }
 }
 
+// NeedsGainUpdate is what ApplyClientEQ checks before calling GetSampleRate() (which takes a
+// lock) on every real-time audio callback -- see BGM_Device::ApplyClientEQ. If this predicate
+// were wrong, either the lock would be taken far more often than necessary (a real-time-safety
+// regression) or, worse, a genuine gain change would go unnoticed.
+- (void) testNeedsGainUpdate
+{
+    BGM_AppEQ eq;
+
+    std::array<Float32, BGM_AppEQ::kNumBands> flat { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    std::array<Float32, BGM_AppEQ::kNumBands> boosted { 3.0f, 0.0f, -2.0f, 0.0f, 5.0f };
+
+    // A freshly-constructed BGM_AppEQ starts flat, so requesting flat again needs no update...
+    XCTAssertFalse(eq.NeedsGainUpdate(flat));
+    // ...but requesting a real change does.
+    XCTAssert(eq.NeedsGainUpdate(boosted));
+
+    eq.SetAllBandGainsDB(boosted, kSampleRate);
+
+    // After applying, the same gains again need no update...
+    XCTAssertFalse(eq.NeedsGainUpdate(boosted));
+    // ...but a different set does.
+    XCTAssert(eq.NeedsGainUpdate(flat));
+}
+
+// The actual correctness property SetAllBandGainsDB exists for: repeatedly calling it with
+// unchanged gains (as ApplyClientEQ does every audio callback) must not reset the filter's
+// delay-line state. Verified behaviorally, not by inspecting private state: process the same
+// continuous signal two ways -- calling SetAllBandGainsDB once vs. calling it redundantly before
+// every single sample -- and confirm the outputs are bit-for-bit identical. If the "only touch
+// bands that changed" logic were broken and every call reset state regardless, the redundant-call
+// version would show discontinuities the single-call version wouldn't, and the two outputs would
+// diverge.
+- (void) testSetAllBandGainsDBDoesNotResetStateWhenUnchanged
+{
+    std::array<Float32, BGM_AppEQ::kNumBands> gains { 4.0f, -6.0f, 2.0f, 0.0f, -3.0f };
+    const int kNumSamples = 2000;
+
+    BGM_AppEQ eqCalledOnce;
+    eqCalledOnce.SetAllBandGainsDB(gains, kSampleRate);
+
+    BGM_AppEQ eqCalledEverySample;
+    eqCalledEverySample.SetAllBandGainsDB(gains, kSampleRate);
+
+    for (int i = 0; i < kNumSamples; i++)
+    {
+        Float32 xL = static_cast<Float32>(std::sin(2.0 * M_PI * 440.0 * i / kSampleRate));
+        Float32 xR = static_cast<Float32>(std::sin(2.0 * M_PI * 660.0 * i / kSampleRate));
+
+        Float32 onceL = xL, onceR = xR;
+        eqCalledOnce.ProcessStereoSample(onceL, onceR);
+
+        // Redundantly re-request the exact same gains before every sample -- this is exactly
+        // what ApplyClientEQ does on every real-time callback.
+        eqCalledEverySample.SetAllBandGainsDB(gains, kSampleRate);
+        Float32 everyL = xL, everyR = xR;
+        eqCalledEverySample.ProcessStereoSample(everyL, everyR);
+
+        XCTAssertEqual(onceL, everyL, @"Diverged at sample %d (left channel) -- redundant "
+                "SetAllBandGainsDB calls with unchanged gains must not reset filter state", i);
+        XCTAssertEqual(onceR, everyR, @"Diverged at sample %d (right channel)", i);
+    }
+}
+
+// Note: deliberately not testing "changing one band leaves other bands' state alone" as a
+// separate black-box behavioral test. Bands are chained in series, so isolating one band's
+// contribution from the combined output without exposing private state isn't something a
+// black-box test can do rigorously (an earlier attempt at this compared mismatched targets with
+// an arbitrary tolerance -- not real evidence, removed rather than shipped). The property holds
+// by construction instead: SetAllBandGainsDB's loop only calls SetBandGainDB(i, ...) -- which
+// only ever touches mBands[i] -- for indices whose target actually changed, so it's structurally
+// incapable of touching an unchanged band.
+
 @end
