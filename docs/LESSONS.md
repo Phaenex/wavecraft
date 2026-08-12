@@ -304,6 +304,41 @@ different test than any mock, and finding out only there is expected, not a sign
 -- the response is adding the coverage that specific gap revealed, not distrusting testing in
 general.
 
+## A comment that asserts a locking invariant isn't the same as code that provides it -- second occurrence
+
+**The trap:** a full-project audit specifically went looking for more instances of the pattern
+that caused the property-discovery crash above (two things that must agree on an invariant,
+silently didn't) and found a live one: `BGM_Device::ApplyClientEQ`'s own comment said its
+`mClientEQProcessors.find()` call was "guarded by the same `mIOMutex` its caller already holds" --
+and `BGM_Device.h`'s comment on the member said the same thing. Both comments were wrong. The
+actual caller, `DoIOOperation`'s `ProcessOutput` case, only held `mIOMutex` for a scoped inner
+block covering `mAudibleState.UpdateWithClientIO(...)` -- the lock had already gone out of scope
+by the time `ApplyClientEQ`/`ApplyClientRelativeVolume` ran. `AddClient`/`RemoveClient` genuinely
+do take `mIOMutex` around inserting/erasing from that same `std::map`, from a different thread --
+so the real effect was an unsynchronized `find()` racing a concurrent `insert`/`erase` on the same
+map's internal tree, a real data race with crash potential inside `coreaudiod`.
+
+**Confirmed, not assumed:** reverting the fix and running a concurrency stress test (four reader
+threads hammering the `ProcessOutput` path, four writer threads churning distinct client IDs
+through `AddClient`/`RemoveClient`) reproduced a real `SIGABRT` crash 3/3 times, every time in well
+under a second (`BGM_DeviceTests::
+testConcurrentAddRemoveClientDuringProcessOutputDoesNotCorruptEQProcessorMap`). With the fix (the
+whole `mIOMutex` scope widened to cover both calls, plus a lock-free `std::atomic<Float64>` cache
+of the sample rate so `ApplyClientEQ` doesn't have to take `mStateMutex` inside `mIOMutex` -- which
+would've reintroduced an AB-BA deadlock against `AddClient`/`RemoveClient`/`Deactivate`, which all
+take `mStateMutex` before `mIOMutex`), the same test passed clean 3/3 times. Passing tests before
+the fix (51/51, the count reported at the top of this project's session) said nothing about this --
+none of them exercised concurrent `AddClient`/`RemoveClient` against active `ApplyClientEQ` calls.
+
+**How to apply:** a comment describing a locking invariant is a *claim*, not a *guarantee* -- when
+auditing concurrency-sensitive code (anything touching a real-time IO thread, anything with a
+mutex-guarded shared structure), read the actual call site's lock scope directly rather than
+trusting what a nearby comment says it is, especially when that comment was written at the same
+time as the code it's describing (both are equally likely to encode the same wrong assumption).
+This is now the second time this exact shape has caused a real bug in this project -- worth
+treating as a standing category to re-check whenever new code touches a shared structure that both
+a real-time thread and a background thread access, not just a one-off fix.
+
 ## Verifying an install means checking the app process is alive, not just its supporting services
 
 **The trap:** after the first `./build_and_install.sh` run, checked that the driver showed up in
@@ -368,3 +403,27 @@ misleading output). Recognize the shape early: `Operation not permitted` on a pa
 `~/Library/...`, or `Couldn't create workspace arena folder`, means retry unsandboxed immediately
 rather than debugging the build itself. Plain `xcodebuild ... build` (no `test`) doesn't hit this,
 since it doesn't need `.xcresult`/test-session directories -- only the `test` action does.
+
+## `iconutil` also needs to run unsandboxed -- same trap, third occurrence this project
+
+**The trap:** `tools/generate-icons.py --out-dir <scratch>` generated all 7 AppIcon PNGs
+correctly, then failed at the `.icns` step with nothing more specific than `Failed to generate
+ICNS.` and a non-zero exit from `iconutil -c icns ...` -- no permission-denied text, no path
+mentioned, nothing that looks like a sandbox artifact on its face.
+
+**What was actually true:** retrying the exact same command with the sandbox disabled succeeded
+immediately and produced a valid `.icns` that round-tripped through `iconutil -c iconset` back to
+10 real PNGs. `iconutil` is CoreAudio-adjacent in this repo's toolchain only by coincidence -- the
+actual pattern is the same one already learned twice this session (`gh auth status`,
+`xcodebuild ... test`): a macOS system tool that touches something outside this session's sandbox
+write/read allowlist (here, whatever scratch/plist state `iconutil` needs on its own, not
+necessarily the `--out-dir` path itself, since the AppIcon PNGs it doesn't need wrote there fine)
+fails with output that gives no hint the sandbox is the cause.
+
+**How to apply:** the growing list of tools that need `dangerouslyDisableSandbox: true` on this
+machine isn't really a list of unrelated one-offs -- it's one recurring shape: *any* macOS system
+CLI tool (not just build tools) can be denied by the sandbox in ways that produce generic,
+misleading errors with no "Operation not permitted" text to grep for. When a system tool
+(`iconutil`, `codesign`, `sips`, anything under `/usr/bin` or a `.app`'s own CLI) fails with a
+vague, non-specific error and the *logic* around the call looks correct, retry unsandboxed before
+spending time debugging the code that invoked it.

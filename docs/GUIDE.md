@@ -104,9 +104,9 @@ making you dig through docs/TROUBLESHOOTING.md or restart things by hand:
   audio routing gets stuck pointing somewhere else.
 - **Reset All App Volumes, Pan & EQ** — returns every app's per-app volume, pan, and EQ bands to
   their defaults. Asks for confirmation first, since it affects every app at once.
-- **Remove All Output Overrides** — clears every per-app output-routing assignment, sending
+- **Remove All Output Routing Overrides** — clears every per-app output-routing assignment, sending
   everything back through your normal default output. Also confirms first.
-- **Reconnect to XPC Helper** — re-establishes the connection to `BGMXPCHelper` if the app seems to
+- **Reconnect to BGMXPCHelper** — re-establishes the connection to `BGMXPCHelper` if the app seems to
   have lost it (a symptom of the helper looking "disconnected" without a full app restart).
 - **Check Microphone Permission** — jumps straight to the System Settings pane for Wavecraft's
   Microphone permission, for when the virtual input device isn't showing up correctly.

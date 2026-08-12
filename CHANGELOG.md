@@ -36,11 +36,38 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
 - A monochrome menu-bar status icon and custom app icon, replacing upstream's Fermata mark — see
   [docs/LESSONS.md](docs/LESSONS.md) for why (the original read as a microphone/recording icon at
   status-bar size).
+- **In-app troubleshooters** (`BGMApp/BGMApp/Preferences/BGMTroubleshootMenu.{h,mm}`,
+  **Preferences > Troubleshoot**) — five one-click fixes for the most common stuck states: reapply
+  the default output device, reset every app's volume/pan/EQ to flat, clear every output-routing
+  override, reconnect to `BGMXPCHelper`, and jump to the Microphone privacy pane.
+- **Global keyboard shortcuts** (`BGMApp/BGMApp/BGMHotkeys.{h,mm}`, **Preferences > Keyboard
+  Shortcuts**) — adjust system volume or the frontmost app's volume without opening the menu. Off
+  by default (needs Accessibility permission, requested with its own one-time explanation since
+  the permission isn't required for the app's core function). Customizable: a modifier preset
+  (Option or Control) and a step size (Fine/Normal/Coarse).
+- An interactive first-run install flow — a welcome dialog explaining why Wavecraft needs
+  "Microphone" access *before* the system permission prompt appears, an "Open Privacy Settings"
+  button on denial, and a guided `build_and_install.sh` with a clearer preamble/epilogue about what
+  the script actually does.
+- [docs/QA-PLAN.md](docs/QA-PLAN.md) — an ordered checklist for verifying a fresh install actually
+  works, covering every menu control and new-feature edge case, not just "does it build."
 
 ### Changed
 
 - `BGMPlayThrough` generalized to accept a non-`BGMDevice` input (`SetRequireBGMDeviceInput`), so
   `BGMTapRoute` can reuse its ring-buffer/clock-sync engine instead of reimplementing it.
+
+### Fixed
+
+- A device-wide crash on first real install: `Device_GetPropertyDataSize`'s case for
+  `kAudioObjectPropertyCustomPropertyInfoList` had gone stale at 7 entries after
+  `kAudioDeviceCustomPropertyAppEQ` became the 8th custom property, silently making AppEQ
+  undiscoverable via property introspection and crashing `BGMApp` on launch. See
+  [docs/LESSONS.md](docs/LESSONS.md)'s "device-wide crash on first real install" entry.
+- A data race in the real-time audio driver: `BGM_Device::DoIOOperation`'s `ProcessOutput` case
+  called `ApplyClientEQ`/`ApplyClientRelativeVolume` after the mutex guarding
+  `mClientEQProcessors` had already gone out of scope, racing unsynchronized against
+  `AddClient`/`RemoveClient` on another thread. See [docs/LESSONS.md](docs/LESSONS.md).
 
 ### Removed
 

@@ -46,6 +46,10 @@ Background Music, unchanged.
 
 # Features
 
+Everything marked *(new in Wavecraft)* below builds clean and passes its unit tests, but hasn't
+been installed and used against real audio yet — see [TODO.md](TODO.md)'s "Needs a human" section
+and [docs/QA-PLAN.md](docs/QA-PLAN.md) for exactly what's still unverified.
+
 - **Per-app volume** — a volume slider for every running app, independent of the system volume.
   You can boost quiet apps above their normal maximum.
 - **Per-app EQ** *(new in Wavecraft)* — 5 bands per app (60Hz / 250Hz / 1kHz / 4kHz / 12kHz, ±12dB

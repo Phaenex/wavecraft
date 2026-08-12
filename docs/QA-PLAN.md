@@ -134,10 +134,10 @@ None of this has run against a real install either — same rule as everything e
 - [ ] Preferences → Troubleshoot → **Reset All App Volumes, Pan & EQ**: set a non-default
       volume/pan/EQ on at least one app, run this (confirm the alert), confirm every app's controls
       visibly return to their defaults and the audio matches
-- [ ] Preferences → Troubleshoot → **Remove All Output Overrides**: route at least one app to a
+- [ ] Preferences → Troubleshoot → **Remove All Output Routing Overrides**: route at least one app to a
       non-default device, run this (confirm the alert), confirm the app's audio returns to the
       default output and its pop-up shows "Default" again
-- [ ] Preferences → Troubleshoot → **Reconnect to XPC Helper**: kill `BGMXPCHelper` manually, run
+- [ ] Preferences → Troubleshoot → **Reconnect to BGMXPCHelper**: kill `BGMXPCHelper` manually, run
       this, confirm the app recovers connection without requiring a full relaunch
 - [ ] Preferences → Troubleshoot → **Check Microphone Permission**: with permission denied, confirm
       this jumps to the correct System Settings pane (`x-apple.systempreferences:` URL scheme

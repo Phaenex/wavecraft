@@ -109,6 +109,7 @@ EQ band count in particular, it's the UI, not the DSP.
   state (`AXIsProcessTrusted()`, `NSWorkspace.frontmostApplication`, `AudioObjectSetPropertyData`
   against a real `BGMDevice`, `AVCaptureDevice` authorization status) that the mocked
   `BGMAppUnitTests` target can't exercise, for the same reason `BGMTapRouteTests.mm` explains.
-- `.github/workflows/build-test-release.yml`'s release job (building a signed `.pkg`) isn't
-  something this fork can run — it needs an Apple Developer ID and notarization credentials we
-  don't have configured. Source-build is the only distribution method right now; see the README.
+- Upstream's `release` job (building a signed `.pkg`) was already removed from
+  `.github/workflows/build-test.yml` (see that file's own top comment and CHANGELOG.md's
+  "Removed" section) — it needs an Apple Developer ID and notarization credentials this fork
+  doesn't have configured. Source-build is the only distribution method right now; see the README.
