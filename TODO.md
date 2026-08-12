@@ -80,6 +80,14 @@ EQ band count in particular, it's the UI, not the DSP.
   route" from a genuine CoreAudio failure — it shows the same generic message with the raw
   `OSStatus` for all three. Worth splitting once we know from real use which of these actually
   happens.
+- Neither `BGMTapRoute` nor `BGMAppOutputRoutingController` watches for the *target* device of an
+  already-active route disappearing (e.g. unplugging a USB/external output mid-route) — the only
+  safety net is `BGMPlayThrough`'s own `IsAlive()`/`ObjectExists()` checks, which stop the IOProc
+  gracefully but give no user-facing signal that the override silently stopped working. The routed
+  app's audio would just go silent with no alert and no automatic fallback to Default; the user
+  would have to notice and manually reassign it, or use "Remove All Output Routing Overrides."
+  Worth adding a device-list-change listener that notifies or auto-falls-back once this comes up in
+  real use.
 - No AppleScript/`osascript` support for the new EQ or routing controls (the existing per-app
   volume/pan AppleScript support in `BGMApp/BGMApp/Scripting/BGMASApplication.m` wasn't extended).
 - Keyboard shortcuts only offer two modifier presets (Option or Control) and three step sizes
