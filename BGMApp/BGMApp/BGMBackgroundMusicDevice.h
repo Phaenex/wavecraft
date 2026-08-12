@@ -44,6 +44,7 @@
 #include "CACFString.h"
 
 // STL Includes
+#include <array>
 #include <vector>
 
 
@@ -117,6 +118,28 @@ public:
                          change to BGMDevice.
      */
     void                SetAppPanPosition(SInt32 inPanPosition,
+                                          pid_t inAppProcessID,
+                                          CFStringRef __nullable inAppBundleID);
+
+#pragma mark App EQ
+
+    /*!
+     @return The current value of BGMDevice's kAudioDeviceCustomPropertyAppEQ property. See
+             BGM_Types.h.
+     @throws CAException If the HAL returns an error or a non-array type. Callers are responsible
+                         for validating and type-checking the values contained in the array.
+     */
+    CFArrayRef          GetAppEQ() const;
+    /*!
+     @param inGainsDB Exactly kBGMAppEQNumBands gains in dB, one per band (see
+                      BGM_AppEQ::kBandCenterFreqs in BGM_Biquad.h for band order/frequencies),
+                      each clamped to [kBGMAppEQMinGainDB, kBGMAppEQMaxGainDB].
+     @param inAppProcessID The ID of app's main process. Pass -1 to omit this param.
+     @param inAppBundleID The app's bundle ID. Pass null to omit this param.
+     @throws CAException If the HAL returns an error when this function sends the EQ change to
+                         BGMDevice.
+     */
+    void                SetAppEQBandGains(const std::array<Float32, kBGMAppEQNumBands>& inGainsDB,
                                           pid_t inAppProcessID,
                                           CFStringRef __nullable inAppBundleID);
 

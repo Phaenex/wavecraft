@@ -36,6 +36,7 @@
 #import "CACFString.h"
 
 // System Includes
+#include <array>
 #include <libproc.h>
 
 #pragma clang assume_nonnull begin
@@ -209,6 +210,24 @@ forAppWithProcessID:(pid_t)processID
     forAppWithProcessID:(pid_t)processID
                bundleID:(NSString* __nullable)bundleID {
     audioDevices.bgmDevice.SetAppPanPosition(pan,
+                                             processID,
+                                             (__bridge_retained CFStringRef)bundleID);
+}
+
+- (void) setEQBandGains:(NSArray<NSNumber*>*)gainsDB
+    forAppWithProcessID:(pid_t)processID
+               bundleID:(NSString* __nullable)bundleID {
+    NSAssert(gainsDB.count == kBGMAppEQNumBands,
+             @"setEQBandGains: expected %d bands, got %lu",
+             kBGMAppEQNumBands,
+             (unsigned long)gainsDB.count);
+
+    std::array<Float32, kBGMAppEQNumBands> gains;
+    for (NSUInteger i = 0; i < gainsDB.count && i < kBGMAppEQNumBands; i++) {
+        gains[i] = gainsDB[i].floatValue;
+    }
+
+    audioDevices.bgmDevice.SetAppEQBandGains(gains,
                                              processID,
                                              (__bridge_retained CFStringRef)bundleID);
 }

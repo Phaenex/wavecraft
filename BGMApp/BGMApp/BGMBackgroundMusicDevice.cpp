@@ -166,6 +166,64 @@ void BGMBackgroundMusicDevice::SetAppPanPosition(SInt32 inPanPosition,
                                   inAppBundleID);
 }
 
+#pragma mark App EQ
+
+CFArrayRef BGMBackgroundMusicDevice::GetAppEQ() const
+{
+    CFTypeRef appEQ = GetPropertyData_CFType(kBGMAppEQAddress);
+
+    ThrowIfNULL(appEQ,
+                CAException(kAudioHardwareIllegalOperationError),
+                "BGMBackgroundMusicDevice::GetAppEQ: !appEQ");
+    ThrowIf(CFGetTypeID(appEQ) != CFArrayGetTypeID(),
+            CAException(kAudioHardwareIllegalOperationError),
+            "BGMBackgroundMusicDevice::GetAppEQ: Expected CFArray value");
+
+    return static_cast<CFArrayRef>(appEQ);
+}
+
+void BGMBackgroundMusicDevice::SetAppEQBandGains(const std::array<Float32, kBGMAppEQNumBands>& inGainsDB,
+                                                 pid_t inAppProcessID,
+                                                 CFStringRef __nullable inAppBundleID)
+{
+    CACFArray bandGains(true);
+
+    for(Float32 gainDB : inGainsDB)
+    {
+        Float32 clampedGainDB = std::max(static_cast<Float32>(kBGMAppEQMinGainDB),
+                                          std::min(static_cast<Float32>(kBGMAppEQMaxGainDB), gainDB));
+        bandGains.AppendFloat64(static_cast<Float64>(clampedGainDB));
+    }
+
+    auto addEQChange = [&] (pid_t pid, CFStringRef bundleID)
+    {
+        CACFDictionary appEQChange(true);
+
+        appEQChange.AddSInt32(CFSTR(kBGMAppEQKey_ProcessID), pid);
+        appEQChange.AddString(CFSTR(kBGMAppEQKey_BundleID), bundleID);
+        appEQChange.AddArray(CFSTR(kBGMAppEQKey_BandGains), bandGains.GetCFArray());
+
+        CACFArray appEQChanges(true);
+        appEQChanges.AppendDictionary(appEQChange.GetDict());
+
+        CFPropertyListRef changesPList = appEQChanges.AsPropertyList();
+
+        SetPropertyData_CFType(kBGMAppEQAddress, changesPList);
+        mUISoundsBGMDevice.SetPropertyData_CFType(kBGMAppEQAddress, changesPList);
+    };
+
+    addEQChange(inAppProcessID, inAppBundleID);
+
+    // Add the same change for each process the app is responsible for, matching
+    // SendAppVolumeOrPanToBGMDevice's handling of multiprocess apps (browsers, etc.) -- see
+    // ResponsibleBundleIDsOf below.
+    for(CACFString responsibleBundleID : ResponsibleBundleIDsOf(CACFString(inAppBundleID)))
+    {
+        // Send -1 as the PID so this will only ever be matched by bundle ID.
+        addEQChange(-1, responsibleBundleID.GetCFString());
+    }
+}
+
 void BGMBackgroundMusicDevice::SendAppVolumeOrPanToBGMDevice(SInt32 inNewValue,
                                                              CFStringRef inVolumeTypeKey,
                                                              pid_t inAppProcessID,

@@ -51,6 +51,12 @@ forAppWithProcessID:(pid_t)processID
     forAppWithProcessID:(pid_t)processID
                bundleID:(NSString* __nullable)bundleID;
 
+// gainsDB must have exactly kBGMAppEQNumBands elements. See
+// BGMBackgroundMusicDevice::SetAppEQBandGains.
+- (void) setEQBandGains:(NSArray<NSNumber*>*)gainsDB
+    forAppWithProcessID:(pid_t)processID
+               bundleID:(NSString* __nullable)bundleID;
+
 - (BGMAppVolumeAndPan) getVolumeAndPanForApp:(NSRunningApplication *)app;
 - (void) setVolumeAndPan:(BGMAppVolumeAndPan)volumeAndPan forApp:(NSRunningApplication*)app;
 
