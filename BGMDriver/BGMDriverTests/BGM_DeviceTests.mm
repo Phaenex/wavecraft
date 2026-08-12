@@ -33,7 +33,10 @@
 #include "CAException.h"
 
 // STL Includes
+#include <atomic>
 #include <stdexcept>
+#include <thread>
+#include <vector>
 
 
 // Subclass BGM_Device to add some test-only functions.
@@ -279,6 +282,104 @@ TestBGM_Device::TestBGM_Device()
                       @"Custom property selector %@ is missing from "
                        "kAudioObjectPropertyCustomPropertyInfoList", selector);
     }
+}
+
+- (void) testConcurrentAddRemoveClientDuringProcessOutputDoesNotCorruptEQProcessorMap {
+    // Regression test for a real data race found in this fork: DoIOOperation's ProcessOutput case
+    // used to call ApplyClientEQ/ApplyClientRelativeVolume *after* the CAMutex::Locker guarding
+    // mIOMutex had already gone out of scope, so ApplyClientEQ's mClientEQProcessors.find() ran
+    // completely unsynchronized against AddClient/RemoveClient inserting/erasing from the same
+    // std::map on a different thread -- exactly the kind of concurrent mutation that corrupts a
+    // std::map's internal tree. See docs/LESSONS.md.
+    //
+    // This can't *prove* the race is fixed the way a Thread Sanitizer run could (this project
+    // doesn't have a TSan build variant configured, and can't easily add one since the existing
+    // Debug/test config already links ASan+UBSan, which TSan can't run alongside) -- it's a
+    // best-effort exerciser, not a formal proof. But it's not just theoretical: reverting the fix
+    // (putting ApplyClientEQ/ApplyClientRelativeVolume back outside theIOLocker's scope) and
+    // running this test reproduced a real SIGABRT crash 3/3 times, every time in well under a
+    // second; running it 3/3 times against the actual fix passed clean every time. That's the
+    // verification this test is checked in for -- it isn't a synthetic worst case, it reliably
+    // reproduced the exact crash this fork hit in real use.
+
+    // A client that stays registered for the whole test, so the IO threads always have something
+    // real to look up in mClientEQProcessors.
+    AudioServerPlugInClientInfo stableClientInfo {};
+    stableClientInfo.mClientID = 100;
+    stableClientInfo.mProcessID = 100;
+    stableClientInfo.mIsNativeEndian = true;
+    stableClientInfo.mBundleID = CFSTR("test.stable.client");
+    testDevice->AddClient(&stableClientInfo);
+
+    std::atomic<bool> stop { false };
+    std::atomic<bool> ioThreadThrew { false };
+
+    // Several reader threads, all repeatedly running the real-time ProcessOutput path for the
+    // stable client -- this is what calls ApplyClientEQ's mClientEQProcessors.find(). More
+    // concurrent readers means more chances to land inside a churn thread's insert/erase.
+    const int kReaderThreadCount = 4;
+    std::vector<std::thread> readerThreads;
+
+    for (int t = 0; t < kReaderThreadCount; t++) {
+        readerThreads.emplace_back([&]{
+            const UInt32 kFrameSize = 64;
+            Float32 buffer[kFrameSize * 2] = {};
+            AudioServerPlugInIOCycleInfo cycleInfo {};
+
+            try {
+                while (!stop.load(std::memory_order_relaxed)) {
+                    testDevice->DoIOOperation(
+                        /* inStreamObjectID = */ kObjectID_Stream_Output,
+                        /* inClientID = */ stableClientInfo.mClientID,
+                        /* inOperationID = */ kAudioServerPlugInIOOperationProcessOutput,
+                        /* inIOBufferFrameSize = */ kFrameSize,
+                        /* inIOCycleInfo = */ cycleInfo,
+                        /* ioMainBuffer = */ buffer,
+                        /* ioSecondaryBuffer = */ nullptr);
+                }
+            } catch (...) {
+                ioThreadThrew.store(true, std::memory_order_relaxed);
+            }
+        });
+    }
+
+    // Several churn threads, each repeatedly adding/removing clients with their own range of
+    // distinct IDs -- distinct keys (rather than one ID repeatedly re-inserted) force more actual
+    // tree rebalancing in mClientEQProcessors's underlying std::map, which is what an unsynchronized
+    // concurrent find() is unsafe against.
+    const int kChurnThreadCount = 4;
+    const int kIterationsPerChurnThread = 5000;
+    std::vector<std::thread> churnThreads;
+
+    for (int t = 0; t < kChurnThreadCount; t++) {
+        churnThreads.emplace_back([&, t]{
+            for (int i = 0; i < kIterationsPerChurnThread; i++) {
+                AudioServerPlugInClientInfo churnClientInfo {};
+                churnClientInfo.mClientID = static_cast<UInt32>(1000 + (t * kIterationsPerChurnThread) + i);
+                churnClientInfo.mProcessID = static_cast<pid_t>(churnClientInfo.mClientID);
+                churnClientInfo.mIsNativeEndian = true;
+                churnClientInfo.mBundleID = CFSTR("test.churn.client");
+
+                testDevice->AddClient(&churnClientInfo);
+                testDevice->RemoveClient(&churnClientInfo);
+            }
+        });
+    }
+
+    for (auto& churnThread : churnThreads) {
+        churnThread.join();
+    }
+
+    stop.store(true, std::memory_order_relaxed);
+
+    for (auto& readerThread : readerThreads) {
+        readerThread.join();
+    }
+
+    XCTAssertFalse(ioThreadThrew.load(),
+                    @"DoIOOperation threw on a reader thread during concurrent AddClient/RemoveClient");
+
+    testDevice->RemoveClient(&stableClientInfo);
 }
 
 // TODO: Performance tests?

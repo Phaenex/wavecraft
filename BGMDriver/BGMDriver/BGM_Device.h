@@ -50,6 +50,7 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <dispatch/dispatch.h>
 #include <pthread.h>
+#include <atomic>
 #include <map>
 
 
@@ -143,6 +144,9 @@ public:
 
     Float64						GetSampleRate() const;
     void                        RequestSampleRate(Float64 inRequestedSampleRate);
+
+    // Real-time-safe alternative to GetSampleRate() -- for ApplyClientEQ only. See its definition.
+    Float64                     GetSampleRateRT() const noexcept;
 
 private:
 	/*!
@@ -255,6 +259,14 @@ private:
     // sites reference this one constant now so they can't drift apart the same way again.
     #define kNumCustomProperties    8
     Float64                     mLoopbackSampleRate;
+
+    // Lock-free mirror of mLoopbackSampleRate, kept in sync by SetSampleRate(), so the real-time
+    // IO thread can read the sample rate (via GetSampleRateRT(), from ApplyClientEQ) without
+    // taking mStateMutex while it already holds mIOMutex -- see the comment at ApplyClientEQ's
+    // GetSampleRateRT() call site for why that specific lock order would be a deadlock risk.
+    // std::atomic<Float64> (8 bytes, naturally aligned) is lock-free on every platform this
+    // driver targets; BGM_Device's constructor confirms this at runtime rather than assuming it.
+    std::atomic<Float64>        mSampleRateForRT { kSampleRateDefault };
     CARingBuffer                mLoopbackRingBuffer;
 
     // TODO: a comment explaining why we need a clock for loopback-only mode

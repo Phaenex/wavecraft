@@ -144,6 +144,15 @@ BGM_Device::BGM_Device(AudioObjectID inObjectID,
     mVolumeControl(inOutputVolumeControlID, GetObjectID()),
     mMuteControl(inOutputMuteControlID, GetObjectID())
 {
+    // mSampleRateForRT (see BGM_Device.h) has to be genuinely lock-free -- ApplyClientEQ reads it
+    // from the real-time IO thread while already holding mIOMutex, so if this ever fell back to a
+    // libc++-internal lock, that would be a second lock taken inside mIOMutex, reintroducing
+    // exactly the lock-ordering risk GetSampleRateRT() exists to avoid. std::atomic<Float64> is
+    // lock-free on every platform this driver targets, but confirm it rather than assume it.
+    ThrowIf(!mSampleRateForRT.is_lock_free(),
+            CAException(kAudioHardwareUnspecifiedError),
+            "BGM_Device::BGM_Device: std::atomic<Float64> is not lock-free on this platform");
+
     // Initialise the loopback clock with the default sample rate.
     SetSampleRate(kSampleRateDefault, true);
 }
@@ -1616,19 +1625,26 @@ void	BGM_Device::DoIOOperation(AudioObjectID inStreamObjectID, UInt32 inClientID
 												 inIOBufferFrameSize,
 												 inIOCycleInfo.mOutputTime.mSampleTime,
 												 reinterpret_cast<const Float32*>(ioMainBuffer));
+
+                // Record that a non-BGMApp client is actively doing IO by updating the timestamp.
+				// TODO: We probably don't need to call this for kAudioServerPlugInIOOperationProcessOutput (every client).
+				//       kAudioServerPlugInIOOperationProcessMix would be more efficient.
+                mClients.RecordNonBGMAppIO(inClientID);
+
+                // EQ before volume/pan, not after: ApplyClientRelativeVolume's clamp to [-1, 1] is
+                // the one place clipping safety happens for this whole chain, and a peaking boost
+                // can push samples outside that range on its own (a +12dB boost multiplies passband
+                // amplitude by roughly 4x). Running EQ first means that clamp still catches it.
+                //
+                // Both calls have to stay inside theIOLocker's scope: ApplyClientEQ's
+                // mClientEQProcessors.find() needs mIOMutex held for its whole duration, since
+                // AddClient/RemoveClient insert/erase from that same map under the same lock from a
+                // different (non-real-time) thread. This used to be a separate, unlocked call after
+                // theIOLocker had already gone out of scope -- a real, previously-undetected data
+                // race on the map's internal tree. See docs/LESSONS.md.
+                ApplyClientEQ(inClientID, inIOBufferFrameSize, ioMainBuffer);
+                ApplyClientRelativeVolume(inClientID, inIOBufferFrameSize, ioMainBuffer);
             }
-
-            // Record that a non-BGMApp client is actively doing IO by updating the timestamp.
-			// TODO: We probably don't need to call this for kAudioServerPlugInIOOperationProcessOutput (every client).
-			//       kAudioServerPlugInIOOperationProcessMix would be more efficient.
-            mClients.RecordNonBGMAppIO(inClientID);
-
-            // EQ before volume/pan, not after: ApplyClientRelativeVolume's clamp to [-1, 1] is
-            // the one place clipping safety happens for this whole chain, and a peaking boost
-            // can push samples outside that range on its own (a +12dB boost multiplies passband
-            // amplitude by roughly 4x). Running EQ first means that clamp still catches it.
-            ApplyClientEQ(inClientID, inIOBufferFrameSize, ioMainBuffer);
-            ApplyClientRelativeVolume(inClientID, inIOBufferFrameSize, ioMainBuffer);
             break;
 
         case kAudioServerPlugInIOOperationProcessMix:
@@ -1820,14 +1836,17 @@ void	BGM_Device::ApplyClientEQ(UInt32 inClientID, UInt32 inIOBufferFrameSize, vo
         return;
     }
 
-    // GetSampleRate() briefly takes mStateMutex, a second lock beyond the mIOMutex this
-    // function's caller already holds -- unlike ApplyClientRelativeVolume just above, which
-    // deliberately never touches mStateMutex on this real-time path. Only call it when gains
-    // have actually changed since this processor was last configured (a rare, user-driven
-    // event), not on every audio callback for every app with active EQ.
+    // GetSampleRateRT() reads mSampleRateForRT, a lock-free atomic cache -- NOT GetSampleRate(),
+    // which takes mStateMutex. This function's caller already holds mIOMutex for this whole call
+    // (see DoIOOperation), and AddClient/RemoveClient/Deactivate all take mStateMutex before
+    // mIOMutex -- so taking mStateMutex here, after mIOMutex, would be a lock-ordering inversion
+    // against those call sites, i.e. a real cross-thread deadlock risk, not just a style
+    // preference. Only recompute the filter coefficients when gains have actually changed since
+    // this processor was last configured (a rare, user-driven event), not on every audio callback
+    // for every app with active EQ.
     if (theEQEntry->second.NeedsGainUpdate(theGainsDB))
     {
-        theEQEntry->second.SetAllBandGainsDB(theGainsDB, GetSampleRate());
+        theEQEntry->second.SetAllBandGainsDB(theGainsDB, GetSampleRateRT());
     }
 
     Float32* theBuffer = reinterpret_cast<Float32*>(ioBuffer);
@@ -1879,6 +1898,16 @@ Float64	BGM_Device::GetSampleRate() const
     CAMutex::Locker theStateLocker(mStateMutex);
 
     return mLoopbackSampleRate;
+}
+
+Float64	BGM_Device::GetSampleRateRT() const noexcept
+{
+    // Real-time-safe alternative to GetSampleRate() for ApplyClientEQ, which runs on the RT IO
+    // thread while already holding mIOMutex: reads mSampleRateForRT, a lock-free atomic mirror of
+    // mLoopbackSampleRate kept up to date by SetSampleRate(), instead of taking mStateMutex. See
+    // the comment at ApplyClientEQ's call site for why taking mStateMutex here would be a
+    // lock-ordering inversion, not just an unnecessary lock.
+    return mSampleRateForRT.load(std::memory_order_relaxed);
 }
 
 void	BGM_Device::RequestSampleRate(Float64 inRequestedSampleRate)
@@ -2024,6 +2053,8 @@ void BGM_Device::SetSampleRate(Float64 inSampleRate, bool force)
 
         // Update the sample rate for loopback.
         mLoopbackSampleRate = inSampleRate;
+        // Keep the RT-safe cache in sync -- see GetSampleRateRT()/mSampleRateForRT.
+        mSampleRateForRT.store(inSampleRate, std::memory_order_relaxed);
         InitLoopback();
 
         // Update the streams.
