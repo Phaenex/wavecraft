@@ -55,8 +55,6 @@
 		2743C9D51D7EF8760089613B /* CADebugger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CC1DF871BE558B000FB8FE4 /* CADebugger.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=libPublicUtility-CADebugger.cpp"; }; };
 		2743C9D71D7EF8760089613B /* CADebugMacros.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CB8B3701BBBD8A4000E2DD1 /* CADebugMacros.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=libPublicUtility-CADebugMacros.cpp"; }; };
 		2743C9D91D7EF8760089613B /* CADebugPrintf.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CB8B3781BBBDFA2000E2DD1 /* CADebugPrintf.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=libPublicUtility-CADebugPrintf.cpp"; }; };
-		BDEB1066000000000000C1FE /* BGMDebugLogging.c in Sources */ = {isa = PBXBuildFile; fileRef = BDEB1066000000000000C0FE /* BGMDebugLogging.c */; };
-		BDEB1066000000000000C2FE /* BGMDebugLogging.c in Sources */ = {isa = PBXBuildFile; fileRef = BDEB1066000000000000C0FE /* BGMDebugLogging.c */; settings = {COMPILER_FLAGS = "-frandom-seed=libPublicUtility-BGMDebugLogging.c"; }; };
 		2743C9DB1D7EF8760089613B /* CADispatchQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CB8B3931BBD2418000E2DD1 /* CADispatchQueue.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=libPublicUtility-CADispatchQueue.cpp"; }; };
 		2743C9DE1D7EF8760089613B /* CAHostTimeBase.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CB8B3871BBCF08A000E2DD1 /* CAHostTimeBase.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=libPublicUtility-CAHostTimeBase.cpp"; }; };
 		2743C9E01D7EF8760089613B /* CAMutex.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CB8B3841BBCEFE8000E2DD1 /* CAMutex.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=libPublicUtility-CAMutex.cpp"; }; };
@@ -81,6 +79,13 @@
 		2795973E1C9847CF00A002FB /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2795973D1C9847CF00A002FB /* Foundation.framework */; };
 		27D643C31C9FBE1600737F6E /* BGM_XPCHelper.m in Sources */ = {isa = PBXBuildFile; fileRef = 27381A141C8EF50F00DF167C /* BGM_XPCHelper.m */; };
 		27E6B5F01E01966A00EC0AAB /* BGM_Utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 275343BC1DE9B44900DF3858 /* BGM_Utils.cpp */; };
+		39D5BF4FFE93E04967FFD42D /* BGM_Biquad.h in Sources */ = {isa = PBXBuildFile; fileRef = 990B144116393F9CAA26AA93 /* BGM_Biquad.h */; };
+		47993B813B8D8D7E0A9F33AB /* BGM_Biquad.h in Sources */ = {isa = PBXBuildFile; fileRef = 990B144116393F9CAA26AA93 /* BGM_Biquad.h */; };
+		5A6E637F450AE533CBB980BD /* BGM_Biquad.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BAD7B72F7A8C84160CD36A52 /* BGM_Biquad.cpp */; };
+		5AE26B6F00FC51CD43CD5829 /* BGM_BiquadTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = C555A317993BC9D4C24640CF /* BGM_BiquadTests.mm */; };
+		96C4CC19D90757A097BA381C /* BGM_Biquad.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BAD7B72F7A8C84160CD36A52 /* BGM_Biquad.cpp */; };
+		BDEB1066000000000000C1FE /* BGMDebugLogging.c in Sources */ = {isa = PBXBuildFile; fileRef = BDEB1066000000000000C0FE /* BGMDebugLogging.c */; };
+		BDEB1066000000000000C2FE /* BGMDebugLogging.c in Sources */ = {isa = PBXBuildFile; fileRef = BDEB1066000000000000C0FE /* BGMDebugLogging.c */; settings = {COMPILER_FLAGS = "-frandom-seed=libPublicUtility-BGMDebugLogging.c"; }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -129,8 +134,6 @@
 		1CB8B3741BBBD924000E2DD1 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		1CB8B3751BBBD924000E2DD1 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		1CB8B3781BBBDFA2000E2DD1 /* CADebugPrintf.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CADebugPrintf.cpp; path = PublicUtility/CADebugPrintf.cpp; sourceTree = "<group>"; };
-		BDEB1066000000000000C0FE /* BGMDebugLogging.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = BGMDebugLogging.c; path = PublicUtility/BGMDebugLogging.c; sourceTree = "<group>"; };
-		BDEB1066000000000000A0FE /* BGMDebugLogging.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BGMDebugLogging.h; path = PublicUtility/BGMDebugLogging.h; sourceTree = "<group>"; };
 		1CB8B3791BBBDFA2000E2DD1 /* CADebugPrintf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CADebugPrintf.h; path = PublicUtility/CADebugPrintf.h; sourceTree = "<group>"; };
 		1CB8B37B1BBCCF62000E2DD1 /* BGM_PlugIn.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BGM_PlugIn.cpp; sourceTree = "<group>"; };
 		1CB8B37C1BBCCF62000E2DD1 /* BGM_PlugIn.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BGM_PlugIn.h; sourceTree = "<group>"; };
@@ -171,6 +174,11 @@
 		27D643B71C9FABF600737F6E /* BGM_Types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BGM_Types.h; path = ../SharedSource/BGM_Types.h; sourceTree = "<group>"; };
 		27D643B81C9FABF600737F6E /* BGMXPCProtocols.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BGMXPCProtocols.h; path = ../SharedSource/BGMXPCProtocols.h; sourceTree = "<group>"; };
 		27D643C21C9FBC5800737F6E /* BGM_TestUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BGM_TestUtils.h; path = ../SharedSource/BGM_TestUtils.h; sourceTree = "<group>"; };
+		990B144116393F9CAA26AA93 /* BGM_Biquad.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = BGM_Biquad.h; sourceTree = "<group>"; };
+		BAD7B72F7A8C84160CD36A52 /* BGM_Biquad.cpp */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.cpp.cpp; path = BGM_Biquad.cpp; sourceTree = "<group>"; };
+		BDEB1066000000000000A0FE /* BGMDebugLogging.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BGMDebugLogging.h; path = PublicUtility/BGMDebugLogging.h; sourceTree = "<group>"; };
+		BDEB1066000000000000C0FE /* BGMDebugLogging.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = BGMDebugLogging.c; path = PublicUtility/BGMDebugLogging.c; sourceTree = "<group>"; };
+		C555A317993BC9D4C24640CF /* BGM_BiquadTests.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = BGM_BiquadTests.mm; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -224,6 +232,8 @@
 				1C0CB6B51C642C600084C15A /* BGM_Clients.h */,
 				1C0CB6B41C642C600084C15A /* BGM_Clients.cpp */,
 				1C0CB6B81C642C600084C15A /* BGM_ClientTasks.h */,
+				990B144116393F9CAA26AA93 /* BGM_Biquad.h */,
+				BAD7B72F7A8C84160CD36A52 /* BGM_Biquad.cpp */,
 			);
 			path = DeviceClients;
 			sourceTree = "<group>";
@@ -235,6 +245,7 @@
 				277EE6581C7269910037F1EE /* BGM_ClientMapTests.mm */,
 				1C3DB4861BE063C500EC8160 /* BGM_DeviceTests.mm */,
 				1C8034DE1BDD073B00668E00 /* Info.plist */,
+				C555A317993BC9D4C24640CF /* BGM_BiquadTests.mm */,
 			);
 			path = BGMDriverTests;
 			sourceTree = SOURCE_ROOT;
@@ -557,6 +568,9 @@
 				1C8034DD1BDD073B00668E00 /* BGM_ClientsTests.mm in Sources */,
 				19FE761291BF07AEA278F25C /* BGM_MuteControl.cpp in Sources */,
 				19FE742AEBE30B21C4CF9285 /* BGM_Control.cpp in Sources */,
+				39D5BF4FFE93E04967FFD42D /* BGM_Biquad.h in Sources */,
+				5AE26B6F00FC51CD43CD5829 /* BGM_BiquadTests.mm in Sources */,
+				5A6E637F450AE533CBB980BD /* BGM_Biquad.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -581,6 +595,8 @@
 				1CDF3ABC1E863B980001E9B7 /* BGM_NullDevice.cpp in Sources */,
 				19FE766482B57D852CCF6F0A /* BGM_MuteControl.cpp in Sources */,
 				19FE77D40F15EA060B462D83 /* BGM_Control.cpp in Sources */,
+				47993B813B8D8D7E0A9F33AB /* BGM_Biquad.h in Sources */,
+				96C4CC19D90757A097BA381C /* BGM_Biquad.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
