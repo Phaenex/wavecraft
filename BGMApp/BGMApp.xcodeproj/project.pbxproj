@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		087DC17BE4E784DE93ECBCCE /* BGMHotkeys.mm in Sources */ = {isa = PBXBuildFile; fileRef = D40863E589A0D533A16C17A3 /* BGMHotkeys.mm */; };
 		19FE7071FF5280BC38F35E1D /* BGMVolumeChangeListener.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 19FE7179EBFA116F3861E79D /* BGMVolumeChangeListener.cpp */; };
 		19FE70F73D26D54450779A22 /* BGMPlayThroughRTLogger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 19FE7DE5E3BA0046ED2BC3C6 /* BGMPlayThroughRTLogger.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMApp-BGMPlayThroughRTLogger.cpp"; }; };
 		19FE715E7338035C7BCD24E7 /* BGMPlayThroughRTLogger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 19FE7DE5E3BA0046ED2BC3C6 /* BGMPlayThroughRTLogger.cpp */; };
@@ -25,6 +26,7 @@
 		19FE7C144C12607D947EB030 /* BGMDebugLogging.c in Sources */ = {isa = PBXBuildFile; fileRef = 19FE73389459BF65748F531F /* BGMDebugLogging.c */; };
 		19FE7DFF63F69E77C53BF95E /* BGMVolumeChangeListener.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 19FE7179EBFA116F3861E79D /* BGMVolumeChangeListener.cpp */; };
 		19FE7F77376562C179449013 /* BGMStatusBarItem.mm in Sources */ = {isa = PBXBuildFile; fileRef = 19FE774DD758EC163EF4F28C /* BGMStatusBarItem.mm */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMApp-BGMStatusBarItem.mm"; }; };
+		1B2D4E4504013A877ACD0324 /* ApplicationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FDBAA2A34D4D476E1E0F99BF /* ApplicationServices.framework */; };
 		1C0BD0A51BF1A8E6004F4CF5 /* BGMAutoPauseMusicPrefs.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1C0BD0A41BF1A8E6004F4CF5 /* BGMAutoPauseMusicPrefs.mm */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMApp-BGMAutoPauseMusicPrefs.mm"; }; };
 		1C0BD0A81BF1B029004F4CF5 /* BGMPreferencesMenu.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1C0BD0A71BF1B029004F4CF5 /* BGMPreferencesMenu.mm */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMApp-BGMPreferencesMenu.mm"; }; };
 		1C1465B81BCC3A73003AEFE6 /* BGMAutoPauseMusic.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1C1465B71BCC3A73003AEFE6 /* BGMAutoPauseMusic.mm */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMApp-BGMAutoPauseMusic.mm"; }; };
@@ -180,6 +182,7 @@
 		1CF2D59E1F9447AE008B6E35 /* CARingBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C1962E21BC94E15008A4DF7 /* CARingBuffer.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMXPCHelper-CARingBuffer.cpp"; }; };
 		1CF5423C1EAAEE4300445AD8 /* BGMAudioDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CF5423A1EAAEE4300445AD8 /* BGMAudioDevice.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMApp-BGMAudioDevice.cpp"; }; };
 		1CF5423D1EAAEE4300445AD8 /* BGMAudioDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CF5423A1EAAEE4300445AD8 /* BGMAudioDevice.cpp */; };
+		24A812F6181B347A759752C5 /* BGMHotkeys.h in Sources */ = {isa = PBXBuildFile; fileRef = 799AF95ED14922923C2D5BEA /* BGMHotkeys.h */; };
 		270A84511E0044EF00F13C99 /* ScriptingBridge.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 270A84501E0044EE00F13C99 /* ScriptingBridge.framework */; };
 		271677BA1C6CBDFA0080B0A2 /* CACFNumber.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 271677B81C6CBDFA0080B0A2 /* CACFNumber.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMApp-CACFNumber.cpp"; }; };
 		27379B8A1C7C562D0084A24C /* BGMVLC.m in Sources */ = {isa = PBXBuildFile; fileRef = 27379B891C7C562D0084A24C /* BGMVLC.m */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMApp-BGMVLC.m"; }; };
@@ -229,17 +232,33 @@
 		2E49E8A7501B969DFD9089DA /* BGMAppOutputRoutingController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7F576613B4F7116C9498D469 /* BGMAppOutputRoutingController.mm */; };
 		3043E0DE87BDC97C8EBECB26 /* BGMTapRoute.h in Sources */ = {isa = PBXBuildFile; fileRef = BE76D7BB26DD487A9B338F66 /* BGMTapRoute.h */; };
 		3F14DC51C6BA44FD50EB3D99 /* BGMTapRoute.mm in Sources */ = {isa = PBXBuildFile; fileRef = F1147BF558DE55DB68E2BFE8 /* BGMTapRoute.mm */; };
+		594DAB8E35B0233160DBCB19 /* BGMHotkeys.h in Sources */ = {isa = PBXBuildFile; fileRef = 799AF95ED14922923C2D5BEA /* BGMHotkeys.h */; };
 		5D5FCE844C238D835B99D29B /* BGMAppOutputRoutingController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7F576613B4F7116C9498D469 /* BGMAppOutputRoutingController.mm */; };
 		5D8700DE876C53F534E5BE48 /* BGMTapRouteTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5BCEE17D46D93500306CAD10 /* BGMTapRouteTests.mm */; };
 		64367B6B93CB2E6B49FC712D /* BGMAppOutputRoutingController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7F576613B4F7116C9498D469 /* BGMAppOutputRoutingController.mm */; };
 		687376D058B8777882E6E168 /* BGMTapRoute.h in Sources */ = {isa = PBXBuildFile; fileRef = BE76D7BB26DD487A9B338F66 /* BGMTapRoute.h */; };
+		6F546BA0B3381C44E4DDA83F /* ApplicationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FDBAA2A34D4D476E1E0F99BF /* ApplicationServices.framework */; };
+		7327E17AF2124066CD125FD9 /* BGMTroubleshootMenu.h in Sources */ = {isa = PBXBuildFile; fileRef = 84C7E5823B97D0B1EFCF180B /* BGMTroubleshootMenu.h */; };
+		81B1B74D715F4CB6FC7EFCAF /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1E84B50D2C7ACA794F166167 /* AVFoundation.framework */; };
 		88C5AE727EE412AE003D036C /* BGMTapRoute.mm in Sources */ = {isa = PBXBuildFile; fileRef = F1147BF558DE55DB68E2BFE8 /* BGMTapRoute.mm */; };
 		9E129A412602AE620005851B /* BGMASApplication.m in Sources */ = {isa = PBXBuildFile; fileRef = 9E129A402602AE620005851B /* BGMASApplication.m */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMApp-BGMASApplication.m"; }; };
 		9E542C7026057FBA0016C0B5 /* BGMASApplication.m in Sources */ = {isa = PBXBuildFile; fileRef = 9E129A402602AE620005851B /* BGMASApplication.m */; };
+		A3B479F1CAD2F4BD7F95058F /* BGMTroubleshootMenu.mm in Sources */ = {isa = PBXBuildFile; fileRef = 6BA924FB8CCD660F5C926A29 /* BGMTroubleshootMenu.mm */; };
 		A7275976027BC34764480F06 /* BGMAppOutputRoutingController.h in Sources */ = {isa = PBXBuildFile; fileRef = 0A6812F6788CC089B61EB752 /* BGMAppOutputRoutingController.h */; };
+		AAD3C70756FC6179245AA3CE /* BGMTroubleshootMenu.mm in Sources */ = {isa = PBXBuildFile; fileRef = 6BA924FB8CCD660F5C926A29 /* BGMTroubleshootMenu.mm */; };
 		B3BFDC172B31A6B1E58D7EB1 /* BGMTapRoute.mm in Sources */ = {isa = PBXBuildFile; fileRef = F1147BF558DE55DB68E2BFE8 /* BGMTapRoute.mm */; };
+		BE1FC3FDF251B31CE1686F8D /* BGMTroubleshootMenu.mm in Sources */ = {isa = PBXBuildFile; fileRef = 6BA924FB8CCD660F5C926A29 /* BGMTroubleshootMenu.mm */; };
 		C38C8DF1D49B7482D2AFA3A5 /* BGMTapRoute.h in Sources */ = {isa = PBXBuildFile; fileRef = BE76D7BB26DD487A9B338F66 /* BGMTapRoute.h */; };
+		D2B13199482412B841D282B3 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FC5D2B96BA1428D2EFEF2710 /* Carbon.framework */; };
 		D7C3CD30199EE345C711959C /* BGMAppOutputRoutingController.h in Sources */ = {isa = PBXBuildFile; fileRef = 0A6812F6788CC089B61EB752 /* BGMAppOutputRoutingController.h */; };
+		D8913A28FD6BD7409C5C1224 /* ApplicationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FDBAA2A34D4D476E1E0F99BF /* ApplicationServices.framework */; };
+		E922CBAB1963E0D7326939B3 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FC5D2B96BA1428D2EFEF2710 /* Carbon.framework */; };
+		EAA7DCB4C433483D3B0FECFB /* BGMTroubleshootMenu.h in Sources */ = {isa = PBXBuildFile; fileRef = 84C7E5823B97D0B1EFCF180B /* BGMTroubleshootMenu.h */; };
+		EB6471FBF317684F00AAF5AE /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FC5D2B96BA1428D2EFEF2710 /* Carbon.framework */; };
+		EBB56924C66177BC7C1EE97A /* BGMHotkeys.mm in Sources */ = {isa = PBXBuildFile; fileRef = D40863E589A0D533A16C17A3 /* BGMHotkeys.mm */; };
+		F781EC55859BC42D53C788B5 /* BGMTroubleshootMenu.h in Sources */ = {isa = PBXBuildFile; fileRef = 84C7E5823B97D0B1EFCF180B /* BGMTroubleshootMenu.h */; };
+		FDC6021E8B65E096CD575A5B /* BGMHotkeys.mm in Sources */ = {isa = PBXBuildFile; fileRef = D40863E589A0D533A16C17A3 /* BGMHotkeys.mm */; };
+		FDDB736270698A91AABE937D /* BGMHotkeys.h in Sources */ = {isa = PBXBuildFile; fileRef = 799AF95ED14922923C2D5BEA /* BGMHotkeys.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -400,6 +419,7 @@
 		1CF5423A1EAAEE4300445AD8 /* BGMAudioDevice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BGMAudioDevice.cpp; sourceTree = "<group>"; };
 		1CF5423B1EAAEE4300445AD8 /* BGMAudioDevice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BGMAudioDevice.h; sourceTree = "<group>"; };
 		1CF69BA41BCFF59C009B5D1F /* BGMApp.profdata */ = {isa = PBXFileReference; lastKnownFileType = file; path = BGMApp.profdata; sourceTree = "<group>"; };
+		1E84B50D2C7ACA794F166167 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		270A84501E0044EE00F13C99 /* ScriptingBridge.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ScriptingBridge.framework; path = System/Library/Frameworks/ScriptingBridge.framework; sourceTree = SDKROOT; };
 		271677B81C6CBDFA0080B0A2 /* CACFNumber.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CACFNumber.cpp; path = PublicUtility/CACFNumber.cpp; sourceTree = "<group>"; };
 		271677B91C6CBDFA0080B0A2 /* CACFNumber.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CACFNumber.h; path = PublicUtility/CACFNumber.h; sourceTree = "<group>"; };
@@ -450,11 +470,17 @@
 		27F7D4911D2484A300821C4B /* Decibel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Decibel.h; path = "Music Players/Decibel.h"; sourceTree = "<group>"; };
 		27FB8C2E1DE468320084DB9D /* BGM_Utils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BGM_Utils.cpp; path = ../SharedSource/BGM_Utils.cpp; sourceTree = "<group>"; };
 		5BCEE17D46D93500306CAD10 /* BGMTapRouteTests.mm */ = {isa = PBXFileReference; includeInIndex = 1; name = BGMTapRouteTests.mm; path = UnitTests/BGMTapRouteTests.mm; sourceTree = "<group>"; };
+		6BA924FB8CCD660F5C926A29 /* BGMTroubleshootMenu.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = Preferences/BGMTroubleshootMenu.mm; sourceTree = "<group>"; };
+		799AF95ED14922923C2D5BEA /* BGMHotkeys.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = BGMHotkeys.h; sourceTree = "<group>"; };
 		7F576613B4F7116C9498D469 /* BGMAppOutputRoutingController.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = BGMAppOutputRoutingController.mm; sourceTree = "<group>"; };
+		84C7E5823B97D0B1EFCF180B /* BGMTroubleshootMenu.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = Preferences/BGMTroubleshootMenu.h; sourceTree = "<group>"; };
 		9E129A3F2602AE620005851B /* BGMASApplication.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BGMASApplication.h; path = Scripting/BGMASApplication.h; sourceTree = "<group>"; };
 		9E129A402602AE620005851B /* BGMASApplication.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BGMASApplication.m; path = Scripting/BGMASApplication.m; sourceTree = "<group>"; };
 		BE76D7BB26DD487A9B338F66 /* BGMTapRoute.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = BGMTapRoute.h; sourceTree = "<group>"; };
+		D40863E589A0D533A16C17A3 /* BGMHotkeys.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = BGMHotkeys.mm; sourceTree = "<group>"; };
 		F1147BF558DE55DB68E2BFE8 /* BGMTapRoute.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = BGMTapRoute.mm; sourceTree = "<group>"; };
+		FC5D2B96BA1428D2EFEF2710 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
+		FDBAA2A34D4D476E1E0F99BF /* ApplicationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ApplicationServices.framework; path = System/Library/Frameworks/ApplicationServices.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -467,6 +493,8 @@
 				270A84511E0044EF00F13C99 /* ScriptingBridge.framework in Frameworks */,
 				1CD1FD301BDDEAF2004F7E1B /* AudioToolbox.framework in Frameworks */,
 				1C1963031BCAC160008A4DF7 /* CoreAudio.framework in Frameworks */,
+				D2B13199482412B841D282B3 /* Carbon.framework in Frameworks */,
+				D8913A28FD6BD7409C5C1224 /* ApplicationServices.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -477,6 +505,8 @@
 				1C62FE5523D423D700B9B68E /* XCTest.framework in Frameworks */,
 				1C8B0C6B21645355008C5679 /* AVFoundation.framework in Frameworks */,
 				1CD989401ECFFCC50014BBBF /* AudioToolbox.framework in Frameworks */,
+				E922CBAB1963E0D7326939B3 /* Carbon.framework in Frameworks */,
+				1B2D4E4504013A877ACD0324 /* ApplicationServices.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -496,6 +526,9 @@
 				2743CA231D86DEA70089613B /* AudioToolbox.framework in Frameworks */,
 				2743CA221D86DE960089613B /* CoreAudio.framework in Frameworks */,
 				2743CA1D1D86DA9B0089613B /* Foundation.framework in Frameworks */,
+				81B1B74D715F4CB6FC7EFCAF /* AVFoundation.framework in Frameworks */,
+				EB6471FBF317684F00AAF5AE /* Carbon.framework in Frameworks */,
+				6F546BA0B3381C44E4DDA83F /* ApplicationServices.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -527,6 +560,8 @@
 				27D1D6BA1DD7226C0049E707 /* BGMAboutPanel.m */,
 				1C0BD0A31BF1A8E6004F4CF5 /* BGMAutoPauseMusicPrefs.h */,
 				1C0BD0A41BF1A8E6004F4CF5 /* BGMAutoPauseMusicPrefs.mm */,
+				84C7E5823B97D0B1EFCF180B /* BGMTroubleshootMenu.h */,
+				6BA924FB8CCD660F5C926A29 /* BGMTroubleshootMenu.mm */,
 			);
 			name = "Preferences Menu";
 			sourceTree = "<group>";
@@ -738,6 +773,8 @@
 				F1147BF558DE55DB68E2BFE8 /* BGMTapRoute.mm */,
 				0A6812F6788CC089B61EB752 /* BGMAppOutputRoutingController.h */,
 				7F576613B4F7116C9498D469 /* BGMAppOutputRoutingController.mm */,
+				799AF95ED14922923C2D5BEA /* BGMHotkeys.h */,
+				D40863E589A0D533A16C17A3 /* BGMHotkeys.mm */,
 			);
 			path = BGMApp;
 			sourceTree = "<group>";
@@ -868,6 +905,9 @@
 				1C1963021BCAC160008A4DF7 /* CoreAudio.framework */,
 				2795970D1C91589B00A002FB /* CoreFoundation.framework */,
 				2743CA1C1D86DA9B0089613B /* Foundation.framework */,
+				1E84B50D2C7ACA794F166167 /* AVFoundation.framework */,
+				FC5D2B96BA1428D2EFEF2710 /* Carbon.framework */,
+				FDBAA2A34D4D476E1E0F99BF /* ApplicationServices.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -1201,6 +1241,10 @@
 				3F14DC51C6BA44FD50EB3D99 /* BGMTapRoute.mm in Sources */,
 				1C930E4EC593B2BA17261BC0 /* BGMAppOutputRoutingController.h in Sources */,
 				2E49E8A7501B969DFD9089DA /* BGMAppOutputRoutingController.mm in Sources */,
+				F781EC55859BC42D53C788B5 /* BGMTroubleshootMenu.h in Sources */,
+				BE1FC3FDF251B31CE1686F8D /* BGMTroubleshootMenu.mm in Sources */,
+				24A812F6181B347A759752C5 /* BGMHotkeys.h in Sources */,
+				FDC6021E8B65E096CD575A5B /* BGMHotkeys.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1272,6 +1316,10 @@
 				5D5FCE844C238D835B99D29B /* BGMAppOutputRoutingController.mm in Sources */,
 				C38C8DF1D49B7482D2AFA3A5 /* BGMTapRoute.h in Sources */,
 				88C5AE727EE412AE003D036C /* BGMTapRoute.mm in Sources */,
+				7327E17AF2124066CD125FD9 /* BGMTroubleshootMenu.h in Sources */,
+				AAD3C70756FC6179245AA3CE /* BGMTroubleshootMenu.mm in Sources */,
+				594DAB8E35B0233160DBCB19 /* BGMHotkeys.h in Sources */,
+				087DC17BE4E784DE93ECBCCE /* BGMHotkeys.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1365,6 +1413,10 @@
 				5D8700DE876C53F534E5BE48 /* BGMTapRouteTests.mm in Sources */,
 				A7275976027BC34764480F06 /* BGMAppOutputRoutingController.h in Sources */,
 				64367B6B93CB2E6B49FC712D /* BGMAppOutputRoutingController.mm in Sources */,
+				EAA7DCB4C433483D3B0FECFB /* BGMTroubleshootMenu.h in Sources */,
+				A3B479F1CAD2F4BD7F95058F /* BGMTroubleshootMenu.mm in Sources */,
+				FDDB736270698A91AABE937D /* BGMHotkeys.h in Sources */,
+				EBB56924C66177BC7C1EE97A /* BGMHotkeys.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

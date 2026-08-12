@@ -59,6 +59,14 @@ Background Music, unchanged.
   Player (**File > New Audio Recording**) to record whatever your Mac is playing. You can combine
   it with a microphone using an [aggregate device](https://support.apple.com/en-us/HT202000) in
   **Audio MIDI Setup**.
+- **Global keyboard shortcuts** *(new in Wavecraft)* — adjust system volume or the frontmost app's
+  volume without opening the menu. Off by default (needs Accessibility permission); turn on and
+  pick a modifier (Option or Control) and a step size (Fine/Normal/Coarse) in **Preferences >
+  Keyboard Shortcuts**.
+- **Built-in troubleshooters** *(new in Wavecraft)* — one-click fixes for the most common stuck
+  states (output not switching back, a volume/pan/EQ setting stuck at an odd value, an output
+  route that won't clear, the XPC helper looking disconnected, Microphone permission) in
+  **Preferences > Troubleshoot**, instead of a wiki page telling you to restart things by hand.
 - **No restart required to install.**
 
 # Requirements
@@ -185,11 +193,17 @@ verifying a fresh install actually works — nothing on it has been run yet.
 
 If Wavecraft crashes and your audio stops working, open **System Settings > Sound** and change your
 default output device to something other than the Wavecraft device — if it's already something
-else, switch away and back again.
+else, switch away and back again. Or open **Preferences > Troubleshoot > Reapply Default Output
+Device**, which does the same thing without leaving the app.
 
 If a volume slider isn't working for an app, check **More Apps** for entries like `Some App
 (Helper)` — some meeting/video apps route audio through a helper process you need to control
 instead.
+
+**Preferences > Troubleshoot** has one-click fixes for the cases most likely to need one: reapply
+the default output device, reset every app's volume/pan/EQ back to flat, clear all output-routing
+overrides, reconnect to the XPC helper if it looks disconnected, and jump straight to the
+Microphone privacy pane. Try the matching one before digging into docs/TROUBLESHOOTING.md by hand.
 
 # Why a fork instead of a paid app
 

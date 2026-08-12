@@ -27,6 +27,7 @@
 // Local Includes
 #import "BGM_Utils.h"
 #import "BGMAppOutputRoutingController.h"
+#import "BGMHotkeys.h"
 #import "BGMAppVolumes.h"
 #import "BGMAppVolumesController.h"
 #import "BGMAutoPauseMusic.h"
@@ -77,6 +78,9 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
     // Owns the per-app output-device routing overrides (see BGMTapRoute). Created before the app
     // volumes menu items so their output-route pop-up buttons have it to hand at setup time.
     BGMAppOutputRoutingController* outputRoutingController;
+
+    // Global keyboard shortcuts for system/frontmost-app volume. Off by default -- see its header.
+    BGMHotkeys* hotkeys;
 }
 
 @synthesize audioDevices = audioDevices;
@@ -273,6 +277,11 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
               error);
         [self showXPCHelperErrorMessage:error];
     }];
+
+    // prefsMenu (built in setUpMainMenu, above) needed xpcListener for its "Reconnect to
+    // BGMXPCHelper" troubleshooter, but xpcListener doesn't exist until here -- see
+    // BGMTroubleshootMenu's header for why this is a separate call instead of an initializer param.
+    [prefsMenu setXPCListener:xpcListener];
 }
 
 // Returns NO if (and only if) BGMApp is about to terminate because of a fatal error.
@@ -396,6 +405,11 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
                                                preferredDevices:preferredOutputDevices];
     [audioDevices setOutputDeviceMenuSection:outputDeviceMenuSection];
 
+    // Global keyboard shortcuts. Constructing this doesn't request any permission or start
+    // monitoring by itself unless the user already had hotkeys enabled and granted Accessibility
+    // trust in a previous run -- see BGMHotkeys's header.
+    hotkeys = [[BGMHotkeys alloc] initWithAudioDevices:audioDevices userDefaults:userDefaults];
+
     // Preferences submenu.
     prefsMenu = [[BGMPreferencesMenu alloc] initWithBGMMenu:self.bgmMenu
                                                audioDevices:audioDevices
@@ -403,7 +417,10 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
                                               statusBarItem:statusBarItem
                                                  aboutPanel:self.aboutPanel
                                       aboutPanelLicenseView:self.aboutPanelLicenseView
-                                               userDefaults:userDefaults];
+                                               userDefaults:userDefaults
+                                     preferredOutputDevices:preferredOutputDevices
+                                    outputRoutingController:outputRoutingController
+                                                    hotkeys:hotkeys];
 
     // Enable/disable debug logging. Hidden unless you option-click the status bar icon.
     debugLoggingMenuItem =

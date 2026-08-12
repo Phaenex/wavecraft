@@ -68,6 +68,11 @@
 // to catch up to it.
 - (BOOL) hasOutputOverrideForBundleID:(NSString*)bundleID;
 
+// Removes every current output-device override, returning all routed apps to Wavecraft's normal
+// default-output path. For the "Remove All Output Routing Overrides" troubleshooter -- a panic
+// button for the newest, least-tested feature in the app, in case a route gets stuck.
+- (void) removeAllOutputOverrides;
+
 @end
 
 #pragma clang assume_nonnull end

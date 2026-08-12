@@ -168,6 +168,19 @@
     return userDefaults.outputRouteDeviceUIDsByBundleID[bundleID] != nil;
 }
 
+- (void) removeAllOutputOverrides {
+    NSAssert([NSThread isMainThread], @"removeAllOutputOverrides is not thread safe");
+
+    // Snapshot the keys first -- userSelectedDeviceUID:forAppWithBundleID:appName: below replaces
+    // userDefaults.outputRouteDeviceUIDsByBundleID with a new dictionary each call, so iterating a
+    // separately-captured array here is safe against mutating the thing we're iterating.
+    NSArray<NSString*>* bundleIDs = userDefaults.outputRouteDeviceUIDsByBundleID.allKeys;
+
+    for (NSString* bundleID in bundleIDs) {
+        [self userSelectedDeviceUID:nil forAppWithBundleID:bundleID appName:nil];
+    }
+}
+
 #pragma mark Restoring Persisted Routes
 
 - (void) restoreRoutesForApps:(NSArray<NSRunningApplication*>*)apps {

@@ -144,6 +144,37 @@ always needs a human, above) followed by actually moving the new sliders/pop-up 
   restoring only happens for apps `NSWorkspace` already knows about; that's an inherent limit of
   routing living in `BGMApp`'s own process rather than the driver, not a bug to fix.
 
+## Also new in Wavecraft: troubleshooters, hotkeys, customization
+
+Three smaller features, all built end-to-end (`BGMApp` UI + `BGMUserDefaults` persistence) and
+compiling/passing tests clean, but — same caveat as EQ/routing above — **not yet exercised against
+a real install**:
+
+- **In-app troubleshooters** (`BGMApp/BGMApp/Preferences/BGMTroubleshootMenu.{h,mm}`,
+  **Preferences > Troubleshoot**) — five one-click fixes: reapply the default output device, reset
+  every app's volume/pan/EQ to flat (confirmation alert first), clear every output-routing override
+  (confirmation alert first), reconnect to `BGMXPCHelper`, and jump to the Microphone privacy pane.
+  Each does the real repair action directly (e.g. `BGMAppOutputRoutingController::
+  removeAllOutputOverrides`), not just a diagnostic message.
+- **Global keyboard shortcuts** (`BGMApp/BGMApp/BGMHotkeys.{h,mm}`, **Preferences > Keyboard
+  Shortcuts**) — Up/Down for system volume, Shift+Up/Down for the frontmost app's volume, via
+  `NSEvent addGlobalMonitorForEventsMatchingMask:`. Off by default: unlike Microphone, the
+  Accessibility permission this needs isn't required for the app's core function. Accessibility
+  trust has no grant-completion callback (unlike `AVCaptureDevice`'s async microphone request), so
+  turning shortcuts on shows a one-time explanation, opens the system prompt, and leaves the user to
+  toggle the switch again after granting — there's no way to detect the grant automatically.
+- **Customizable hotkey behavior** — a modifier preset (Option or Control, in case one conflicts
+  with something else) and a step-size preset (Fine/Normal/Coarse, indexing into
+  `kSystemVolumeSteps`/`kAppVolumeSteps` arrays in `BGMHotkeys.mm`) — both persisted in
+  `BGMUserDefaults` and shown live in the Preferences menu via `currentBindingsDescription`.
+
+51/51 unit tests passing after this work (28 BGMAppUnitTests + 23 BGMDriverTests — no new tests
+were added for these three features specifically; they depend on real system state
+(`AXIsProcessTrusted()`, `NSWorkspace.frontmostApplication`, live `AudioObjectSetPropertyData`,
+`AVCaptureDevice` authorization) that the mocked `BGMAppUnitTests` target can't exercise, the same
+limitation `BGMTapRouteTests.mm` documents for the EQ/routing UI). See TODO.md's "Needs a human"
+section for what real-install verification these three still need.
+
 ## Known limitations (inherited from upstream, not introduced by us)
 
 - Only 2-channel (stereo) output devices are supported. An 8-channel DisplayPort monitor caused a

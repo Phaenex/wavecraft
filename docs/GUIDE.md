@@ -77,6 +77,40 @@ next to the record button, and select **Wavecraft** (shown internally as "Backgr
 input device. To record a microphone at the same time, create an aggregate device combining your
 mic with the Wavecraft device in **Audio MIDI Setup** (**/Applications/Utilities**).
 
+## Keyboard shortcuts
+
+**Preferences > Keyboard Shortcuts** lets you adjust volume without opening the menu at all. Off by
+default, since it needs Accessibility permission — something Wavecraft's core function doesn't
+otherwise require, so it's opt-in.
+
+- **Enable Keyboard Shortcuts** turns it on. The first time, you'll see an explanation of why
+  Accessibility access is needed before macOS's own permission prompt appears. Check the box for
+  Wavecraft in the System Settings window that opens, then come back and toggle the switch off and
+  back on — macOS doesn't tell an app when this permission gets granted, so there's no way for
+  Wavecraft to pick it up automatically.
+- **Use Option (⌥) / Use Control (⌃) as Modifier** picks which key combination to use, in case
+  Option or Control conflicts with something else on your system.
+- **Fine / Normal / Coarse Steps** controls how much each key press changes the volume by — Fine
+  for small adjustments, Coarse for getting from very quiet to very loud in fewer presses.
+- With the modifier set, **Up/Down** adjusts system volume and **Shift+Up/Down** adjusts the
+  frontmost app's volume. The current bindings and step size are shown right in the menu.
+
+## Troubleshoot
+
+**Preferences > Troubleshoot** has one-click fixes for the most common stuck states, instead of
+making you dig through docs/TROUBLESHOOTING.md or restart things by hand:
+
+- **Reapply Default Output Device** — re-sets your system output to Wavecraft's device, for when
+  audio routing gets stuck pointing somewhere else.
+- **Reset All App Volumes, Pan & EQ** — returns every app's per-app volume, pan, and EQ bands to
+  their defaults. Asks for confirmation first, since it affects every app at once.
+- **Remove All Output Overrides** — clears every per-app output-routing assignment, sending
+  everything back through your normal default output. Also confirms first.
+- **Reconnect to XPC Helper** — re-establishes the connection to `BGMXPCHelper` if the app seems to
+  have lost it (a symptom of the helper looking "disconnected" without a full app restart).
+- **Check Microphone Permission** — jumps straight to the System Settings pane for Wavecraft's
+  Microphone permission, for when the virtual input device isn't showing up correctly.
+
 ## Status bar icon
 
 **Preferences > Status Bar Icon** lets you switch between the default four-bar Wavecraft icon and a

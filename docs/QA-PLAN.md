@@ -124,6 +124,41 @@ Nothing in this fork should have made stock Background Music functionality worse
 - [ ] Trigger a failed output-device change (e.g. by disconnecting a device mid-switch) — confirm
       the error alert and revert-on-failure behavior described in `BGMAudioDeviceManager`
 
+## 6. In-app troubleshooters, keyboard shortcuts, and customization (added 2026-08-12)
+
+None of this has run against a real install either — same rule as everything else on this page.
+
+- [ ] Preferences → Troubleshoot → **Reapply Default Output Device**: change your system default
+      output to something other than Wavecraft, then run this — confirm it switches back without
+      needing System Settings
+- [ ] Preferences → Troubleshoot → **Reset All App Volumes, Pan & EQ**: set a non-default
+      volume/pan/EQ on at least one app, run this (confirm the alert), confirm every app's controls
+      visibly return to their defaults and the audio matches
+- [ ] Preferences → Troubleshoot → **Remove All Output Overrides**: route at least one app to a
+      non-default device, run this (confirm the alert), confirm the app's audio returns to the
+      default output and its pop-up shows "Default" again
+- [ ] Preferences → Troubleshoot → **Reconnect to XPC Helper**: kill `BGMXPCHelper` manually, run
+      this, confirm the app recovers connection without requiring a full relaunch
+- [ ] Preferences → Troubleshoot → **Check Microphone Permission**: with permission denied, confirm
+      this jumps to the correct System Settings pane (`x-apple.systempreferences:` URL scheme
+      actually resolves on this macOS version, not just in theory)
+- [ ] Preferences → Keyboard Shortcuts → **Enable Keyboard Shortcuts** with Accessibility not yet
+      granted: confirm the one-time explanation dialog appears before the system Accessibility
+      prompt, and that toggling the switch off and back on after granting access actually starts
+      monitoring (there's no completion callback for this permission — confirm the documented
+      "toggle it again" workaround is actually necessary and actually works)
+- [ ] Keyboard Shortcuts: with shortcuts enabled and Option as the modifier, confirm ⌥↑/⌥↓ change
+      system volume and ⌥⇧↑/⌥⇧↓ change the frontmost app's volume — audibly, not just that the
+      sliders move
+- [ ] Keyboard Shortcuts: switch to Control as the modifier, confirm the old Option binding stops
+      working and the new Control one works immediately (no re-enable needed)
+- [ ] Keyboard Shortcuts: switch between Fine/Normal/Coarse step sizes and confirm each press
+      changes volume by a visibly different amount, matching the description text shown in the
+      menu
+- [ ] Keyboard Shortcuts: confirm the shortcuts don't fire while Wavecraft itself is the frontmost
+      app (there's no reason to adjust "the frontmost app's volume" when that app is Wavecraft) and
+      don't interfere with the same key combination in another app that also uses it
+
 ## Reporting back
 
 For each item: pass/fail, and for fails, exactly what happened (error text, screenshot, or

@@ -22,8 +22,6 @@ Roughly ordered by effort, cheapest first:
   UI: 5 sliders already needed a real XIB layout exercise (see docs/LESSONS.md) to fit in the
   per-app menu row; 10+ needs an actual layout decision (a wider row? A separate EQ window per app?
   Two columns?), not just repeating the same pattern more times.
-- **Keyboard shortcuts** for volume (system boost and/or frontmost app) — already on upstream's own
-  TODO list, unrelated to this fork's features specifically.
 - **"Do Not Disturb" / priority-app auto-mute** — mute everything except a chosen app, the inverse
   of auto-pause. Similar shape to the existing auto-pause feature
   (`BGMApp/BGMApp/BGMAutoPauseMusic.mm`), could likely reuse a lot of its audible-state-change
@@ -63,6 +61,10 @@ EQ band count in particular, it's the UI, not the DSP.
   unit tested (DSP math, construction/validation, and now the property-discovery list) pass. Work
   through [docs/QA-PLAN.md](docs/QA-PLAN.md) — every menu control, every new-feature edge case, and
   the app's own error dialogs, in order, nothing marked done without actually watching it happen.
+  The same applies to the in-app troubleshooters (does each one actually fix the state it claims
+  to?), the global keyboard shortcuts (does the Accessibility prompt flow work, do the presets
+  actually change step size audibly?), and their menu items — all of that only exists as build +
+  unit-test-clean code so far, none of it has been clicked or pressed on a real running install.
 - **Verify `CATapMuted` actually mutes the routed app's normal output**, not just that the tap
   receives audio (see docs/PROCESS-TAP-ROUTING.md's Phase 1 results — this was the one thing left
   unconfirmed after the proof-of-concept, deferred to a real listening test with two apps and two
@@ -80,6 +82,10 @@ EQ band count in particular, it's the UI, not the DSP.
   happens.
 - No AppleScript/`osascript` support for the new EQ or routing controls (the existing per-app
   volume/pan AppleScript support in `BGMApp/BGMApp/Scripting/BGMASApplication.m` wasn't extended).
+- Keyboard shortcuts only offer two modifier presets (Option or Control) and three step sizes
+  (Fine/Normal/Coarse) — no arbitrary key rebinding. `BGMHotkeys` only ever listens for
+  Up/Down-arrow, so a real rebinding UI would need to record and store an actual key code, not just
+  pick from a fixed enum the way `BGMHotkeyModifierPreset`/`BGMHotkeyStepSize` do now.
 
 ## Less quick
 
@@ -99,6 +105,10 @@ EQ band count in particular, it's the UI, not the DSP.
   that touches a real `CAHALAudioDevice`. This matches upstream's own testing gap for
   `BGMAppVolumesController`/`BGMOutputDeviceMenuSection`/`BGMPreferredOutputDevices`, none of which
   have unit tests either, but it's worth flagging rather than assuming coverage exists.
+- Same testing gap applies to `BGMHotkeys` and `BGMTroubleshootMenu` — both depend on real system
+  state (`AXIsProcessTrusted()`, `NSWorkspace.frontmostApplication`, `AudioObjectSetPropertyData`
+  against a real `BGMDevice`, `AVCaptureDevice` authorization status) that the mocked
+  `BGMAppUnitTests` target can't exercise, for the same reason `BGMTapRouteTests.mm` explains.
 - `.github/workflows/build-test-release.yml`'s release job (building a signed `.pkg`) isn't
   something this fork can run — it needs an Apple Developer ID and notarization credentials we
   don't have configured. Source-build is the only distribution method right now; see the README.

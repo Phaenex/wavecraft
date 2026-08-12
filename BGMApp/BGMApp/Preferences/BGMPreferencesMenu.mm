@@ -50,7 +50,7 @@ static NSInteger const kAboutPanelMenuItemTag  = 4;
 
     // The About Background Music window
     BGMAboutPanel* aboutPanel;
-    
+
     // Delay preferences
     NSMenuItem* pauseDelayMenuItem;
     NSMenuItem* maxUnpauseDelayMenuItem;
@@ -59,6 +59,18 @@ static NSInteger const kAboutPanelMenuItemTag  = 4;
     NSTextField* pauseDelayLabel;
     NSTextField* maxUnpauseDelayLabel;
     BGMUserDefaults* userDefaults;
+
+    BGMTroubleshootMenu* troubleshootMenu;
+
+    // Hotkey preferences
+    BGMHotkeys* hotkeys;
+    NSMenuItem* hotkeysEnabledMenuItem;
+    NSMenuItem* hotkeyModifierOptionMenuItem;
+    NSMenuItem* hotkeyModifierControlMenuItem;
+    NSMenuItem* hotkeyStepFineMenuItem;
+    NSMenuItem* hotkeyStepNormalMenuItem;
+    NSMenuItem* hotkeyStepCoarseMenuItem;
+    NSMenuItem* hotkeyBindingsDescriptionMenuItem;
 }
 
 - (id) initWithBGMMenu:(NSMenu*)inBGMMenu
@@ -67,14 +79,17 @@ static NSInteger const kAboutPanelMenuItemTag  = 4;
          statusBarItem:(BGMStatusBarItem*)inStatusBarItem
             aboutPanel:(NSPanel*)inAboutPanel
  aboutPanelLicenseView:(NSTextView*)inAboutPanelLicenseView
-          userDefaults:(BGMUserDefaults*)inUserDefaults {
+          userDefaults:(BGMUserDefaults*)inUserDefaults
+preferredOutputDevices:(BGMPreferredOutputDevices*)inPreferredOutputDevices
+outputRoutingController:(BGMAppOutputRoutingController*)inOutputRoutingController
+               hotkeys:(BGMHotkeys*)inHotkeys {
     if ((self = [super init])) {
         NSMenu* prefsMenu = [[inBGMMenu itemWithTag:kPreferencesMenuItemTag] submenu];
-        
+
         autoPauseMusicPrefs = [[BGMAutoPauseMusicPrefs alloc] initWithPreferencesMenu:prefsMenu
                                                                          audioDevices:inAudioDevices
                                                                          musicPlayers:inMusicPlayers];
-        
+
         aboutPanel = [[BGMAboutPanel alloc] initWithPanel:inAboutPanel licenseView:inAboutPanelLicenseView];
 
         statusBarItem = inStatusBarItem;
@@ -96,13 +111,137 @@ static NSInteger const kAboutPanelMenuItemTag  = 4;
         NSMenuItem* aboutMenuItem = [prefsMenu itemWithTag:kAboutPanelMenuItemTag];
         [aboutMenuItem setTarget:aboutPanel];
         [aboutMenuItem setAction:@selector(show)];
-        
+
         // Set up delay preferences
         userDefaults = inUserDefaults;
         [self setupDelayPreferences:prefsMenu];
+
+        troubleshootMenu =
+            [[BGMTroubleshootMenu alloc] initWithPreferencesMenu:prefsMenu
+                                                     audioDevices:inAudioDevices
+                                          preferredOutputDevices:inPreferredOutputDevices
+                                         outputRoutingController:inOutputRoutingController];
+
+        hotkeys = inHotkeys;
+        [self setupHotkeysMenu:prefsMenu];
     }
-    
+
     return self;
+}
+
+#pragma mark Hotkeys
+
+- (void) setupHotkeysMenu:(NSMenu*)prefsMenu {
+    [prefsMenu addItem:[NSMenuItem separatorItem]];
+
+    NSMenuItem* header = [[NSMenuItem alloc] initWithTitle:@"Keyboard Shortcuts"
+                                                     action:nil
+                                              keyEquivalent:@""];
+    header.enabled = NO;
+    [prefsMenu addItem:header];
+
+    hotkeysEnabledMenuItem = [[NSMenuItem alloc] initWithTitle:@"Enable Keyboard Shortcuts"
+                                                         action:@selector(toggleHotkeysEnabled)
+                                                  keyEquivalent:@""];
+    hotkeysEnabledMenuItem.target = self;
+    hotkeysEnabledMenuItem.state = hotkeys.isEnabled ? NSOnState : NSOffState;
+    [prefsMenu addItem:hotkeysEnabledMenuItem];
+
+    hotkeyModifierOptionMenuItem = [[NSMenuItem alloc] initWithTitle:@"Use Option (⌥) as Modifier"
+                                                               action:@selector(useOptionModifier)
+                                                        keyEquivalent:@""];
+    hotkeyModifierOptionMenuItem.target = self;
+    hotkeyModifierOptionMenuItem.indentationLevel = 1;
+    [prefsMenu addItem:hotkeyModifierOptionMenuItem];
+
+    hotkeyModifierControlMenuItem =
+        [[NSMenuItem alloc] initWithTitle:@"Use Control (⌃) as Modifier"
+                                    action:@selector(useControlModifier)
+                             keyEquivalent:@""];
+    hotkeyModifierControlMenuItem.target = self;
+    hotkeyModifierControlMenuItem.indentationLevel = 1;
+    [prefsMenu addItem:hotkeyModifierControlMenuItem];
+
+    hotkeyStepFineMenuItem = [[NSMenuItem alloc] initWithTitle:@"Fine Steps"
+                                                          action:@selector(useFineStepSize)
+                                                   keyEquivalent:@""];
+    hotkeyStepFineMenuItem.target = self;
+    hotkeyStepFineMenuItem.indentationLevel = 1;
+    [prefsMenu addItem:hotkeyStepFineMenuItem];
+
+    hotkeyStepNormalMenuItem = [[NSMenuItem alloc] initWithTitle:@"Normal Steps"
+                                                            action:@selector(useNormalStepSize)
+                                                     keyEquivalent:@""];
+    hotkeyStepNormalMenuItem.target = self;
+    hotkeyStepNormalMenuItem.indentationLevel = 1;
+    [prefsMenu addItem:hotkeyStepNormalMenuItem];
+
+    hotkeyStepCoarseMenuItem = [[NSMenuItem alloc] initWithTitle:@"Coarse Steps"
+                                                            action:@selector(useCoarseStepSize)
+                                                     keyEquivalent:@""];
+    hotkeyStepCoarseMenuItem.target = self;
+    hotkeyStepCoarseMenuItem.indentationLevel = 1;
+    [prefsMenu addItem:hotkeyStepCoarseMenuItem];
+
+    hotkeyBindingsDescriptionMenuItem = [[NSMenuItem alloc] initWithTitle:@""
+                                                                    action:nil
+                                                             keyEquivalent:@""];
+    hotkeyBindingsDescriptionMenuItem.enabled = NO;
+    hotkeyBindingsDescriptionMenuItem.indentationLevel = 1;
+    [prefsMenu addItem:hotkeyBindingsDescriptionMenuItem];
+
+    [self updateHotkeyMenuItemStates];
+}
+
+- (void) toggleHotkeysEnabled {
+    [hotkeys setEnabled:!hotkeys.isEnabled];
+    [self updateHotkeyMenuItemStates];
+}
+
+- (void) useOptionModifier {
+    userDefaults.hotkeyModifierPreset = BGMHotkeyModifierPresetOption;
+    [hotkeys modifierPresetChanged];
+    [self updateHotkeyMenuItemStates];
+}
+
+- (void) useControlModifier {
+    userDefaults.hotkeyModifierPreset = BGMHotkeyModifierPresetControl;
+    [hotkeys modifierPresetChanged];
+    [self updateHotkeyMenuItemStates];
+}
+
+- (void) useFineStepSize {
+    userDefaults.hotkeyStepSize = BGMHotkeyStepSizeFine;
+    [self updateHotkeyMenuItemStates];
+}
+
+- (void) useNormalStepSize {
+    userDefaults.hotkeyStepSize = BGMHotkeyStepSizeNormal;
+    [self updateHotkeyMenuItemStates];
+}
+
+- (void) useCoarseStepSize {
+    userDefaults.hotkeyStepSize = BGMHotkeyStepSizeCoarse;
+    [self updateHotkeyMenuItemStates];
+}
+
+- (void) updateHotkeyMenuItemStates {
+    hotkeysEnabledMenuItem.state = hotkeys.isEnabled ? NSOnState : NSOffState;
+
+    BOOL usingOption = (userDefaults.hotkeyModifierPreset == BGMHotkeyModifierPresetOption);
+    hotkeyModifierOptionMenuItem.state = usingOption ? NSOnState : NSOffState;
+    hotkeyModifierControlMenuItem.state = usingOption ? NSOffState : NSOnState;
+
+    NSInteger stepSize = userDefaults.hotkeyStepSize;
+    hotkeyStepFineMenuItem.state = (stepSize == BGMHotkeyStepSizeFine) ? NSOnState : NSOffState;
+    hotkeyStepNormalMenuItem.state = (stepSize == BGMHotkeyStepSizeNormal) ? NSOnState : NSOffState;
+    hotkeyStepCoarseMenuItem.state = (stepSize == BGMHotkeyStepSizeCoarse) ? NSOnState : NSOffState;
+
+    hotkeyBindingsDescriptionMenuItem.title = [hotkeys currentBindingsDescription];
+}
+
+- (void) setXPCListener:(BGMXPCListener*)xpcListener {
+    [troubleshootMenu setXPCListener:xpcListener];
 }
 
 - (void) useBGMStatusBarIcon {

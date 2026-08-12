@@ -76,6 +76,25 @@
 // a much smaller problem than skipping it if it was never actually seen.
 @property BOOL hasShownMicrophonePermissionExplanation;
 
+// Whether global keyboard shortcuts (system output volume, frontmost app's volume) are enabled.
+// Off by default -- unlike Microphone access, Accessibility permission (needed for global hotkeys)
+// isn't required for Wavecraft's core function, so it's opt-in rather than requested at launch.
+// See BGMHotkeys.
+@property BOOL hotkeysEnabled;
+
+// Same one-time-explanation pattern as hasShownMicrophonePermissionExplanation, for the
+// Accessibility permission prompt hotkeys need.
+@property BOOL hasShownHotkeysAccessibilityExplanation;
+
+// Which modifier-key combination the hotkeys use, so two people with different keyboard habits
+// (or conflicting shortcuts in other apps) aren't stuck with one hard-coded choice. See
+// BGMHotkeys.BGMHotkeyModifierPreset for the values.
+@property NSInteger hotkeyModifierPreset;
+
+// How much each hotkey press changes the volume by. See BGMHotkeys.BGMHotkeyStepSize for the
+// values.
+@property NSInteger hotkeyStepSize;
+
 @end
 
 #pragma clang assume_nonnull end

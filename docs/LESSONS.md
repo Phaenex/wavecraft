@@ -341,3 +341,30 @@ next"). More generally: after editing a shell script, `bash -n` before consideri
 not just before running it for real -- it's a full parse with zero side effects, cheap enough to run
 after every edit, and a syntax error's *reported* line number can be arbitrarily far from the actual
 mistake when an unterminated quote is involved.
+
+## `xcodebuild test` under the sandbox fails on DerivedData permissions, not on the code
+
+**The trap:** running `xcodebuild ... test` sandboxed produced a wall of `CoreSimulatorService
+connection became invalid`, `Operation not permitted` on `.xcresult`/`.xcactivitylog` paths inside
+`~/Library/Developer/Xcode/DerivedData/...`, and finally `Couldn't create workspace arena folder`,
+ending in `** TEST FAILED **` / `Testing cancelled because the build failed`. Nothing about that
+output mentions the sandbox, so the obvious first read is "the build is broken" or "Xcode's
+simulator service is down" -- neither is true.
+
+**What was actually true:** `~/Library/Developer/Xcode/DerivedData` isn't on this session's sandbox
+write allowlist, so every artifact `xcodebuild` needs to create there (the arena folder, the
+`.xcresult` bundle, build/activity logs) gets denied. `xcodebuild` doesn't fail fast on the first
+denial -- it logs each one as a `CoreSimulatorService`/`IDETestOperationsObserverDebug`/`DVTAssertions`
+warning and keeps limping forward until it finally can't create the top-level workspace arena
+folder at all, which is the error that actually surfaces as the build failure. The CoreSimulator
+noise is a downstream symptom of the same permission denial, not a separate problem -- this project
+never touches the iOS Simulator (`-destination 'platform=macOS'` only).
+
+**How to apply:** any `xcodebuild ... test` invocation (not just `build`) needs
+`dangerouslyDisableSandbox: true` on this machine, the same as install commands -- this is the same
+class of trap as the `gh auth status` keychain issue already learned this session (a sandboxed
+command that fails for permission reasons unrelated to the actual task, producing noisy but
+misleading output). Recognize the shape early: `Operation not permitted` on a path under
+`~/Library/...`, or `Couldn't create workspace arena folder`, means retry unsandboxed immediately
+rather than debugging the build itself. Plain `xcodebuild ... build` (no `test`) doesn't hit this,
+since it doesn't need `.xcresult`/test-session directories -- only the `test` action does.

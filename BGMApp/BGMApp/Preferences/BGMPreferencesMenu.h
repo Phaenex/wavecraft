@@ -24,10 +24,15 @@
 //
 
 // Local Includes
+#import "BGMAppOutputRoutingController.h"
 #import "BGMAudioDeviceManager.h"
+#import "BGMHotkeys.h"
 #import "BGMMusicPlayers.h"
+#import "BGMPreferredOutputDevices.h"
 #import "BGMStatusBarItem.h"
+#import "BGMTroubleshootMenu.h"
 #import "BGMUserDefaults.h"
+#import "BGMXPCListener.h"
 
 // System Includes
 #import <Cocoa/Cocoa.h>
@@ -43,7 +48,14 @@ NS_ASSUME_NONNULL_BEGIN
          statusBarItem:(BGMStatusBarItem*)inStatusBarItem
             aboutPanel:(NSPanel*)inAboutPanel
  aboutPanelLicenseView:(NSTextView*)inAboutPanelLicenseView
-          userDefaults:(BGMUserDefaults*)inUserDefaults;
+          userDefaults:(BGMUserDefaults*)inUserDefaults
+preferredOutputDevices:(BGMPreferredOutputDevices*)inPreferredOutputDevices
+outputRoutingController:(BGMAppOutputRoutingController*)inOutputRoutingController
+               hotkeys:(BGMHotkeys*)inHotkeys;
+
+// BGMXPCListener isn't constructed yet when this class is -- see BGMTroubleshootMenu's header for
+// why this is a separate, later call instead of an initializer param.
+- (void) setXPCListener:(BGMXPCListener*)xpcListener;
 
 @end
 

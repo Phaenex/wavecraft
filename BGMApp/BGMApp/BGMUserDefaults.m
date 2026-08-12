@@ -38,6 +38,11 @@ static NSString* const kDefaultKeyStatusBarIcon         = @"StatusBarIcon";
 static NSString* const kDefaultKeyPauseDelayMS          = @"PauseDelayMS";
 static NSString* const kDefaultKeyMaxUnpauseDelayMS     = @"MaxUnpauseDelayMS";
 static NSString* const kDefaultKeyHasShownMicExplanation = @"HasShownMicrophonePermissionExplanation";
+static NSString* const kDefaultKeyHotkeysEnabled        = @"HotkeysEnabled";
+static NSString* const kDefaultKeyHasShownHotkeysAXExplanation =
+    @"HasShownHotkeysAccessibilityExplanation";
+static NSString* const kDefaultKeyHotkeyModifierPreset  = @"HotkeyModifierPreset";
+static NSString* const kDefaultKeyHotkeyStepSize        = @"HotkeyStepSize";
 
 // Labels for Keychain Data
 static NSString* const kKeychainLabelGPMDPAuthCode =
@@ -149,6 +154,38 @@ static NSString* const kKeychainLabelGPMDPAuthCode =
 
 - (void) setHasShownMicrophonePermissionExplanation:(BOOL)hasShown {
     [self setBool:kDefaultKeyHasShownMicExplanation to:hasShown];
+}
+
+- (BOOL) hotkeysEnabled {
+    return [self getBool:kDefaultKeyHotkeysEnabled];
+}
+
+- (void) setHotkeysEnabled:(BOOL)enabled {
+    [self setBool:kDefaultKeyHotkeysEnabled to:enabled];
+}
+
+- (BOOL) hasShownHotkeysAccessibilityExplanation {
+    return [self getBool:kDefaultKeyHasShownHotkeysAXExplanation];
+}
+
+- (void) setHasShownHotkeysAccessibilityExplanation:(BOOL)hasShown {
+    [self setBool:kDefaultKeyHasShownHotkeysAXExplanation to:hasShown];
+}
+
+- (NSInteger) hotkeyModifierPreset {
+    return [self getInt:kDefaultKeyHotkeyModifierPreset or:0];
+}
+
+- (void) setHotkeyModifierPreset:(NSInteger)preset {
+    [self setInt:kDefaultKeyHotkeyModifierPreset to:preset];
+}
+
+- (NSInteger) hotkeyStepSize {
+    return [self getInt:kDefaultKeyHotkeyStepSize or:1];  // 1 = BGMHotkeyStepSizeNormal
+}
+
+- (void) setHotkeyStepSize:(NSInteger)stepSize {
+    [self setInt:kDefaultKeyHotkeyStepSize to:stepSize];
 }
 
 - (BGMStatusBarIcon) statusBarIcon {
