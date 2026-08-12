@@ -36,10 +36,10 @@ else
     OK=0
 fi
 
-if launchctl list 2>/dev/null | grep -qi bearisdriving; then
-    pass "BGMXPCHelper is registered with launchd"
+if launchctl print system/com.bearisdriving.BGM.XPCHelper 2>/dev/null | grep -q "state = running"; then
+    pass "BGMXPCHelper is registered with launchd and running"
 else
-    fail "BGMXPCHelper launchd job not found"
+    fail "BGMXPCHelper launchd job not found or not running"
     OK=0
 fi
 
