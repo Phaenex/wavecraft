@@ -461,7 +461,11 @@ UInt32	BGM_Device::Device_GetPropertyDataSize(AudioObjectID inObjectID, pid_t in
             break;
             
         case kAudioObjectPropertyCustomPropertyInfoList:
-            theAnswer = sizeof(AudioServerPlugInCustomPropertyInfo) * 7;
+            // kNumCustomProperties (BGM_Device.h) is also used by Device_GetPropertyData's clamp
+            // below, so the two can't drift apart the way they did when this literally said "* 7"
+            // after AppEQ became the 8th custom property -- see that constant's comment for what
+            // that silently broke.
+            theAnswer = sizeof(AudioServerPlugInCustomPropertyInfo) * kNumCustomProperties;
             break;
             
         case kAudioDeviceCustomPropertyDeviceAudibleState:
@@ -896,9 +900,9 @@ void	BGM_Device::Device_GetPropertyData(AudioObjectID inObjectID, pid_t inClient
             theNumberItemsToFetch = inDataSize / sizeof(AudioServerPlugInCustomPropertyInfo);
 
             //	clamp it to the number of items we have
-            if(theNumberItemsToFetch > 8)
+            if(theNumberItemsToFetch > kNumCustomProperties)
             {
-                theNumberItemsToFetch = 8;
+                theNumberItemsToFetch = kNumCustomProperties;
             }
             
             if(theNumberItemsToFetch > 0)

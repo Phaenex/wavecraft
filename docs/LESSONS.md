@@ -245,3 +245,78 @@ will fail until it re-resolves).
 let the user decide, rather than treating "rename the folder" as a purely mechanical filesystem
 operation — the two options (rename and accept the history split, or keep the path and rebrand only
 in-repo naming/docs) have very different costs and only the user can weigh them.
+
+## A device-wide crash on first real install: two functions that must agree on a count, silently didn't
+
+**Symptom:** the very first real install of the per-app EQ work crashed `BGMApp` on launch, every
+time, non-deterministically-looking from the outside (it happened deep inside a KVO callback for
+`NSWorkspace.runningApplications`, which made it *look* like a race condition or an app-launch
+timing bug). The crash log's own stack-walk was actively misleading: symbolicating the Release
+binary's addresses by hand pointed at unrelated functions (`BGMAppDelegate menuWillOpen:`,
+`BGMAVM_PanSlider setUpWithApp:...`, `BGMOutputDeviceMenuSection dealloc`) that don't call each
+other and had nothing to do with the real cause. **Don't trust hand-symbolicated addresses from an
+optimized Release binary as ground truth** — they can look plausible and still be wrong.
+
+**What actually found it:** relaunching the crashing binary directly from Terminal (rather than via
+LaunchServices) to capture live stderr, which printed the one thing that mattered:
+`Uncaught CAException. Error code: 'who?' (2003332927)` --
+`kAudioHardwareUnknownPropertyError`. That pointed at a specific property being unrecognized, not a
+vague crash. From there, reading `BGM_Device.cpp`'s three dispatch points for
+`kAudioObjectPropertyCustomPropertyInfoList` (the list a HAL client uses to discover which custom
+properties a plugin supports) found it: `Device_GetPropertyData` had grown to fill in 8 entries
+when `kAudioDeviceCustomPropertyAppEQ` was added as the 8th custom property in an earlier session,
+but `Device_GetPropertyDataSize` for the *same selector* was still hardcoded to `sizeof(...) * 7`.
+A well-behaved caller sizes its buffer from the size query, gets a 7-property-sized buffer, and
+`Device_GetPropertyData`'s own clamp (`inDataSize / sizeof(...)`) then silently agrees with that
+undersized buffer and returns only 7 entries -- so the property discovery list never lies loudly,
+it just quietly omits whatever was added after the count went stale. `AudioObjectGetPropertyData`
+for `kAudioDeviceCustomPropertyAppEQ` directly then fails with "unknown property," even though the
+driver's own `Device_GetPropertyData`/`Device_HasProperty`/`Device_IsPropertySettable` all handle
+that selector correctly in isolation -- the bug was never in the property's own dispatch case, it
+was in a *different* property (the meta-property that lists all the others) undercounting.
+
+Root cause, not just the symptom: this was **only reachable with a real HAL round-trip** --
+`BGMDriverTests` mocks nothing about `BGM_Device` itself (it's tested directly, not through a mock
+HAL), but every existing test called `Device_GetPropertyData`/`Device_GetPropertyDataSize`
+independently for the properties it cared about, never through the *discovery* path
+(`kAudioObjectPropertyCustomPropertyInfoList`) the way a real generic HAL client actually finds out
+what properties exist. 22/22 driver tests passed the entire time this bug existed.
+
+**The fix:** corrected the stale `7` to `8`, then replaced both hardcoded numbers (the size query's
+`* 8` and the data-fill clamp's `> 8`) with one shared `#define kNumCustomProperties 8` in
+`BGM_Device.h`, so the two call sites structurally can't drift apart the same way again when a 9th
+property gets added later. Added `BGM_DeviceTests::testCustomPropertyInfoListSizeMatchesActualEntryCount`,
+which fetches the list with a deliberately oversized buffer (so `Device_GetPropertyData`'s own
+clamp can't hide an undercount from the test the way it hides one from a well-behaved real caller),
+asserts the size query and the actual fill agree, and asserts every known custom-property selector
+is actually present in the list. Verified red-then-green: reverted the fix, watched the new test
+fail, reapplied it, watched it pass -- see the global rule about not trusting a new check until it's
+been shown capable of failing.
+
+**How to apply:** any time a HAL/driver-style API has a "how many things exist" query and a
+separate "give me the things" call, treat them as one invariant with two call sites, not two
+independent numbers -- define the count once and reference it from both, and write a test that
+exercises the *discovery* path specifically (oversized buffer, checking the size query and the
+actual fill agree), not just each individual property in isolation. A mocked or narrowly-scoped
+unit test suite passing 100% is not evidence that a real end-to-end round trip works -- it's
+evidence that the paths the tests actually exercise work. The first real install is a genuinely
+different test than any mock, and finding out only there is expected, not a sign the tests were bad
+-- the response is adding the coverage that specific gap revealed, not distrusting testing in
+general.
+
+## Verifying an install means checking the app process is alive, not just its supporting services
+
+**The trap:** after the first `./build_and_install.sh` run, checked that the driver showed up in
+`system_profiler`, that the XPC helper reported `state = running`, and declared the install
+verified. All of that was true, and the app had still crashed on launch -- `ps aux` for
+"Background Music" only showed the driver's `coreaudiod` host process and the XPC helper, not the
+app itself, which was missed on the first pass because the check was "does anything relevant show
+up in ps aux" rather than specifically confirming the foreground app's own process.
+
+**How to apply:** verifying an install of a multi-component system (driver + helper + app here)
+means checking *every* component individually reached a running state, not just the ones that are
+easiest to check or that infrastructure-level tools (`system_profiler`, `launchctl`) surface by
+default. `pgrep -fl` (or equivalent) for the actual app binary's path, specifically, before calling
+an install verified -- and check `~/Library/Logs/DiagnosticReports/` for a crash report matching
+the install's timestamp if the process isn't there, rather than assuming it just hasn't launched
+yet.

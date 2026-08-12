@@ -53,11 +53,16 @@ EQ band count in particular, it's the UI, not the DSP.
 
 ## Needs a human (can't be done by an agent building this)
 
-- **Install and run the full QA sweep.** Nothing in per-app EQ or per-app output routing has been
-  verified against real audio yet — only that it builds clean and the parts that can be unit tested
-  (DSP math, construction/validation) pass. `./build_and_install.sh`, then work through
-  [docs/QA-PLAN.md](docs/QA-PLAN.md) — every menu control, every new-feature edge case, and the
-  app's own error dialogs, in order, nothing marked done without actually watching it happen.
+- **Install and run the full QA sweep.** The first real install (2026-08-12) crashed `BGMApp` on
+  every launch — a real bug, now fixed and pushed (see docs/LESSONS.md's "device-wide crash on
+  first real install" entry: `kAudioObjectPropertyCustomPropertyInfoList`'s size query had gone
+  stale after AppEQ became the 8th custom property). That fix needs a **fresh**
+  `./build_and_install.sh` to actually take effect — re-running it is required, not optional, even
+  if you already installed once today. After that, nothing in per-app EQ or per-app output routing
+  has been verified against real audio yet — only that it builds clean and the parts that can be
+  unit tested (DSP math, construction/validation, and now the property-discovery list) pass. Work
+  through [docs/QA-PLAN.md](docs/QA-PLAN.md) — every menu control, every new-feature edge case, and
+  the app's own error dialogs, in order, nothing marked done without actually watching it happen.
 - **Verify `CATapMuted` actually mutes the routed app's normal output**, not just that the tap
   receives audio (see docs/PROCESS-TAP-ROUTING.md's Phase 1 results — this was the one thing left
   unconfirmed after the proof-of-concept, deferred to a real listening test with two apps and two

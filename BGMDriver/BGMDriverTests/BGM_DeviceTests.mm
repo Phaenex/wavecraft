@@ -219,6 +219,68 @@ TestBGM_Device::TestBGM_Device()
     });
 }
 
+- (void) testCustomPropertyInfoListSizeMatchesActualEntryCount {
+    // Regression test for a real bug found on this fork's first install: Device_GetPropertyData
+    // for kAudioObjectPropertyCustomPropertyInfoList grew to include
+    // kAudioDeviceCustomPropertyAppEQ as an 8th entry, but Device_GetPropertyDataSize for the same
+    // selector was left declaring 7. A well-behaved HAL client sizes its buffer from the size
+    // query, and Device_GetPropertyData's own clamp ("theNumberItemsToFetch =
+    // inDataSize / sizeof(...)") silently agrees with that undersized buffer -- so the mismatch
+    // doesn't fail loudly, it just makes the 8th (and any later) custom property invisible to
+    // property discovery. AudioObjectGetPropertyData for kAudioDeviceCustomPropertyAppEQ then
+    // fails with kAudioHardwareUnknownPropertyError ('who?') for any real HAL client, even though
+    // Device_GetPropertyData itself handles that selector correctly -- confirmed by reproducing
+    // the crash this caused in BGMApp and tracing it back to this exact mismatch.
+    AudioObjectPropertyAddress infoListAddress = {
+        kAudioObjectPropertyCustomPropertyInfoList,
+        kAudioObjectPropertyScopeGlobal,
+        kAudioObjectPropertyElementMain
+    };
+
+    UInt32 declaredSize = testDevice->GetPropertyDataSize(kObjectID_Device, 0, infoListAddress,
+                                                           0, nullptr);
+
+    // Ask for far more entries than we expect, so Device_GetPropertyData's own internal clamp
+    // can't hide an undercount from us the way it would if we naively reused declaredSize as the
+    // buffer size for both calls.
+    const UInt32 kGenerousCount = 32;
+    AudioServerPlugInCustomPropertyInfo buffer[kGenerousCount];
+    UInt32 actualSize;
+
+    testDevice->GetPropertyData(kObjectID_Device, 0, infoListAddress, 0, nullptr, sizeof(buffer),
+                                actualSize, buffer);
+
+    XCTAssertEqual(declaredSize, actualSize,
+                    @"GetPropertyDataSize's declared byte count for the custom property info list "
+                     "must match how many bytes GetPropertyData actually fills in, or a caller "
+                     "that sizes its buffer from the size query silently truncates the list");
+
+    UInt32 numEntries = actualSize / static_cast<UInt32>(sizeof(AudioServerPlugInCustomPropertyInfo));
+    NSMutableSet<NSNumber*>* selectors = [NSMutableSet new];
+    for (UInt32 i = 0; i < numEntries; i++) {
+        [selectors addObject:@(buffer[i].mSelector)];
+    }
+
+    // Every custom property this device implements (see Device_HasProperty) must be discoverable
+    // here, or AudioObjectGetPropertyData fails for it from any real HAL client.
+    NSArray<NSNumber*>* expectedSelectors = @[
+        @(kAudioDeviceCustomPropertyAppVolumes),
+        @(kAudioDeviceCustomPropertyMusicPlayerProcessID),
+        @(kAudioDeviceCustomPropertyMusicPlayerBundleID),
+        @(kAudioDeviceCustomPropertyDeviceIsRunningSomewhereOtherThanBGMApp),
+        @(kAudioDeviceCustomPropertyDeviceAudibleState),
+        @(kAudioDeviceCustomPropertyEnabledOutputControls),
+        @(kAudioDeviceCustomPropertyDebugLoggingEnabled),
+        @(kAudioDeviceCustomPropertyAppEQ),
+    ];
+
+    for (NSNumber* selector in expectedSelectors) {
+        XCTAssertTrue([selectors containsObject:selector],
+                      @"Custom property selector %@ is missing from "
+                       "kAudioObjectPropertyCustomPropertyInfoList", selector);
+    }
+}
+
 // TODO: Performance tests?
 - (void) testPerformanceExample {
     // This is an example of a performance test case.

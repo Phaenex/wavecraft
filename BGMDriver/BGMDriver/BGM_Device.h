@@ -245,6 +245,15 @@ private:
     std::map<UInt32, BGM_AppEQ> mClientEQProcessors;
 
     #define kLoopbackRingBufferFrameSize    16384
+
+    // The number of entries Device_GetPropertyData fills in for
+    // kAudioObjectPropertyCustomPropertyInfoList -- one per custom property this device
+    // implements (see Device_HasProperty). Device_GetPropertyDataSize's case for the same
+    // selector must report this many too; they went out of sync once already when
+    // kAudioDeviceCustomPropertyAppEQ was added as the 8th entry (see the comment on that case in
+    // BGM_Device.cpp), which silently made AppEQ undiscoverable via property introspection. Both
+    // sites reference this one constant now so they can't drift apart the same way again.
+    #define kNumCustomProperties    8
     Float64                     mLoopbackSampleRate;
     CARingBuffer                mLoopbackRingBuffer;
 

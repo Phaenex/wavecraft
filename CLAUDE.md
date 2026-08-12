@@ -42,14 +42,19 @@ xcodebuild -workspace BGM.xcworkspace -scheme "Background Music Device" -configu
 python3 tools/verify-icons.py
 ```
 
-All three targets build clean (Debug and Release). 50/50 unit tests passing as of the per-app EQ
-UI and per-app output routing UI going in (28 BGMAppUnitTests + 22 BGMDriverTests, 0 failures —
-re-run directly via the commands above, not carried over from an older count). No new unit tests
-were added for the EQ/routing UI itself: it's ordinary AppKit/CoreAudio glue code
-(`BGMAppVolumesController`, `BGMOutputDeviceMenuSection`, `BGMPreferredOutputDevices` already
-follow the same pattern), and `BGMTapRouteTests`'s own comment explains why — this test target
-links mocked `CAHALAudioDevice`/`CAHALAudioSystemObject`, so anything that touches a real device or
-`BGMPlayThrough` can't be exercised here regardless of how the test is written.
+All three targets build clean (Debug and Release). 51/51 unit tests passing (28 BGMAppUnitTests +
+23 BGMDriverTests, 0 failures — re-run directly via the commands above, not carried over from an
+older count). The 23rd driver test
+(`BGM_DeviceTests::testCustomPropertyInfoListSizeMatchesActualEntryCount`) is a regression test for
+a real crash found on this fork's first actual install — see docs/LESSONS.md's "device-wide crash
+on first real install" entry. No unit tests were added for the EQ/routing UI itself: it's ordinary
+AppKit/CoreAudio glue code (`BGMAppVolumesController`, `BGMOutputDeviceMenuSection`,
+`BGMPreferredOutputDevices` already follow the same pattern), and `BGMTapRouteTests`'s own comment
+explains why — this test target links mocked `CAHALAudioDevice`/`CAHALAudioSystemObject`, so
+anything that touches a real device or `BGMPlayThrough` can't be exercised here regardless of how
+the test is written. **A fully mocked/isolated test suite passing 100% is not the same claim as
+"works on a real install"** — see that same LESSONS.md entry for exactly how that gap showed up in
+practice.
 
 ## The one step that always needs a human
 
