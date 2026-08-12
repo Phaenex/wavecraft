@@ -28,19 +28,33 @@
 // System Includes
 #import <Cocoa/Cocoa.h>
 
+// Forward Declarations
+@class BGMAppOutputRoutingController;
+
 
 #pragma clang assume_nonnull begin
 
 @interface BGMAppVolumes : NSObject
 
+// Subviews that need it (currently just BGMAVM_OutputRouteButton) read this instead of getting it
+// through the setUpWithApp:context:controller:menuItem: protocol method below, because that
+// method's controller: param is a BGMAppVolumesController specifically -- see this property's use
+// in BGMAVM_OutputRouteButton.
+@property (nonatomic, readonly) BGMAppOutputRoutingController* outputRoutingController;
+
 - (id) initWithController:(BGMAppVolumesController*)inController
                   bgmMenu:(NSMenu*)inMenu
-            appVolumeView:(NSView*)inView;
+            appVolumeView:(NSView*)inView
+  outputRoutingController:(BGMAppOutputRoutingController*)inOutputRoutingController;
 
-// Pass -1 for initialVolume or kAppPanNoValue for initialPan to leave the volume/pan at its default level.
+// Pass -1 for initialVolume or kAppPanNoValue for initialPan to leave the volume/pan at its
+// default level. Pass nil for initialEQBandGains to leave the EQ bands flat (0dB); otherwise it
+// must have exactly kBGMAppEQNumBands elements, in the same order as
+// BGM_AppEQ::kBandCenterFreqs.
 - (void) insertMenuItemForApp:(NSRunningApplication*)app
                 initialVolume:(int)volume
-                   initialPan:(int)pan;
+                   initialPan:(int)pan
+           initialEQBandGains:(NSArray<NSNumber*>* __nullable)gainsDB;
 
 - (void) removeMenuItemForApp:(NSRunningApplication*)app;
 
@@ -90,6 +104,26 @@
 
 - (void) setPanPosition:(int)panPosition;
 
+@end
+
+// One of the kBGMAppEQNumBands per-band gain sliders in an app's extra controls. Each instance is
+// tagged (see the "tag" attribute in the XIB) with its band index, 0...kBGMAppEQNumBands-1, in the
+// same order as BGM_AppEQ::kBandCenterFreqs (BGM_Biquad.h) -- lowest frequency first. Because the
+// driver takes all bands' gains in a single property write (see
+// BGMBackgroundMusicDevice::SetAppEQBandGains), moving one band's slider reads the other bands'
+// current values from its siblings in the same menu item view and sends all of them together.
+@interface BGMAVM_EQBandSlider : NSSlider <BGMAppVolumeMenuItemSubview>
+
+- (void) setGainDB:(float)gainDB;
+
+@end
+
+// The pop-up button in an app's extra controls used to route its audio to a different output
+// device -- see BGMAppOutputRoutingController and docs/PROCESS-TAP-ROUTING.md. Its menu is empty
+// until just before it's shown, when menuNeedsUpdate: asks the routing controller (reached via
+// BGMAppVolumes.outputRoutingController, not the controller: param -- see that property) to
+// rebuild it from the output devices currently connected.
+@interface BGMAVM_OutputRouteButton : NSPopUpButton <BGMAppVolumeMenuItemSubview, NSMenuDelegate>
 @end
 
 #pragma clang assume_nonnull end

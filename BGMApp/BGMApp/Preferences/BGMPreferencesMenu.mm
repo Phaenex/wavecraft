@@ -82,7 +82,7 @@ static NSInteger const kAboutPanelMenuItemTag  = 4;
         // Set up the menu items under the "Status Bar Icon" heading.
         bgmIconMenuItem = [prefsMenu itemWithTag:kBGMIconMenuItemTag];
         bgmIconMenuItem.state =
-                (statusBarItem.icon == BGMFermataStatusBarIcon) ? NSOnState : NSOffState;
+                (statusBarItem.icon == BGMWavecraftStatusBarIcon) ? NSOnState : NSOffState;
         [bgmIconMenuItem setTarget:self];
         [bgmIconMenuItem setAction:@selector(useBGMStatusBarIcon)];
 
@@ -107,7 +107,7 @@ static NSInteger const kAboutPanelMenuItemTag  = 4;
 
 - (void) useBGMStatusBarIcon {
     // Change the icon.
-    statusBarItem.icon = BGMFermataStatusBarIcon;
+    statusBarItem.icon = BGMWavecraftStatusBarIcon;
 
     // Select/deselect the menu items.
     bgmIconMenuItem.state = NSOnState;

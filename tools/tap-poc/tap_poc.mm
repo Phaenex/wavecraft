@@ -137,7 +137,7 @@ int main(int argc, const char* argv[]) {
         desc.mixdown = YES;
         desc.privateTap = YES;
         desc.muteBehavior = CATapMuted;
-        desc.name = @"mac-volume-mixer tap-poc";
+        desc.name = @"Wavecraft tap-poc";
 
         AudioObjectID tapID = kAudioObjectUnknown;
         printf("Calling AudioHardwareCreateProcessTap...\n");
@@ -169,7 +169,7 @@ int main(int argc, const char* argv[]) {
         // Step 3: wrap the tap in a private aggregate device.
         NSDictionary* subTap = @{ @(kAudioSubTapUIDKey) : (__bridge NSString*)tapUID };
         NSDictionary* aggregateDict = @{
-            @(kAudioAggregateDeviceNameKey) : @"mac-volume-mixer tap-poc aggregate",
+            @(kAudioAggregateDeviceNameKey) : @"Wavecraft tap-poc aggregate",
             @(kAudioAggregateDeviceUIDKey) : [[NSUUID UUID] UUIDString],
             @(kAudioAggregateDeviceIsPrivateKey) : @YES,
             @(kAudioAggregateDeviceTapAutoStartKey) : @YES,

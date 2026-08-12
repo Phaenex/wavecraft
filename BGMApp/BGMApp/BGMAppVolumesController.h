@@ -27,6 +27,9 @@
 // System Includes
 #import <Cocoa/Cocoa.h>
 
+// Forward Declarations
+@class BGMAppOutputRoutingController;
+
 
 #pragma clang assume_nonnull begin
 
@@ -39,7 +42,8 @@ typedef struct BGMAppVolumeAndPan {
 
 - (id) initWithMenu:(NSMenu*)menu
       appVolumeView:(NSView*)view
-       audioDevices:(BGMAudioDeviceManager*)audioDevices;
+       audioDevices:(BGMAudioDeviceManager*)audioDevices
+outputRoutingController:(BGMAppOutputRoutingController*)outputRoutingController;
 
 // See BGMBackgroundMusicDevice::SetAppVolume.
 - (void)  setVolume:(SInt32)volume

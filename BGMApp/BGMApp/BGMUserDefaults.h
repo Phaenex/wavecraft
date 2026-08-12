@@ -49,6 +49,11 @@
 // device is at index 0. See BGMPreferredOutputDevices.
 @property NSArray<NSString*>* preferredDeviceUIDs;
 
+// Per-app output routing overrides -- app bundle ID -> the UID of the output device its audio
+// should be routed to instead of BGMDevice's default output. Apps with no entry here aren't
+// overridden. See BGMAppOutputRoutingController and BGMTapRoute.
+@property NSDictionary<NSString*, NSString*>* outputRouteDeviceUIDsByBundleID;
+
 // The (type of) icon to show in the button in the status bar. (The button the user clicks to open
 // BGMApp's main menu.)
 @property BGMStatusBarIcon statusBarIcon;

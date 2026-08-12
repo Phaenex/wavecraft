@@ -17,7 +17,7 @@
 //  BGMTapRoute.mm
 //  BGMApp
 //
-//  Copyright © 2026 mac-volume-mixer contributors
+//  Copyright © 2026 Wavecraft contributors
 //
 
 // Self Include
@@ -112,7 +112,14 @@ void    BGMTapRoute::CreateTapAndAggregateDevice()
             description.mixdown = YES;
             description.privateTap = YES;
             description.muteBehavior = CATapMuted;
-            description.name = [NSString stringWithFormat:@"mac-volume-mixer route: %@",
+            // Without this, the tap stops delivering audio for good once the app process that
+            // owned it at Start() time exits -- quitting and reopening the routed app would
+            // silently break routing until the user reselects it. processRestoreEnabled makes the
+            // tap reattach to whichever process currently owns the bundle ID, so a routing
+            // assignment survives the app being quit and relaunched. Same macOS 26.0+ gate as
+            // description.bundleIDs above -- see docs/PROCESS-TAP-ROUTING.md.
+            description.processRestoreEnabled = YES;
+            description.name = [NSString stringWithFormat:@"Wavecraft route: %@",
                                                             (__bridge NSString*)mAppBundleID.GetCFString()];
 
             AudioObjectID tapID = kAudioObjectUnknown;
@@ -137,7 +144,7 @@ void    BGMTapRoute::CreateTapAndAggregateDevice()
             NSDictionary* subTap = @{ @(kAudioSubTapUIDKey) : (__bridge NSString*)tapUID };
             NSDictionary* aggregateDict = @{
                 @(kAudioAggregateDeviceNameKey) :
-                        [NSString stringWithFormat:@"mac-volume-mixer route aggregate: %@",
+                        [NSString stringWithFormat:@"Wavecraft route aggregate: %@",
                                                     (__bridge NSString*)mAppBundleID.GetCFString()],
                 @(kAudioAggregateDeviceUIDKey) : [[NSUUID UUID] UUIDString],
                 @(kAudioAggregateDeviceIsPrivateKey) : @YES,

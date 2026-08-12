@@ -37,13 +37,13 @@
 #pragma clang assume_nonnull begin
 
 typedef NS_ENUM(NSInteger, BGMStatusBarIcon) {
-    BGMFermataStatusBarIcon = 0,
+    BGMWavecraftStatusBarIcon = 0,
     BGMVolumeStatusBarIcon
 };
 
-static BGMStatusBarIcon const kBGMStatusBarIconMinValue     = BGMFermataStatusBarIcon;
+static BGMStatusBarIcon const kBGMStatusBarIconMinValue     = BGMWavecraftStatusBarIcon;
 static BGMStatusBarIcon const kBGMStatusBarIconMaxValue     = BGMVolumeStatusBarIcon;
-static BGMStatusBarIcon const kBGMStatusBarIconDefaultValue = BGMFermataStatusBarIcon;
+static BGMStatusBarIcon const kBGMStatusBarIconDefaultValue = BGMWavecraftStatusBarIcon;
 
 @interface BGMStatusBarItem : NSObject
 
@@ -51,9 +51,12 @@ static BGMStatusBarIcon const kBGMStatusBarIconDefaultValue = BGMFermataStatusBa
                  audioDevices:(BGMAudioDeviceManager*)devices
                  userDefaults:(BGMUserDefaults*)defaults;
 
-// Set this to BGMFermataStatusBarIcon to change the icon to the Background Music logo.
+// Set this to BGMWavecraftStatusBarIcon to change the icon to the Wavecraft logo (four bars,
+// replaced the upstream project's fermata-shaped icon here -- see docs/LESSONS.md for why: it
+// read as a microphone/recording icon at status-bar size, which is exactly the wrong impression
+// for an app that needs "microphone" permission for an unrelated reason).
 //
-// Set this to BGMFermataStatusBarIcon to change the icon to a volume icon. This icon has the
+// Set this to BGMVolumeStatusBarIcon to change the icon to a volume icon. This icon has the
 // advantage of indicating the volume level, but we can't make it the default because it looks the
 // same as the icon for the macOS volume status bar item.
 @property BGMStatusBarIcon icon;

@@ -31,6 +31,7 @@
 #import "BGM_Types.h"
 #import "BGM_Utils.h"
 #import "BGMAppDelegate.h"
+#import "BGMAppOutputRoutingController.h"
 
 // PublicUtility Includes
 #import "CADebugMacros.h"
@@ -40,12 +41,24 @@ static float const     kSlidersSnapWithin          = 5;
 static CGFloat const   kAppVolumeViewInitialHeight = 20;
 static NSString* const kMoreAppsMenuTitle          = @"More Apps";
 
+// Labels for the EQ band sliders' tooltips/accessibility descriptions. Must be in the same order
+// (lowest frequency first) as BGM_AppEQ::kBandCenterFreqs in BGM_Biquad.h -- there's no shared
+// source of truth between the driver's C++ constants and this Objective-C UI code, so if the
+// driver's bands ever change, these need to be updated to match.
+//
+// A plain C array rather than an NSArray literal because this file is compiled as Objective-C
+// (not Objective-C++), where an @[...] literal isn't a compile-time constant and so can't
+// initialize a file-scope static.
+static const char* const kEQBandFreqLabels[] = { "60 Hz", "250 Hz", "1 kHz", "4 kHz", "12 kHz" };
+static const NSUInteger kEQBandFreqLabelsCount =
+    sizeof(kEQBandFreqLabels) / sizeof(kEQBandFreqLabels[0]);
+
 @implementation BGMAppVolumes {
     BGMAppVolumesController* controller;
 
     NSMenu* bgmMenu;
     NSMenu* moreAppsMenu;
-    
+
     NSView* appVolumeView;
     CGFloat appVolumeViewFullHeight;
 
@@ -53,9 +66,12 @@ static NSString* const kMoreAppsMenuTitle          = @"More Apps";
     NSInteger numMenuItems;
 }
 
+@synthesize outputRoutingController = outputRoutingController;
+
 - (id) initWithController:(BGMAppVolumesController*)inController
                   bgmMenu:(NSMenu*)inMenu
-            appVolumeView:(NSView*)inView {
+            appVolumeView:(NSView*)inView
+  outputRoutingController:(BGMAppOutputRoutingController*)inOutputRoutingController {
     if ((self = [super init])) {
         controller = inController;
         bgmMenu = inMenu;
@@ -63,6 +79,7 @@ static NSString* const kMoreAppsMenuTitle          = @"More Apps";
         appVolumeView = inView;
         appVolumeViewFullHeight = appVolumeView.frame.size.height;
         numMenuItems = 0;
+        outputRoutingController = inOutputRoutingController;
 
         // Add the More Apps menu to the main menu.
         NSMenuItem* moreAppsMenuItem =
@@ -88,7 +105,8 @@ static NSString* const kMoreAppsMenuTitle          = @"More Apps";
 
 - (void) insertMenuItemForApp:(NSRunningApplication*)app
                 initialVolume:(int)volume
-                   initialPan:(int)pan {
+                   initialPan:(int)pan
+           initialEQBandGains:(NSArray<NSNumber*>* __nullable)gainsDB {
     NSMenuItem* appVolItem = [self createBlankAppVolumeMenuItem];
 
     // Look through the menu item's subviews for the ones we want to set up
@@ -106,6 +124,10 @@ static NSString* const kMoreAppsMenuTitle          = @"More Apps";
 
     // Set the slider to the volume for this app if we got one from the driver
     [self setVolumeOfMenuItem:appVolItem relativeVolume:volume panPosition:pan];
+
+    if (gainsDB) {
+        [self setEQBandGainsOfMenuItem:appVolItem gainsDB:BGMNN(gainsDB)];
+    }
 
     // NSMenuItem didn't implement NSAccessibility before OS X SDK 10.12.
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= 101200  // MAC_OS_X_VERSION_10_12
@@ -221,6 +243,17 @@ static NSString* const kMoreAppsMenuTitle          = @"More Apps";
         // Set the pan position.
         if (pan != kAppPanNoValue && [subview isKindOfClass:[BGMAVM_PanSlider class]]) {
             [(BGMAVM_PanSlider*)subview setPanPosition:pan];
+        }
+    }
+}
+
+- (void) setEQBandGainsOfMenuItem:(NSMenuItem*)menuItem gainsDB:(NSArray<NSNumber*>*)gainsDB {
+    for (NSView* subview in menuItem.view.subviews) {
+        if ([subview isKindOfClass:[BGMAVM_EQBandSlider class]]) {
+            NSInteger band = ((BGMAVM_EQBandSlider*)subview).tag;
+            if (band >= 0 && (NSUInteger)band < gainsDB.count) {
+                [(BGMAVM_EQBandSlider*)subview setGainDB:gainsDB[(NSUInteger)band].floatValue];
+            }
         }
     }
 }
@@ -650,6 +683,151 @@ static NSString* const kMoreAppsMenuTitle          = @"More Apps";
 
     // The values from our sliders are in [kAppPanLeftRawValue, kAppPanRightRawValue] already.
     [controller setPanPosition:self.intValue forAppWithProcessID:appProcessID bundleID:appBundleID];
+}
+
+@end
+
+@implementation BGMAVM_EQBandSlider {
+    pid_t appProcessID;
+    NSString* __nullable appBundleID;
+    BGMAppVolumesController* controller;
+}
+
+- (void) setUpWithApp:(NSRunningApplication*)app
+              context:(BGMAppVolumes*)ctx
+           controller:(BGMAppVolumesController*)ctrl
+             menuItem:(NSMenuItem*)menuItem {
+    #pragma unused (ctx, menuItem)
+
+    controller = ctrl;
+
+    self.target = self;
+    self.action = @selector(appEQGainChanged);
+
+    appProcessID = app.processIdentifier;
+    appBundleID = app.bundleIdentifier;
+
+    self.minValue = kBGMAppEQMinGainDB;
+    self.maxValue = kBGMAppEQMaxGainDB;
+
+    NSString* freqLabel =
+        (self.tag >= 0 && (NSUInteger)self.tag < kEQBandFreqLabelsCount) ?
+            @(kEQBandFreqLabels[(NSUInteger)self.tag]) : @"";
+
+    self.toolTip = [NSString stringWithFormat:@"%@ EQ gain for %@", freqLabel, [app localizedName]];
+
+    if ([self respondsToSelector:@selector(setAccessibilityTitle:)]) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wpartial-availability"
+        self.accessibilityTitle = self.toolTip;
+#pragma clang diagnostic pop
+    }
+}
+
+- (void) setGainDB:(float)gainDB {
+    self.floatValue = gainDB;
+}
+
+// Returns this slider's siblings (including itself), sorted by band index (their IB "tag"), so
+// callers always send the driver a complete, correctly-ordered set of band gains.
+- (NSArray<BGMAVM_EQBandSlider*>*) siblingBandSlidersIncludingSelf {
+    NSMutableArray<BGMAVM_EQBandSlider*>* sliders = [NSMutableArray new];
+
+    for (NSView* view in self.superview.subviews) {
+        if ([view isKindOfClass:[BGMAVM_EQBandSlider class]]) {
+            [sliders addObject:(BGMAVM_EQBandSlider*)view];
+        }
+    }
+
+    [sliders sortUsingComparator:^NSComparisonResult(BGMAVM_EQBandSlider* a, BGMAVM_EQBandSlider* b) {
+        return [@(a.tag) compare:@(b.tag)];
+    }];
+
+    return sliders;
+}
+
+- (void) appEQGainChanged {
+    NSArray<BGMAVM_EQBandSlider*>* sliders = [self siblingBandSlidersIncludingSelf];
+
+    if (sliders.count != kBGMAppEQNumBands) {
+        DebugMsg("BGMAppVolumes::appEQGainChanged: Expected %d EQ band sliders, found %lu",
+                 kBGMAppEQNumBands,
+                 (unsigned long)sliders.count);
+        return;
+    }
+
+    NSMutableArray<NSNumber*>* gainsDB = [NSMutableArray arrayWithCapacity:sliders.count];
+    for (BGMAVM_EQBandSlider* slider in sliders) {
+        [gainsDB addObject:@(slider.floatValue)];
+    }
+
+    DebugMsg("BGMAppVolumes::appEQGainChanged: EQ gains for %s (%d) changed to %s",
+             appBundleID.UTF8String,
+             appProcessID,
+             gainsDB.description.UTF8String);
+
+    [controller setEQBandGains:gainsDB forAppWithProcessID:appProcessID bundleID:appBundleID];
+}
+
+@end
+
+@implementation BGMAVM_OutputRouteButton {
+    NSString* __nullable appBundleID;
+    NSString* __nullable appName;
+    BGMAppOutputRoutingController* routingController;
+}
+
+- (void) setUpWithApp:(NSRunningApplication*)app
+              context:(BGMAppVolumes*)ctx
+           controller:(BGMAppVolumesController*)ctrl
+             menuItem:(NSMenuItem*)menuItem {
+    #pragma unused (ctrl, menuItem)
+
+    appBundleID = app.bundleIdentifier;
+    appName = app.localizedName;
+    routingController = ctx.outputRoutingController;
+
+    self.target = self;
+    self.action = @selector(deviceSelected);
+    self.menu.delegate = self;
+    self.pullsDown = NO;
+
+    NSString* toolTip =
+        [NSString stringWithFormat:@"Route %@'s audio to a different output device",
+                                    appName ? appName : @"this app"];
+    self.toolTip = toolTip;
+
+    if ([self respondsToSelector:@selector(setAccessibilityTitle:)]) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wpartial-availability"
+        self.accessibilityTitle = toolTip;
+#pragma clang diagnostic pop
+    }
+}
+
+// NSMenuDelegate. Rebuilds this button's menu from the currently-connected output devices right
+// before it's shown, so it's never stale (a device plugged/unplugged since the menu was last
+// opened, or the routing state changing from elsewhere).
+- (void) menuNeedsUpdate:(NSMenu*)menu {
+    #pragma unused (menu)
+
+    if (appBundleID) {
+        [routingController populateMenuForButton:self forBundleID:BGMNN(appBundleID)];
+    }
+}
+
+- (void) deviceSelected {
+    if (!appBundleID) {
+        return;
+    }
+
+    // The "Default" item has no representedObject; every other item's is the device's UID -- see
+    // BGMAppOutputRoutingController::populateMenuForButton:forBundleID:.
+    NSString* __nullable deviceUID = self.selectedItem.representedObject;
+
+    [routingController userSelectedDeviceUID:deviceUID
+                          forAppWithBundleID:BGMNN(appBundleID)
+                                     appName:appName];
 }
 
 @end

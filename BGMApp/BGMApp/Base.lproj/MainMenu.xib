@@ -82,16 +82,16 @@
             <point key="canvasLocation" x="-184" y="-69.5"/>
         </menu>
         <customView wantsLayer="YES" id="MWB-XH-kFI">
-            <rect key="frame" x="0.0" y="0.0" width="269" height="47"/>
+            <rect key="frame" x="0.0" y="0.0" width="269" height="147"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
                 <imageView identifier="AppIcon" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="W04-iT-IUw" customClass="BGMAVM_AppIcon">
-                    <rect key="frame" x="20" y="27" width="16" height="16"/>
+                    <rect key="frame" x="20" y="127" width="16" height="16"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" id="6QQ-oO-HxF"/>
                 </imageView>
                 <button springLoaded="YES" verticalHuggingPriority="750" id="3qR-sO-pXN" customClass="BGMAVM_VolumeMute">
-                    <rect key="frame" x="139" y="24.5" width="21.5" height="21"/>
+                    <rect key="frame" x="139" y="124.5" width="21.5" height="21"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="NSAddTemplate" imagePosition="overlaps" alignment="center" lineBreakMode="truncatingTail" state="on" imageScaling="proportionallyDown" inset="2" id="xzH-YY-5On">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -99,19 +99,19 @@
                     </buttonCell>
                 </button>
                 <slider verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="I1l-Ci-4md" customClass="BGMAVM_VolumeSlider">
-                    <rect key="frame" x="163" y="27" width="74" height="15"/>
+                    <rect key="frame" x="163" y="127" width="74" height="15"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <sliderCell key="cell" controlSize="mini" continuous="YES" state="on" alignment="left" maxValue="100" doubleValue="50" tickMarkPosition="above" sliderType="linear" id="Jmg-df-9Xl"/>
                     <accessibility description="Volume"/>
                 </slider>
                 <slider toolTip="Pan" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2mh-uO-kOV" customClass="BGMAVM_PanSlider">
-                    <rect key="frame" x="163" y="7" width="74" height="15"/>
+                    <rect key="frame" x="163" y="107" width="74" height="15"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <sliderCell key="cell" controlSize="mini" continuous="YES" state="on" alignment="left" minValue="-100" maxValue="100" tickMarkPosition="below" numberOfTickMarks="1" sliderType="linear" id="ccM-Mt-93g"/>
                     <accessibility description="Pan"/>
                 </slider>
                 <button tag="1" springLoaded="YES" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="vTG-n6-GxY" customClass="BGMAVM_ShowMoreControlsButton">
-                    <rect key="frame" x="243" y="27" width="16" height="17"/>
+                    <rect key="frame" x="243" y="127" width="16" height="17"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <contentFilters>
                         <ciFilter name="CIAffineTransform">
@@ -127,7 +127,7 @@
                     </buttonCell>
                 </button>
                 <textField identifier="PanLeft" toolTip="Pan" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="9jc-9i-jw2">
-                    <rect key="frame" x="162" y="-1" width="12" height="17"/>
+                    <rect key="frame" x="162" y="99" width="12" height="17"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="L" id="hgE-7A-bez">
                         <font key="font" metaFont="menu" size="9"/>
@@ -136,7 +136,7 @@
                     </textFieldCell>
                 </textField>
                 <textField identifier="PanRight" toolTip="Pan" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1lZ-hX-6Kl">
-                    <rect key="frame" x="228" y="-1" width="12" height="17"/>
+                    <rect key="frame" x="228" y="99" width="12" height="17"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="R" id="lzr-NO-0Na">
                         <font key="font" metaFont="menu" size="9"/>
@@ -145,7 +145,7 @@
                     </textFieldCell>
                 </textField>
                 <textField identifier="AppName" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Xmd-bg-huG" customClass="BGMAVM_AppNameLabel">
-                    <rect key="frame" x="44" y="27" width="87" height="14"/>
+                    <rect key="frame" x="44" y="127" width="87" height="14"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" controlSize="small" lineBreakMode="truncatingTail" allowsUndo="NO" sendsActionOnEndEditing="YES" alignment="left" title="App name here" usesSingleLineMode="YES" id="ZHF-ZW-Oqg">
                         <font key="font" metaFont="message" size="11"/>
@@ -153,6 +153,94 @@
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
+                <slider tag="4" toolTip="12 kHz EQ band" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="eq4-Sl-001" customClass="BGMAVM_EQBandSlider">
+                    <rect key="frame" x="163" y="85" width="74" height="12"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    <sliderCell key="cell" controlSize="mini" continuous="YES" state="on" alignment="left" minValue="-12" maxValue="12" tickMarkPosition="below" numberOfTickMarks="1" sliderType="linear" id="eq4-Ce-001"/>
+                    <accessibility description="12 kHz EQ band"/>
+                </slider>
+                <textField toolTip="12 kHz EQ band" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="eq4-Lb-001">
+                    <rect key="frame" x="241" y="85" width="26" height="12"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="12k" id="eq4-Cl-001">
+                        <font key="font" metaFont="menu" size="9"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <slider tag="3" toolTip="4 kHz EQ band" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="eq3-Sl-001" customClass="BGMAVM_EQBandSlider">
+                    <rect key="frame" x="163" y="70" width="74" height="12"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    <sliderCell key="cell" controlSize="mini" continuous="YES" state="on" alignment="left" minValue="-12" maxValue="12" tickMarkPosition="below" numberOfTickMarks="1" sliderType="linear" id="eq3-Ce-001"/>
+                    <accessibility description="4 kHz EQ band"/>
+                </slider>
+                <textField toolTip="4 kHz EQ band" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="eq3-Lb-001">
+                    <rect key="frame" x="241" y="70" width="26" height="12"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="4k" id="eq3-Cl-001">
+                        <font key="font" metaFont="menu" size="9"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <slider tag="2" toolTip="1 kHz EQ band" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="eq2-Sl-001" customClass="BGMAVM_EQBandSlider">
+                    <rect key="frame" x="163" y="55" width="74" height="12"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    <sliderCell key="cell" controlSize="mini" continuous="YES" state="on" alignment="left" minValue="-12" maxValue="12" tickMarkPosition="below" numberOfTickMarks="1" sliderType="linear" id="eq2-Ce-001"/>
+                    <accessibility description="1 kHz EQ band"/>
+                </slider>
+                <textField toolTip="1 kHz EQ band" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="eq2-Lb-001">
+                    <rect key="frame" x="241" y="55" width="26" height="12"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="1k" id="eq2-Cl-001">
+                        <font key="font" metaFont="menu" size="9"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <slider tag="1" toolTip="250 Hz EQ band" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="eq1-Sl-001" customClass="BGMAVM_EQBandSlider">
+                    <rect key="frame" x="163" y="40" width="74" height="12"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    <sliderCell key="cell" controlSize="mini" continuous="YES" state="on" alignment="left" minValue="-12" maxValue="12" tickMarkPosition="below" numberOfTickMarks="1" sliderType="linear" id="eq1-Ce-001"/>
+                    <accessibility description="250 Hz EQ band"/>
+                </slider>
+                <textField toolTip="250 Hz EQ band" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="eq1-Lb-001">
+                    <rect key="frame" x="241" y="40" width="26" height="12"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="250" id="eq1-Cl-001">
+                        <font key="font" metaFont="menu" size="9"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <slider tag="0" toolTip="60 Hz EQ band" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="eq0-Sl-001" customClass="BGMAVM_EQBandSlider">
+                    <rect key="frame" x="163" y="25" width="74" height="12"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    <sliderCell key="cell" controlSize="mini" continuous="YES" state="on" alignment="left" minValue="-12" maxValue="12" tickMarkPosition="below" numberOfTickMarks="1" sliderType="linear" id="eq0-Ce-001"/>
+                    <accessibility description="60 Hz EQ band"/>
+                </slider>
+                <textField toolTip="60 Hz EQ band" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="eq0-Lb-001">
+                    <rect key="frame" x="241" y="25" width="26" height="12"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="60" id="eq0-Cl-001">
+                        <font key="font" metaFont="menu" size="9"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <popUpButton toolTip="Route this app's audio to a different output device" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="rte-Bt-001" customClass="BGMAVM_OutputRouteButton">
+                    <rect key="frame" x="44" y="0" width="199" height="18"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    <popUpButtonCell key="cell" type="push" title="Default" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" controlSize="small" inset="2" pullsDown="NO" selectedItem="rte-It-001" id="rte-Ce-001">
+                        <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                        <font key="font" metaFont="menu" size="10"/>
+                        <menu key="menu" id="rte-Mn-001">
+                            <items>
+                                <menuItem title="Default" state="on" id="rte-It-001"/>
+                            </items>
+                        </menu>
+                    </popUpButtonCell>
+                </popUpButton>
             </subviews>
             <point key="canvasLocation" x="116.5" y="-39"/>
         </customView>
@@ -211,7 +299,7 @@
                         <shadow key="shadow">
                             <color key="color" white="0.0" alpha="1" colorSpace="calibratedWhite"/>
                         </shadow>
-                        <imageCell key="cell" refusesFirstResponder="YES" alignment="left" animates="YES" imageScaling="proportionallyUpOrDown" image="FermataIcon" id="dBU-ZS-ZzA"/>
+                        <imageCell key="cell" refusesFirstResponder="YES" alignment="left" animates="YES" imageScaling="proportionallyUpOrDown" image="WavecraftIcon" id="dBU-ZS-ZzA"/>
                     </imageView>
                     <imageView wantsLayer="YES" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="R1R-Rd-xPC">
                         <rect key="frame" x="116" y="155" width="150" height="150"/>
@@ -219,7 +307,7 @@
                         <shadow key="shadow">
                             <color key="color" white="0.0" alpha="1" colorSpace="calibratedWhite"/>
                         </shadow>
-                        <imageCell key="cell" refusesFirstResponder="YES" alignment="left" animates="YES" imageScaling="proportionallyUpOrDown" image="FermataIcon" id="1VP-dU-RCe"/>
+                        <imageCell key="cell" refusesFirstResponder="YES" alignment="left" animates="YES" imageScaling="proportionallyUpOrDown" image="WavecraftIcon" id="1VP-dU-RCe"/>
                     </imageView>
                     <scrollView fixedFrame="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="eqz-ap-PAC">
                         <rect key="frame" x="415" y="45" width="567" height="245"/>
@@ -353,7 +441,7 @@
         </customView>
     </objects>
     <resources>
-        <image name="FermataIcon" width="284" height="284"/>
+        <image name="WavecraftIcon" width="284" height="284"/>
         <image name="NSAddTemplate" width="18" height="17"/>
         <image name="NSComputer" width="32" height="32"/>
         <image name="buttonCell:IXo-C7-3uE:image" width="1" height="1">

@@ -26,6 +26,7 @@
 
 // Local Includes
 #import "BGM_Utils.h"
+#import "BGMAppOutputRoutingController.h"
 #import "BGMAppVolumes.h"
 #import "BGMAppVolumesController.h"
 #import "BGMAutoPauseMusic.h"
@@ -72,6 +73,10 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
     BGMDebugLoggingMenuItem* debugLoggingMenuItem;
     BGMXPCListener* xpcListener;
     BGMPreferredOutputDevices* preferredOutputDevices;
+
+    // Owns the per-app output-device routing overrides (see BGMTapRoute). Created before the app
+    // volumes menu items so their output-route pop-up buttons have it to hand at setup time.
+    BGMAppOutputRoutingController* outputRoutingController;
 }
 
 @synthesize audioDevices = audioDevices;
@@ -369,10 +374,18 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
 
     [self.bgmMenu insertItem:systemSoundsVolume.menuItem atIndex:(headingIdx + 2)];
 
+    // Owns per-app output-device routing overrides. Created here (rather than earlier, alongside
+    // audioDevices) because it doesn't need to exist until there are app volume menu items whose
+    // output-route pop-up buttons can use it, and restoring persisted routes needs userDefaults,
+    // which isn't set up until awakeFromNib.
+    outputRoutingController =
+        [[BGMAppOutputRoutingController alloc] initWithUserDefaults:userDefaults];
+
     // Add the app volumes to the menu.
     appVolumes = [[BGMAppVolumesController alloc] initWithMenu:self.bgmMenu
                                                  appVolumeView:self.appVolumeView
-                                                  audioDevices:audioDevices];
+                                                  audioDevices:audioDevices
+                                       outputRoutingController:outputRoutingController];
 }
 
 - (void) applicationWillTerminate:(NSNotification*)aNotification {

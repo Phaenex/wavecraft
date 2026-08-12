@@ -41,7 +41,7 @@ static CGFloat const kVolumeIconAdditionalVerticalPadding = 0.075;
     // User settings and data.
     BGMUserDefaults* userDefaults;
 
-    NSImage* fermataIcon;
+    NSImage* wavecraftIcon;
     NSImage* volumeIcon0SoundWaves;
     NSImage* volumeIcon1SoundWave;
     NSImage* volumeIcon2SoundWaves;
@@ -124,7 +124,7 @@ static CGFloat const kVolumeIconAdditionalVerticalPadding = 0.075;
 
 - (void) initIcons {
     // Load the icons.
-    fermataIcon = [NSImage imageNamed:@"FermataIcon"];
+    wavecraftIcon = [NSImage imageNamed:@"WavecraftIcon"];
     if (@available(macOS 11.0, *)) {
         volumeIcon0SoundWaves = [NSImage imageWithSystemSymbolName:@"speaker.fill" accessibilityDescription:nil];
         volumeIcon1SoundWave = [NSImage imageWithSystemSymbolName:@"speaker.wave.1.fill" accessibilityDescription:nil];
@@ -152,8 +152,8 @@ static CGFloat const kVolumeIconAdditionalVerticalPadding = 0.075;
 
     CGFloat heightMinusPadding = statusBarItemFrame.size.height * (1 - kStatusBarIconPadding);
 
-    // The fermata icon has equal width and height.
-    [fermataIcon setSize:NSMakeSize(heightMinusPadding, heightMinusPadding)];
+    // The Wavecraft icon has equal width and height.
+    [wavecraftIcon setSize:NSMakeSize(heightMinusPadding, heightMinusPadding)];
 
     // The volume icons are all the same width and height.
     CGFloat volumeIconWidthToHeightRatio =
@@ -168,7 +168,7 @@ static CGFloat const kVolumeIconAdditionalVerticalPadding = 0.075;
 
     // Make the icons "template images" so they get drawn colour-inverted when they're highlighted
     // or the system is in dark mode.
-    [fermataIcon setTemplate:YES];
+    [wavecraftIcon setTemplate:YES];
     [volumeIcon0SoundWaves setTemplate:YES];
     [volumeIcon1SoundWave setTemplate:YES];
     [volumeIcon2SoundWaves setTemplate:YES];
@@ -205,8 +205,8 @@ static CGFloat const kVolumeIconAdditionalVerticalPadding = 0.075;
 
     // Change the icon (i.e. the image). Dispatch this to the main thread because it changes the UI.
     dispatch_async(dispatch_get_main_queue(), ^{
-        if (_icon == BGMFermataStatusBarIcon) {
-            [self setImage:fermataIcon];
+        if (_icon == BGMWavecraftStatusBarIcon) {
+            [self setImage:wavecraftIcon];
 
             // If the icon was greyed out, change it back.
             if ([BGMStatusBarItem buttonAvailable]) {

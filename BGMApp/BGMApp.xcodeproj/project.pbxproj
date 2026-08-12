@@ -97,6 +97,7 @@
 		1C9258472090287F00B8D3A6 /* BGMGooglePlayMusicDesktopPlayerConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = 1C9258462090287F00B8D3A6 /* BGMGooglePlayMusicDesktopPlayerConnection.m */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMApp-BGMGooglePlayMusicDesktopPlayerConnection.m"; }; };
 		1C9258482090287F00B8D3A6 /* BGMGooglePlayMusicDesktopPlayerConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = 1C9258462090287F00B8D3A6 /* BGMGooglePlayMusicDesktopPlayerConnection.m */; };
 		1C9258492090287F00B8D3A6 /* BGMGooglePlayMusicDesktopPlayerConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = 1C9258462090287F00B8D3A6 /* BGMGooglePlayMusicDesktopPlayerConnection.m */; };
+		1C930E4EC593B2BA17261BC0 /* BGMAppOutputRoutingController.h in Sources */ = {isa = PBXBuildFile; fileRef = 0A6812F6788CC089B61EB752 /* BGMAppOutputRoutingController.h */; };
 		1CACCF391F3175AD007F86CA /* BGMBackgroundMusicDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CACCF371F3175AD007F86CA /* BGMBackgroundMusicDevice.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMApp-BGMBackgroundMusicDevice.cpp"; }; };
 		1CACCF3A1F334447007F86CA /* BGMBackgroundMusicDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CACCF371F3175AD007F86CA /* BGMBackgroundMusicDevice.cpp */; };
 		1CACCF3B1F334450007F86CA /* BGMBackgroundMusicDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CACCF371F3175AD007F86CA /* BGMBackgroundMusicDevice.cpp */; };
@@ -225,13 +226,20 @@
 		27FB8C2F1DE468320084DB9D /* BGM_Utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27FB8C2E1DE468320084DB9D /* BGM_Utils.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMApp-BGM_Utils.cpp"; }; };
 		27FB8C301DE4758A0084DB9D /* BGMPlayThrough.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C1962E51BC94E91008A4DF7 /* BGMPlayThrough.cpp */; };
 		27FB8C311DE4758A0084DB9D /* BGM_Utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27FB8C2E1DE468320084DB9D /* BGM_Utils.cpp */; };
+		2E49E8A7501B969DFD9089DA /* BGMAppOutputRoutingController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7F576613B4F7116C9498D469 /* BGMAppOutputRoutingController.mm */; };
 		3043E0DE87BDC97C8EBECB26 /* BGMTapRoute.h in Sources */ = {isa = PBXBuildFile; fileRef = BE76D7BB26DD487A9B338F66 /* BGMTapRoute.h */; };
 		3F14DC51C6BA44FD50EB3D99 /* BGMTapRoute.mm in Sources */ = {isa = PBXBuildFile; fileRef = F1147BF558DE55DB68E2BFE8 /* BGMTapRoute.mm */; };
+		5D5FCE844C238D835B99D29B /* BGMAppOutputRoutingController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7F576613B4F7116C9498D469 /* BGMAppOutputRoutingController.mm */; };
 		5D8700DE876C53F534E5BE48 /* BGMTapRouteTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5BCEE17D46D93500306CAD10 /* BGMTapRouteTests.mm */; };
+		64367B6B93CB2E6B49FC712D /* BGMAppOutputRoutingController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7F576613B4F7116C9498D469 /* BGMAppOutputRoutingController.mm */; };
 		687376D058B8777882E6E168 /* BGMTapRoute.h in Sources */ = {isa = PBXBuildFile; fileRef = BE76D7BB26DD487A9B338F66 /* BGMTapRoute.h */; };
+		88C5AE727EE412AE003D036C /* BGMTapRoute.mm in Sources */ = {isa = PBXBuildFile; fileRef = F1147BF558DE55DB68E2BFE8 /* BGMTapRoute.mm */; };
 		9E129A412602AE620005851B /* BGMASApplication.m in Sources */ = {isa = PBXBuildFile; fileRef = 9E129A402602AE620005851B /* BGMASApplication.m */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMApp-BGMASApplication.m"; }; };
 		9E542C7026057FBA0016C0B5 /* BGMASApplication.m in Sources */ = {isa = PBXBuildFile; fileRef = 9E129A402602AE620005851B /* BGMASApplication.m */; };
+		A7275976027BC34764480F06 /* BGMAppOutputRoutingController.h in Sources */ = {isa = PBXBuildFile; fileRef = 0A6812F6788CC089B61EB752 /* BGMAppOutputRoutingController.h */; };
 		B3BFDC172B31A6B1E58D7EB1 /* BGMTapRoute.mm in Sources */ = {isa = PBXBuildFile; fileRef = F1147BF558DE55DB68E2BFE8 /* BGMTapRoute.mm */; };
+		C38C8DF1D49B7482D2AFA3A5 /* BGMTapRoute.h in Sources */ = {isa = PBXBuildFile; fileRef = BE76D7BB26DD487A9B338F66 /* BGMTapRoute.h */; };
+		D7C3CD30199EE345C711959C /* BGMAppOutputRoutingController.h in Sources */ = {isa = PBXBuildFile; fileRef = 0A6812F6788CC089B61EB752 /* BGMAppOutputRoutingController.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -252,6 +260,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		0A6812F6788CC089B61EB752 /* BGMAppOutputRoutingController.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = BGMAppOutputRoutingController.h; sourceTree = "<group>"; };
 		19FE70CF6C93F5007940CE91 /* BGMMusic.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BGMMusic.h; path = "Music Players/BGMMusic.h"; sourceTree = "<group>"; };
 		19FE7179EBFA116F3861E79D /* BGMVolumeChangeListener.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BGMVolumeChangeListener.cpp; sourceTree = "<group>"; };
 		19FE71BCD79E7246F7345C16 /* BGMThreadSafetyAnalysis.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BGMThreadSafetyAnalysis.h; path = ../SharedSource/BGMThreadSafetyAnalysis.h; sourceTree = SOURCE_ROOT; };
@@ -441,6 +450,7 @@
 		27F7D4911D2484A300821C4B /* Decibel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Decibel.h; path = "Music Players/Decibel.h"; sourceTree = "<group>"; };
 		27FB8C2E1DE468320084DB9D /* BGM_Utils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BGM_Utils.cpp; path = ../SharedSource/BGM_Utils.cpp; sourceTree = "<group>"; };
 		5BCEE17D46D93500306CAD10 /* BGMTapRouteTests.mm */ = {isa = PBXFileReference; includeInIndex = 1; name = BGMTapRouteTests.mm; path = UnitTests/BGMTapRouteTests.mm; sourceTree = "<group>"; };
+		7F576613B4F7116C9498D469 /* BGMAppOutputRoutingController.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = BGMAppOutputRoutingController.mm; sourceTree = "<group>"; };
 		9E129A3F2602AE620005851B /* BGMASApplication.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BGMASApplication.h; path = Scripting/BGMASApplication.h; sourceTree = "<group>"; };
 		9E129A402602AE620005851B /* BGMASApplication.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BGMASApplication.m; path = Scripting/BGMASApplication.m; sourceTree = "<group>"; };
 		BE76D7BB26DD487A9B338F66 /* BGMTapRoute.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = BGMTapRoute.h; sourceTree = "<group>"; };
@@ -726,6 +736,8 @@
 				1CB8B3391BBA75EF000E2DD1 /* Supporting Files */,
 				BE76D7BB26DD487A9B338F66 /* BGMTapRoute.h */,
 				F1147BF558DE55DB68E2BFE8 /* BGMTapRoute.mm */,
+				0A6812F6788CC089B61EB752 /* BGMAppOutputRoutingController.h */,
+				7F576613B4F7116C9498D469 /* BGMAppOutputRoutingController.mm */,
 			);
 			path = BGMApp;
 			sourceTree = "<group>";
@@ -1187,6 +1199,8 @@
 				19FE7B7BDF0C683288654F90 /* BGMDebugLogging.c in Sources */,
 				3043E0DE87BDC97C8EBECB26 /* BGMTapRoute.h in Sources */,
 				3F14DC51C6BA44FD50EB3D99 /* BGMTapRoute.mm in Sources */,
+				1C930E4EC593B2BA17261BC0 /* BGMAppOutputRoutingController.h in Sources */,
+				2E49E8A7501B969DFD9089DA /* BGMAppOutputRoutingController.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1254,6 +1268,10 @@
 				19FE7B32E1214BA0E8166A9E /* BGMMusic.m in Sources */,
 				19FE72D66CBC5C39F86333DE /* BGMPlayThroughRTLogger.cpp in Sources */,
 				19FE734C861E0370C21E4E94 /* BGMDebugLogging.c in Sources */,
+				D7C3CD30199EE345C711959C /* BGMAppOutputRoutingController.h in Sources */,
+				5D5FCE844C238D835B99D29B /* BGMAppOutputRoutingController.mm in Sources */,
+				C38C8DF1D49B7482D2AFA3A5 /* BGMTapRoute.h in Sources */,
+				88C5AE727EE412AE003D036C /* BGMTapRoute.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1345,6 +1363,8 @@
 				687376D058B8777882E6E168 /* BGMTapRoute.h in Sources */,
 				B3BFDC172B31A6B1E58D7EB1 /* BGMTapRoute.mm in Sources */,
 				5D8700DE876C53F534E5BE48 /* BGMTapRouteTests.mm in Sources */,
+				A7275976027BC34764480F06 /* BGMAppOutputRoutingController.h in Sources */,
+				64367B6B93CB2E6B49FC712D /* BGMAppOutputRoutingController.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

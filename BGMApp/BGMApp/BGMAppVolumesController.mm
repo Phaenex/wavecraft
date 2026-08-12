@@ -28,6 +28,7 @@
 // Local Includes
 #import "BGM_Types.h"
 #import "BGM_Utils.h"
+#import "BGMAppOutputRoutingController.h"
 #import "BGMAppVolumes.h"
 
 // PublicUtility Includes
@@ -51,12 +52,14 @@
 
 - (id) initWithMenu:(NSMenu*)menu
       appVolumeView:(NSView*)view
-       audioDevices:(BGMAudioDeviceManager*)devices {
+       audioDevices:(BGMAudioDeviceManager*)devices
+outputRoutingController:(BGMAppOutputRoutingController*)outputRoutingController {
     if ((self = [super init])) {
         audioDevices = devices;
         appVolumes = [[BGMAppVolumes alloc] initWithController:self
                                                        bgmMenu:menu
-                                                 appVolumeView:view];
+                                                 appVolumeView:view
+                                       outputRoutingController:outputRoutingController];
 
         // Create the menu items for controlling app volumes.
         NSArray<NSRunningApplication*>* apps = [[NSWorkspace sharedWorkspace] runningApplications];
@@ -86,16 +89,20 @@
     // TODO: Handle the C++ exceptions this method can throw. They can cause crashes because this
     //       method is called in a KVO handler.
 
-    // Get the app volumes currently set on the device
+    // Get the app volumes and EQ gains currently set on the device
     CACFArray volumesFromBGMDevice([audioDevices bgmDevice].GetAppVolumes(), false);
+    CACFArray eqFromBGMDevice([audioDevices bgmDevice].GetAppEQ(), false);
 
     for (NSRunningApplication* app in apps) {
         if ([self shouldBeIncludedInMenu:app]) {
             BGMAppVolumeAndPan initial = [self getVolumeAndPanForApp:app
                                                          fromVolumes:volumesFromBGMDevice];
+            NSArray<NSNumber*>* __nullable initialEQ = [self getEQBandGainsForApp:app
+                                                                              fromEQ:eqFromBGMDevice];
             [appVolumes insertMenuItemForApp:app
                                initialVolume:initial.volume
-                                  initialPan:initial.pan];
+                                  initialPan:initial.pan
+                          initialEQBandGains:initialEQ];
         }
     }
 }
@@ -143,6 +150,46 @@
     }
 
     return volumeAndPan;
+}
+
+// Returns nil if the device doesn't have EQ gains stored for this app (i.e. it's still flat/0dB
+// on every band, the driver's default -- see BGM_AppEQ's default-constructed gains).
+- (NSArray<NSNumber*>* __nullable) getEQBandGainsForApp:(NSRunningApplication*)app
+                                                   fromEQ:(const CACFArray&)eq {
+    for (UInt32 i = 0; i < eq.GetNumberItems(); i++) {
+        CACFDictionary appEQ(false);
+        eq.GetCACFDictionary(i, appEQ);
+
+        // Match the app to the EQ entry by pid or bundle ID, the same way app volumes are matched.
+        CACFString bundleID;
+        bundleID.DontAllowRelease();
+        appEQ.GetCACFString(CFSTR(kBGMAppEQKey_BundleID), bundleID);
+
+        pid_t pid;
+        appEQ.GetSInt32(CFSTR(kBGMAppEQKey_ProcessID), pid);
+
+        if ((app.processIdentifier == pid) ||
+            [app.bundleIdentifier isEqualToString:(__bridge NSString*)bundleID.GetCFString()]) {
+            CACFArray bandGains(false);
+            appEQ.GetCACFArray(CFSTR(kBGMAppEQKey_BandGains), bandGains);
+            if (!bandGains.IsValid()) {
+                return nil;
+            }
+
+            NSMutableArray<NSNumber*>* gainsDB =
+                [NSMutableArray arrayWithCapacity:bandGains.GetNumberItems()];
+
+            for (UInt32 band = 0; band < bandGains.GetNumberItems(); band++) {
+                Float64 gainDB = 0;
+                bandGains.GetFloat64(band, gainDB);
+                [gainsDB addObject:@(gainDB)];
+            }
+
+            return gainsDB;
+        }
+    }
+
+    return nil;
 }
 
 - (BOOL) shouldBeIncludedInMenu:(NSRunningApplication*)app {

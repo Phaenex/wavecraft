@@ -33,6 +33,7 @@
 static NSString* const kDefaultKeyAutoPauseMusicEnabled = @"AutoPauseMusicEnabled";
 static NSString* const kDefaultKeySelectedMusicPlayerID = @"SelectedMusicPlayerID";
 static NSString* const kDefaultKeyPreferredDeviceUIDs   = @"PreferredDeviceUIDs";
+static NSString* const kDefaultKeyOutputRouteDeviceUIDs = @"OutputRouteDeviceUIDsByBundleID";
 static NSString* const kDefaultKeyStatusBarIcon         = @"StatusBarIcon";
 static NSString* const kDefaultKeyPauseDelayMS          = @"PauseDelayMS";
 static NSString* const kDefaultKeyMaxUnpauseDelayMS     = @"MaxUnpauseDelayMS";
@@ -130,6 +131,15 @@ static NSString* const kKeychainLabelGPMDPAuthCode =
 
 - (void) setPreferredDeviceUIDs:(NSArray<NSString*>*)devices {
     [self set:kDefaultKeyPreferredDeviceUIDs to:devices];
+}
+
+- (NSDictionary<NSString*, NSString*>*) outputRouteDeviceUIDsByBundleID {
+    NSDictionary<NSString*, NSString*>* __nullable uids = [self get:kDefaultKeyOutputRouteDeviceUIDs];
+    return uids ? BGMNN(uids) : @{};
+}
+
+- (void) setOutputRouteDeviceUIDsByBundleID:(NSDictionary<NSString*, NSString*>*)uids {
+    [self set:kDefaultKeyOutputRouteDeviceUIDs to:uids];
 }
 
 - (BGMStatusBarIcon) statusBarIcon {
