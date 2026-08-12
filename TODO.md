@@ -53,10 +53,11 @@ EQ band count in particular, it's the UI, not the DSP.
 
 ## Needs a human (can't be done by an agent building this)
 
-- **Install and listen.** Nothing in per-app EQ or per-app output routing has been verified against
-  real audio yet — only that it builds clean and the parts that can be unit tested (DSP math,
-  construction/validation) pass. `./build_and_install.sh`, then actually move the EQ sliders and
-  the output-routing pop-up while audio plays.
+- **Install and run the full QA sweep.** Nothing in per-app EQ or per-app output routing has been
+  verified against real audio yet — only that it builds clean and the parts that can be unit tested
+  (DSP math, construction/validation) pass. `./build_and_install.sh`, then work through
+  [docs/QA-PLAN.md](docs/QA-PLAN.md) — every menu control, every new-feature edge case, and the
+  app's own error dialogs, in order, nothing marked done without actually watching it happen.
 - **Verify `CATapMuted` actually mutes the routed app's normal output**, not just that the tap
   receives audio (see docs/PROCESS-TAP-ROUTING.md's Phase 1 results — this was the one thing left
   unconfirmed after the proof-of-concept, deferred to a real listening test with two apps and two

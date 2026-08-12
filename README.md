@@ -180,7 +180,8 @@ Specific to this fork's new features:
 See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for build/install issues, and
 [docs/LESSONS.md](docs/LESSONS.md) for the less obvious things that came up while developing this
 fork (an "open Tahoe bug" that turned out to be the 2-channel limitation above, a build-vs-test
-sandbox permission gotcha, etc.).
+sandbox permission gotcha, etc.). [docs/QA-PLAN.md](docs/QA-PLAN.md) is the ordered checklist for
+verifying a fresh install actually works — nothing on it has been run yet.
 
 If Wavecraft crashes and your audio stops working, open **System Settings > Sound** and change your
 default output device to something other than the Wavecraft device — if it's already something
