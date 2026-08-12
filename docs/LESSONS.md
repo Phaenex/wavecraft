@@ -1,5 +1,37 @@
 # Lessons
 
+## BGMAppUnitTests links a mocked CoreAudio HAL for the whole target, not per-test
+
+**The trap:** wrote a real-hardware functional test for `BGMTapRoute` (create a real tap +
+aggregate device, route Finder's audio to a real output device, assert it started and stopped
+cleanly). It crashed instantly: `Crash: xctest at Mock_Unimplemented(char const*).
+libsystem_c.dylib: abort()`. The instinct was to assume the *test* was wrong (bad device lookup,
+wrong API usage) and start debugging that.
+
+**What was actually true:** `BGMAppUnitTests` (see `BGMAppTests/UnitTests/Mocks/`) links
+`Mock_CAHALAudioSystemObject.cpp` and `Mock_CAHALAudioDevice.cpp` **in place of** the real
+implementations for the entire target — not opt-in per test, not something `MockAudioObjects`
+layers on top of real objects. Every `CAHALAudioDevice`/`CAHALAudioSystemObject` call in any test
+in this target hits the mock, including a call on a **real** `AudioObjectID` from a **real**
+aggregate device just created via `AudioHardwareCreateAggregateDevice` — the mock has no idea that
+ID exists and aborts rather than silently misbehaving. `BGMPlayThroughTests.mm` never hits this
+because it explicitly registers everything through `MockAudioObjects::CreateMockDevice` first.
+
+**How to apply:** before writing a test in `BGMAppUnitTests` that touches any device object
+(`CAHALAudioDevice`, `CAHALAudioSystemObject`, or anything built on them like `BGMAudioDevice`),
+assume it's mocked and check `BGMAppTests/UnitTests/Mocks/` for how existing tests register the
+objects they need, rather than reaching for a real device by ID and finding out the hard way.
+`AudioHardwareCreateProcessTap`/`AudioHardwareCreateAggregateDevice` (raw HAL entry points, not
+methods on the mocked classes) aren't mocked and do create real system objects — but anything
+downstream that touches them via `CAHALAudioDevice` (which `BGMPlayThrough` does extensively) will
+still crash. There's currently no way to test that full pipeline inside this target; it needs
+either an out-of-target harness or manual verification through actual use.
+
+**Root cause diagnosis, not guesswork:** confirmed by reading `Mock_CAHALAudioSystemObject.cpp`'s
+existence and the crash's own `Mock_Unimplemented` symbol name, not by trial and error on the test
+code itself. The fix was recognizing the test was asking the wrong environment to do something it
+architecturally can't, not finding a bug in the test's logic.
+
 ## Per-app EQ filter state must not live where BGM_Client gets copied
 
 **The trap:** `BGM_ClientMap::GetClientRT` (and the rest of the existing per-client access
