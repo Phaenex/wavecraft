@@ -757,10 +757,26 @@ void    BGMPlayThrough::StopIfIdle()
     // being audible. VLC does that when you have a file paused, for example.
     
     CAMutex::Locker stateLocker(mStateMutex);
-    
-    BGMAssert(mInputDevice.IsBGMDeviceInstance(),
-              "BGMDevice not set as input device. StopIfIdle can't tell if other devices are idle.");
-    
+
+    // Same guard as Activate() -- BGMTapRoute sets mRequireBGMDeviceInput to false for its own
+    // BGMPlayThrough instance, since its input is a private aggregate tap device, not BGMDevice.
+    // IsRunningSomewhereOtherThanBGMApp queries a custom property BGMDevice implements
+    // specifically, so it wouldn't behave correctly against a non-BGMDevice input either --
+    // skipping just the assert makes this method not crash a non-BGMDevice-input instance, but
+    // doesn't make idle-detection actually work for one. No current caller hits this (StopIfIdle
+    // is only called on BGMAudioDeviceManager's own BGMDevice-input instances, never on a
+    // BGMTapRoute's), so this returns rather than guessing at BGMDevice-specific behavior for a
+    // case nothing exercises yet.
+    if(mRequireBGMDeviceInput)
+    {
+        BGMAssert(mInputDevice.IsBGMDeviceInstance(),
+                  "BGMDevice not set as input device. StopIfIdle can't tell if other devices are idle.");
+    }
+    else
+    {
+        return;
+    }
+
     if(!mPlayingThrough || IsRunningSomewhereOtherThanBGMApp(mInputDevice))
     {
         return;

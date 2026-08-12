@@ -24,6 +24,7 @@
 #import "BGMUserDefaults.h"
 
 // Local Includes
+#import "BGMHotkeys.h"
 #import "BGM_Utils.h"
 
 
@@ -173,7 +174,16 @@ static NSString* const kKeychainLabelGPMDPAuthCode =
 }
 
 - (NSInteger) hotkeyModifierPreset {
-    return [self getInt:kDefaultKeyHotkeyModifierPreset or:0];
+    NSInteger preset = [self getInt:kDefaultKeyHotkeyModifierPreset or:BGMHotkeyModifierPresetOption];
+
+    // Just in case we get an invalid value somehow.
+    if ((preset < kBGMHotkeyModifierPresetMinValue) || (preset > kBGMHotkeyModifierPresetMaxValue)) {
+        NSLog(@"BGMUserDefaults::hotkeyModifierPreset: Unknown BGMHotkeyModifierPreset: %ld",
+              (long)preset);
+        preset = BGMHotkeyModifierPresetOption;
+    }
+
+    return preset;
 }
 
 - (void) setHotkeyModifierPreset:(NSInteger)preset {
@@ -181,7 +191,17 @@ static NSString* const kKeychainLabelGPMDPAuthCode =
 }
 
 - (NSInteger) hotkeyStepSize {
-    return [self getInt:kDefaultKeyHotkeyStepSize or:1];  // 1 = BGMHotkeyStepSizeNormal
+    NSInteger stepSize = [self getInt:kDefaultKeyHotkeyStepSize or:BGMHotkeyStepSizeNormal];
+
+    // Just in case we get an invalid value somehow. (BGMHotkeys.mm also clamps this at every use
+    // site before indexing into an array with it, so an invalid value here wouldn't crash -- but
+    // it would silently disagree with what the Preferences menu shows as selected.)
+    if ((stepSize < kBGMHotkeyStepSizeMinValue) || (stepSize > kBGMHotkeyStepSizeMaxValue)) {
+        NSLog(@"BGMUserDefaults::hotkeyStepSize: Unknown BGMHotkeyStepSize: %ld", (long)stepSize);
+        stepSize = BGMHotkeyStepSizeNormal;
+    }
+
+    return stepSize;
 }
 
 - (void) setHotkeyStepSize:(NSInteger)stepSize {

@@ -45,10 +45,11 @@
 @implementation BGMAppOutputRoutingController {
     BGMUserDefaults* userDefaults;
 
-    // Only ever touched on routingQueue -- see applyRouteForBundleID:deviceUID:appName:. The
-    // source of truth for what's actually running; userDefaults.outputRouteDeviceUIDsByBundleID
-    // (main-thread only) is the source of truth for what the user asked for, which is what the UI
-    // reads so it updates immediately instead of waiting on routingQueue.
+    // Only ever touched on routingQueue -- see applyRouteForBundleID:deviceUID:appName: and
+    // dealloc, below. The source of truth for what's actually running;
+    // userDefaults.outputRouteDeviceUIDsByBundleID (main-thread only) is the source of truth for
+    // what the user asked for, which is what the UI reads so it updates immediately instead of
+    // waiting on routingQueue.
     std::map<std::string, std::unique_ptr<BGMTapRoute>> routes;
 
     dispatch_queue_t routingQueue;
@@ -76,6 +77,15 @@
     [[NSWorkspace sharedWorkspace] removeObserver:self
                                        forKeyPath:@"runningApplications"
                                           context:nil];
+
+    // routes is "only ever touched on routingQueue" (see its declaration above), but ARC would
+    // otherwise destruct it here on whatever thread drops this object's last reference, which
+    // isn't guaranteed to be routingQueue. dispatch_sync so routes.clear() -- which runs each
+    // BGMTapRoute's real destructor, tearing down its CoreAudio tap/aggregate device -- happens on
+    // the right queue before this object (and its ivars) finish being destroyed.
+    dispatch_sync(routingQueue, ^{
+        routes.clear();
+    });
 }
 
 #pragma mark Menu

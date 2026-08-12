@@ -137,9 +137,17 @@ static const SInt32 kAppVolumeSteps[] = { 2, 5, 15 };
 - (void) startMonitoring {
     [self stopMonitoring];  // Replace any existing monitor rather than stacking a second one.
 
+    // Apple doesn't document (in the header or otherwise) which thread this handler block runs
+    // on -- unlike addLocalMonitorForEventsMatchingMask:, which is synchronous on the calling
+    // thread, the global monitor is commonly observed running off the main thread. handleKeyEvent:
+    // touches BGMUserDefaults, NSWorkspace, and CoreAudio HAL property calls, none of which are
+    // documented as safe from an arbitrary background thread the way they'd be from the main
+    // thread -- so dispatch back to main rather than assume.
     eventMonitor = [NSEvent addGlobalMonitorForEventsMatchingMask:NSEventMaskKeyDown
                                                             handler:^(NSEvent* event) {
-        [self handleKeyEvent:event];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self handleKeyEvent:event];
+        });
     }];
 }
 

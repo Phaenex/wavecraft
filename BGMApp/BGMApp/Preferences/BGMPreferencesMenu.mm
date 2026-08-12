@@ -228,9 +228,15 @@ outputRoutingController:(BGMAppOutputRoutingController*)inOutputRoutingControlle
 - (void) updateHotkeyMenuItemStates {
     hotkeysEnabledMenuItem.state = hotkeys.isEnabled ? NSOnState : NSOffState;
 
-    BOOL usingOption = (userDefaults.hotkeyModifierPreset == BGMHotkeyModifierPresetOption);
-    hotkeyModifierOptionMenuItem.state = usingOption ? NSOnState : NSOffState;
-    hotkeyModifierControlMenuItem.state = usingOption ? NSOffState : NSOnState;
+    // Explicit equality checks against both values, not a complement of one against the other --
+    // BGMHotkeys::currentVolumeModifierFlags checks explicitly too (falling back to Option for
+    // anything that isn't literally Control), so this has to match that exactly rather than
+    // showing Control checked for any non-Option value.
+    NSInteger modifierPreset = userDefaults.hotkeyModifierPreset;
+    hotkeyModifierOptionMenuItem.state =
+        (modifierPreset == BGMHotkeyModifierPresetOption) ? NSOnState : NSOffState;
+    hotkeyModifierControlMenuItem.state =
+        (modifierPreset == BGMHotkeyModifierPresetControl) ? NSOnState : NSOffState;
 
     NSInteger stepSize = userDefaults.hotkeyStepSize;
     hotkeyStepFineMenuItem.state = (stepSize == BGMHotkeyStepSizeFine) ? NSOnState : NSOffState;
