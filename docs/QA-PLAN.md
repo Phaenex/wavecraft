@@ -22,7 +22,15 @@ not a browser) — not eyeballing the code and assuming it's fine.
 - [ ] `ps aux | grep "Background Music"` shows the app running
 - [ ] Menu bar shows the new four-bar icon, not the old three-ring one — if it's still the old one,
       the install picked up a stale build; re-run the script
-- [ ] First-run Microphone permission prompt appears and granting it doesn't crash the app
+- [ ] First-run explanation dialog appears *before* the system Microphone prompt, reads clearly,
+      and clicking Continue actually triggers the real system permission prompt next
+- [ ] Granting Microphone access completes launch without crashing (this is also where the
+      `kAudioObjectPropertyCustomPropertyInfoList` crash fix gets its first real test — confirm the
+      per-app menu populates for every running app, not just that the app stays open)
+- [ ] Denying Microphone access shows the error dialog with a working **Open Privacy Settings**
+      button that jumps to the right System Settings pane, then quits cleanly
+- [ ] Quit and relaunch Wavecraft a second time — the first-run explanation should **not** show
+      again, and access should be requested (and already granted) silently
 - [ ] `tools/verify-icons.py` passes (checks pixel dimensions of `AppIcon.appiconset` against
       `Contents.json`)
 

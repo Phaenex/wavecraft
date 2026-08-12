@@ -37,6 +37,7 @@ static NSString* const kDefaultKeyOutputRouteDeviceUIDs = @"OutputRouteDeviceUID
 static NSString* const kDefaultKeyStatusBarIcon         = @"StatusBarIcon";
 static NSString* const kDefaultKeyPauseDelayMS          = @"PauseDelayMS";
 static NSString* const kDefaultKeyMaxUnpauseDelayMS     = @"MaxUnpauseDelayMS";
+static NSString* const kDefaultKeyHasShownMicExplanation = @"HasShownMicrophonePermissionExplanation";
 
 // Labels for Keychain Data
 static NSString* const kKeychainLabelGPMDPAuthCode =
@@ -140,6 +141,14 @@ static NSString* const kKeychainLabelGPMDPAuthCode =
 
 - (void) setOutputRouteDeviceUIDsByBundleID:(NSDictionary<NSString*, NSString*>*)uids {
     [self set:kDefaultKeyOutputRouteDeviceUIDs to:uids];
+}
+
+- (BOOL) hasShownMicrophonePermissionExplanation {
+    return [self getBool:kDefaultKeyHasShownMicExplanation];
+}
+
+- (void) setHasShownMicrophonePermissionExplanation:(BOOL)hasShown {
+    [self setBool:kDefaultKeyHasShownMicExplanation to:hasShown];
 }
 
 - (BGMStatusBarIcon) statusBarIcon {

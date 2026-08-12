@@ -320,3 +320,24 @@ default. `pgrep -fl` (or equivalent) for the actual app binary's path, specifica
 an install verified -- and check `~/Library/Logs/DiagnosticReports/` for a crash report matching
 the install's timestamp if the process isn't there, rather than assuming it just hasn't launched
 yet.
+
+## `bold_face`'s bare-word args break on apostrophes, silently swallowing the rest of the script
+
+**The trap:** added `echo "$(bold_face What's next):"` to `build_and_install.sh` and `bash -n`
+immediately failed with `unexpected EOF while looking for matching `'`` pointing at the *last* line
+of an 887-line file, nowhere near the actual mistake. `bold_face()` is `echo $(tput
+bold)$*$(tput sgr0)` -- it takes its argument as bare, unquoted words via `$*`, which means
+`$(bold_face What's next)` hands the apostrophe in "What's" to the shell as an *unquoted* character
+inside a command substitution, not as literal text inside a string. The shell opens a single-quoted
+string right there and keeps consuming every character after it, across the rest of the file,
+looking for a closing `'` that doesn't exist -- which is exactly why the reported error location was
+useless for finding the actual problem.
+
+**How to apply:** every existing `bold_face` call in this script already avoids contractions and
+apostrophes (`"About to install Background Music"`, `"Building Background Music..."`) -- that's not
+a coincidence, it's the actual constraint this function's implementation imposes. Don't put an
+apostrophe in anything passed to `bold_face`; rephrase instead ("What happens next", not "What's
+next"). More generally: after editing a shell script, `bash -n` before considering the edit done,
+not just before running it for real -- it's a full parse with zero side effects, cheap enough to run
+after every edit, and a syntax error's *reported* line number can be arbitrarily far from the actual
+mistake when an unterminated quote is involved.

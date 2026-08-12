@@ -70,6 +70,12 @@
 @property NSUInteger pauseDelayMS;
 @property NSUInteger maxUnpauseDelayMS;
 
+// True once the user has seen the one-time explanation of why Wavecraft is about to ask for
+// "Microphone" access (see BGMAppDelegate). Set right before that dialog is shown, not after --
+// if this is somehow shown twice (e.g. the app crashes and relaunches immediately after), that's
+// a much smaller problem than skipping it if it was never actually seen.
+@property BOOL hasShownMicrophonePermissionExplanation;
+
 @end
 
 #pragma clang assume_nonnull end

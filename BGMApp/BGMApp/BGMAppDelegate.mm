@@ -140,28 +140,7 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
         // before making BGMDevice the default device. This way, if the user is playing audio when
         // they open Background Music, we won't interrupt it while we're waiting for them to click
         // OK.
-        [AVCaptureDevice requestAccessForMediaType:AVMediaTypeAudio
-                                 completionHandler:^(BOOL granted) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                if (granted) {
-                    DebugMsg("BGMAppDelegate::applicationDidFinishLaunching: Permission granted");
-                    [self continueLaunchAfterInputDevicePermissionGranted];
-                } else {
-                    NSLog(@"BGMAppDelegate::applicationDidFinishLaunching: Permission denied");
-                    // If they don't accept, Background Music won't work at all and the only way to
-                    // fix it is in System Preferences, so show an error dialog with instructions.
-                    //
-                    // TODO: It would be nice if this dialog had a shortcut to open the System
-                    //       Preferences panel. See showSetDeviceAsDefaultError.
-                    [self showErrorMessage:@"Background Music needs permission to use microphones."
-                           informativeText:@"It uses a virtual microphone to access your system's "
-                                            "audio.\n\nYou can grant the permission by going to "
-                                            "System Preferences > Security and Privacy > "
-                                            "Microphone and checking the box for Background Music."
-                 exitAfterMessageDismissed:YES];
-                }
-            });
-        }];
+        [self explainMicrophonePermissionIfFirstRunThenRequestAccess];
     }
     else
 #endif
@@ -169,6 +148,99 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
         // We can change the device immediately on older versions of macOS because they don't
         // require user permission for input devices.
         [self continueLaunchAfterInputDevicePermissionGranted];
+    }
+}
+
+// The first time Wavecraft ever launches, explains up front why the permission prompt macOS is
+// about to show says "Microphone" for an app that doesn't record audio, before actually
+// triggering that prompt. Every launch after the first skips straight to requesting access, same
+// as before this existed -- the explanation only needs to be seen once.
+- (void) explainMicrophonePermissionIfFirstRunThenRequestAccess {
+    if (userDefaults.hasShownMicrophonePermissionExplanation) {
+        [self requestMicrophoneAccess];
+        return;
+    }
+
+    // Set this before showing the alert, not after: if this dialog is somehow shown twice (e.g.
+    // the app crashes and relaunches immediately after), that's a much smaller problem than
+    // skipping it because a crash happened between showing it and recording that we did.
+    userDefaults.hasShownMicrophonePermissionExplanation = YES;
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSAlert* alert = [NSAlert new];
+        alert.messageText = @"Wavecraft needs “Microphone” access";
+        alert.informativeText =
+            @"macOS is about to ask you to allow Wavecraft to use the microphone. Wavecraft "
+             "doesn’t actually listen to your microphone — it needs this permission "
+             "because the virtual audio device it uses to capture your system’s audio (so it "
+             "can apply per-app volume, EQ, and output routing) is classified as a microphone "
+             "input by macOS, even though nothing about it is a real mic.\n\nClick Continue, then "
+             "click Allow on the next prompt.";
+        [alert addButtonWithTitle:@"Continue"];
+        [alert runModal];
+
+        [self requestMicrophoneAccess];
+    });
+}
+
+// Only ever called from inside an `if (@available(macOS 10.14, *))` check (see
+// applicationDidFinishLaunching), but the compiler's availability analysis doesn't see across
+// that method-call boundary, so it needs its own guard here too.
+- (void) requestMicrophoneAccess {
+    if (@available(macOS 10.14, *)) {
+        [AVCaptureDevice requestAccessForMediaType:AVMediaTypeAudio
+                                 completionHandler:^(BOOL granted) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if (granted) {
+                    DebugMsg("BGMAppDelegate::requestMicrophoneAccess: Permission granted");
+                    [self continueLaunchAfterInputDevicePermissionGranted];
+                } else {
+                    NSLog(@"BGMAppDelegate::requestMicrophoneAccess: Permission denied");
+                    // If they don't accept, Wavecraft won't work at all and the only way to fix
+                    // it is in System Settings, so show an error dialog with a direct shortcut
+                    // there.
+                    [self showMicrophonePermissionDeniedError];
+                }
+            });
+        }];
+    }
+}
+
+- (void) showMicrophonePermissionDeniedError {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSAlert* alert = [NSAlert new];
+        alert.messageText = @"Wavecraft needs “Microphone” permission to work.";
+        alert.informativeText =
+            @"It uses a virtual microphone to access your system’s audio — it doesn’t "
+             "actually listen to anything. Grant the permission in System Settings > Privacy & "
+             "Security > Microphone, then open Wavecraft again.";
+
+        [alert addButtonWithTitle:@"Quit"];
+        [alert addButtonWithTitle:@"Open Privacy Settings"];
+
+        NSModalResponse buttonClicked = [alert runModal];
+
+        if (buttonClicked != NSAlertFirstButtonReturn) {  // 'Quit' is the first button.
+            [self openSysPrefsMicrophonePrivacy];
+        }
+
+        [NSApp terminate:self];
+    });
+}
+
+// Deep-links straight to the Microphone list in Privacy & Security, rather than just describing
+// where it is in the dialog text. Uses the same x-apple.systempreferences: URL scheme Apple has
+// kept working across the System Preferences -> System Settings redesign, rather than the
+// Scripting Bridge approach openSysPrefsSoundOutput (below) uses -- there's no
+// "SystemPreferencesPane" for Privacy & Security's sub-sections to script the same way.
+- (void) openSysPrefsMicrophonePrivacy {
+    NSURL* __nullable url = [NSURL URLWithString:
+        @"x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone"];
+
+    BOOL opened = url && [[NSWorkspace sharedWorkspace] openURL:BGMNN(url)];
+
+    if (!opened) {
+        NSLog(@"BGMAppDelegate::openSysPrefsMicrophonePrivacy: Failed to open System Settings");
     }
 }
 

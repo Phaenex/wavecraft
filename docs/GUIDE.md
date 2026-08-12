@@ -6,6 +6,18 @@ A walkthrough of what's actually in the menu, once Wavecraft is installed and ru
 written description, not a set of screenshots — the UI hasn't been screenshotted yet, since that
 needs a real install; see [TODO.md](../TODO.md).)
 
+## First launch
+
+The very first time Wavecraft ever opens, it shows a one-time dialog explaining that macOS is about
+to ask for "Microphone" access, and why (the virtual audio device it uses to see your system's
+audio is classified as a microphone input by macOS, even though nothing about it is a real mic —
+see the README's Known Limitations). Click **Continue**, then **Allow** on the actual system
+permission prompt that follows.
+
+If you miss that prompt or click **Don't Allow** by mistake, Wavecraft shows an error with an
+**Open Privacy Settings** button that jumps straight to **System Settings > Privacy & Security >
+Microphone** — check the box for Wavecraft there, then open it again.
+
 ## Opening the menu
 
 Click the Wavecraft icon (four bars) in your menu bar. Everything — output device, per-app

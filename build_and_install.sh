@@ -571,8 +571,23 @@ fi
 if [[ "${XCODEBUILD_ACTION}" == "install" ]]; then
     XPC_HELPER_OUTPUT_PATH="$(BGMApp/BGMXPCHelper/safe_install_dir.sh)"
 
-    echo "$(bold_face About to install Background Music). Please pause all audio, if you can."
+    echo "$(bold_face About to install Wavecraft). Please pause all audio, if you can."
     [[ "${CONFIGURATION}" == "Debug" ]] && echo "Debug build."
+    echo
+    echo "What's about to happen, and why it needs your password:"
+    echo " - A virtual audio device gets installed to /Library/Audio/Plug-Ins/HAL/. This is what"
+    echo "   lets Wavecraft see (and remix) every app's audio -- macOS has no other way to do"
+    echo "   that. It only loads from that one system-owned path, which is why this step needs"
+    echo "   sudo; there's no per-user alternative."
+    echo " - A small helper service gets registered with launchd, to coordinate between the"
+    echo "   driver above and the app below."
+    echo " - The Wavecraft app (still shows as \"Background Music\" in Finder/Activity Monitor --"
+    echo "   only this project's own branding changed, not the underlying app/driver names) gets"
+    echo "   installed and opened automatically once everything else is in place."
+    echo
+    echo "The first time it opens, it'll explain and then ask for \"Microphone\" access -- that's"
+    echo "expected. It doesn't listen to your microphone; macOS just classifies the virtual audio"
+    echo "input this way, and Wavecraft can't capture your system's audio without it."
     echo
     echo "This script will install:"
     echo " - ${APP_PATH}/${APP_DIR}"
@@ -876,6 +891,19 @@ if [[ "${XCODEBUILD_ACTION}" == "install" ]]; then
     show_spinner "${BGMAPP_FAILED_TO_START_ERROR_MSG}" 5
 
     echo "Done."
+    echo
+    echo "$(bold_face What happens next):"
+    echo " - You should see a dialog asking to allow \"Microphone\" access -- click Continue on"
+    echo "   the explanation, then Allow on the actual system prompt. If you miss it or click"
+    echo "   Don't Allow, Wavecraft will show you a button that jumps straight to the right"
+    echo "   Privacy & Security setting."
+    echo " - Once that's granted, look for the Wavecraft icon (four bars) in your menu bar --"
+    echo "   that's where every control lives: per-app volume, per-app EQ, per-app output"
+    echo "   routing, and the output device picker."
+    echo " - Full walkthrough of every control: docs/GUIDE.md in this repo."
+    echo " - Something not working? docs/TROUBLESHOOTING.md has real problems that came up"
+    echo "   building this fork, with the actual fixes -- check there before assuming it's a new"
+    echo "   bug."
 elif [[ "${XCODEBUILD_ACTION}" == "archive" ]]; then
     # Copy the dSYMs (debug symbols) into the correct directories in the archives. I haven't been
     # able to figure out why Xcode isn't doing this automatically.
