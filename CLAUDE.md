@@ -1,9 +1,10 @@
-# mac-volume-mixer — working agreement
+# Wavecraft — working agreement
 
 ## What this is
 
-A personal fork of [kyleneideck/BackgroundMusic](https://github.com/kyleneideck/BackgroundMusic)
-(GPL-2.0), built from source on this machine instead of installed from the upstream `.pkg`. It
+Wavecraft is a personal fork of
+[kyleneideck/BackgroundMusic](https://github.com/kyleneideck/BackgroundMusic) (GPL-2.0), built
+from source on this machine instead of installed from the upstream `.pkg`. It
 gives macOS a real per-app volume slider — something the OS has no native API for — by installing
 a CoreAudio HAL virtual audio device that all app output routes through, then remixing it before
 it reaches the real output device.
@@ -41,9 +42,14 @@ xcodebuild -workspace BGM.xcworkspace -scheme "Background Music Device" -configu
 python3 tools/verify-icons.py
 ```
 
-All three targets build clean. 49/49 unit tests passing as of the per-app EQ property wiring
-(27 BGMAppUnitTests + 22 BGMDriverTests — 9 original + 13 for the EQ work, verified by
-measuring actual RMS gain from a real sine wave, not just checking the code runs), 0 failures.
+All three targets build clean (Debug and Release). 50/50 unit tests passing as of the per-app EQ
+UI and per-app output routing UI going in (28 BGMAppUnitTests + 22 BGMDriverTests, 0 failures —
+re-run directly via the commands above, not carried over from an older count). No new unit tests
+were added for the EQ/routing UI itself: it's ordinary AppKit/CoreAudio glue code
+(`BGMAppVolumesController`, `BGMOutputDeviceMenuSection`, `BGMPreferredOutputDevices` already
+follow the same pattern), and `BGMTapRouteTests`'s own comment explains why — this test target
+links mocked `CAHALAudioDevice`/`CAHALAudioSystemObject`, so anything that touches a real device or
+`BGMPlayThrough` can't be exercised here regardless of how the test is written.
 
 ## The one step that always needs a human
 
@@ -83,7 +89,15 @@ commands.
 ### Icons
 
 Custom app + device icon (not upstream's Fermata mark) — see the commit that introduced them for
-the design rationale. `tools/verify-icons.py` measures every icon file's actual pixel dimensions
+the design rationale. The menu bar status icon (`Images.xcassets/WavecraftIcon.imageset`, shown by
+`BGMStatusBarItem`) was also replaced — upstream's original there (also literally named
+"FermataIcon", though the artwork was three concentric rings, not an actual fermata glyph) read as
+a microphone/recording icon at status-bar size, which is a bad look for an app that separately
+needs "Microphone" permission for its virtual input device (see Known limitations, below) for
+unrelated reasons. It's now four rounded bars (an EQ-meter motif matching the app icon), generated
+with `reportlab` as a vector PDF at the same 283.46×283.46pt canvas size upstream's icon used —
+regenerate it with a similar script rather than hand-editing the PDF if it ever needs to change.
+`tools/verify-icons.py` measures every icon file's actual pixel dimensions
 against what `Contents.json` declares, rather than trusting a generation script got it right; run
 it after regenerating any icon. The app icon updates in `/Applications` without `sudo` (that
 bundle is user-owned after install); `DeviceIcon.icns`, shown in Audio MIDI Setup, is inside the
@@ -91,24 +105,39 @@ root-owned driver bundle and needs a real reinstall to update.
 
 ## In-progress work beyond stock Background Music
 
-Two features being built on top of upstream, past parity with SoundSource:
+Two features being built on top of upstream, past parity with SoundSource. Both now have driver
+(where relevant) and `BGMApp` UI wired end to end and build clean, but **neither has been
+installed and used with real audio yet** — that needs `./build_and_install.sh` (the one step that
+always needs a human, above) followed by actually moving the new sliders/pop-up while audio plays.
 
-- **Per-app EQ** — driver-side work complete: DSP core
-  (`BGMDriver/BGMDriver/DeviceClients/BGM_Biquad.*`), the
+- **Per-app EQ** — DSP core (`BGMDriver/BGMDriver/DeviceClients/BGM_Biquad.*`), the
   `kAudioDeviceCustomPropertyAppEQ` device property (get/set/validate, mirroring how
   `AppVolumes` already works), and real-time application in `BGM_Device::ApplyClientEQ`
-  (called from `DoIOOperation`, before `ApplyClientRelativeVolume`). 22/22 `BGMDriverTests`
-  passing. **Not yet done: `BGMApp` has no UI to actually set gains** — only reachable by
-  calling `AudioObjectSetPropertyData` directly (e.g. from a test or a script) until a slider
-  gets added to the menu. Hasn't been installed+listened to yet either — see
-  `docs/LESSONS.md` for the filter-state-ownership design decision this was built around
-  (real-time delay-line state can't live where `BGM_Client` gets copied by value; it's owned
-  by `BGM_Device` instead, in `mClientEQProcessors`).
+  (called from `DoIOOperation`, before `ApplyClientRelativeVolume`) — all driver-side, 22/22
+  `BGMDriverTests` passing. See `docs/LESSONS.md` for the filter-state-ownership design decision
+  this was built around (real-time delay-line state can't live where `BGM_Client` gets copied by
+  value; it's owned by `BGM_Device` instead, in `mClientEQProcessors`). **UI**: each app's menu
+  item now has 5 band sliders (60Hz/250Hz/1kHz/4kHz/12kHz, ±12dB, in the "extra controls" area
+  alongside Pan) — `BGMAVM_EQBandSlider` in `BGMApp/BGMApp/BGMAppVolumes.{h,m}`, wired straight to
+  the existing `BGMAppVolumesController::setEQBandGains:forAppWithProcessID:bundleID:`. Initial
+  gains are read back from `BGMBackgroundMusicDevice::GetAppEQ()` the same way Volume/Pan already
+  are, in `BGMAppVolumesController::getEQBandGainsForApp:fromEQ:`.
 - **Per-app output routing** (send one app to headphones while another stays on speakers) — not
-  possible in upstream's architecture at all (one virtual device, one `PlayThrough` output). Being
-  built via CoreAudio Process Taps instead — see `docs/PROCESS-TAP-ROUTING.md` for the verified API
-  surface and `tools/tap-poc/` for the proof-of-concept that confirmed the approach works (real
-  audio measured, no unexpected permission prompt).
+  possible in upstream's architecture at all (one virtual device, one `PlayThrough` output). Built
+  via CoreAudio Process Taps instead — see `docs/PROCESS-TAP-ROUTING.md` for the verified API
+  surface, `tools/tap-poc/` for the Phase 1 proof-of-concept, and `BGMApp/BGMApp/BGMTapRoute.*` for
+  the Phase 2 per-app `PlayThrough`-equivalent engine (runs in `BGMApp`'s own process, not the
+  driver — see that doc's "hybrid, not a replacement" design decision). **UI**: each app's menu
+  item has an output-device pop-up ("Default" + every device `BGMOutputDeviceMenuSection` would
+  offer) in the extra controls area, driven by the new `BGMAppOutputRoutingController` (owns the
+  bundle-ID → `BGMTapRoute` map, starts/stops routes on its own serial queue so a slow
+  `BGMPlayThrough::Start()` never blocks the main thread, and persists assignments in
+  `BGMUserDefaults.outputRouteDeviceUIDsByBundleID`). Assignments survive both `BGMApp` restarting
+  (persisted, restored for apps that are running when they're needed) and the *target* app being
+  quit and relaunched (`CATapDescription.processRestoreEnabled`, macOS 26.0+) — they do **not**
+  survive an app that was never running again during the `BGMApp` session it was assigned in, since
+  restoring only happens for apps `NSWorkspace` already knows about; that's an inherent limit of
+  routing living in `BGMApp`'s own process rather than the driver, not a bug to fix.
 
 ## Known limitations (inherited from upstream, not introduced by us)
 

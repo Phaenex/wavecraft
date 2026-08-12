@@ -22,18 +22,21 @@ assignees: ''
 
 **Versions**
 > Please complete the following information.
- - Background Music: [e.g. "0.4.3" or "0.4.0-SNAPSHOT-c0ab98b". `Preferences > About Background Music`]
- - macOS: [e.g. "11.3 Beta (20E5172i)" or "Big Sur". ` > About This Mac`]
+ - Wavecraft: [commit hash, or `git log -1 --format=%h`]
+ - macOS: [e.g. "26.5.1 (25F70)". ` > About This Mac`]
 
 **Hardware**
 > Delete this part if you think it's probably not necessary.
- - Computer: [e.g. "MacBook Pro (13-inch, 2016, Four Thunderbolt 3 Ports)". ` > About This Mac`]
+ - Computer: [e.g. "MacBook Pro (14-inch, 2024, M4 Pro)". ` > About This Mac`]
  - Audio Device: [e.g. "Built-in Output. Manufacturer: Apple Inc. Output Channels: 2 [...]". `System Information app > Hardware > Audio`]
 
 **Debug logs**
-> If you think the developers might not be able to reproduce the bug on their computers, e.g. because an important feature is completely broken and they would have noticed, it can help to include [debug logs](https://github.com/kyleneideck/BackgroundMusic/wiki/Getting-Debug-Logs). This takes a little effort, so feel free to leave it out at first.
+> If you think we might not be able to reproduce the bug on our own machines, it can help to
+> install a debug build (`./build_and_install.sh -d`) and include its logs from Console.app
+> (search for "BGM" or "Background Music"). This takes a little effort, so feel free to leave it
+> out at first.
 
-[Debug logs attached here](https://github.com/example/background-music-debug-logs.txt)
+[Debug logs attached here]
 
 **Other info**
 > Anything else you want to add?
@@ -42,8 +45,11 @@ assignees: ''
 
 > Tips
 > (Delete this section before posting.)
->  - https://github.com/kyleneideck/BackgroundMusic#troubleshooting
->  - Try the latest SNAPSHOT version from https://github.com/kyleneideck/BackgroundMusic/releases (if it's newer than the latest non-SNAPSHOT release).
->  - If your bug is one of these common issues, consider leaving a comment or a +1 (👍) on an existing issue:
+>  - See [the README's Troubleshooting section](../../README.md#troubleshooting) and
+>    [docs/TROUBLESHOOTING.md](../../docs/TROUBLESHOOTING.md) first.
+>  - If your bug is about per-app volume, auto-pause, or recording system audio (not the per-app EQ
+>    or output-routing features this fork adds), it may already be a known upstream issue — check
+>    [upstream Background Music's issues](https://github.com/kyleneideck/BackgroundMusic/issues)
+>    too. Known upstream workarounds:
 >     - Background Music currently only supports audio devices with two channels. Bluetooth devices often only have one.
 >     - Volumes having no effect for certain apps: Microsoft Teams ([workaround](https://github.com/kyleneideck/BackgroundMusic/issues/268#issuecomment-604977210)), Zoom ([workaround](https://github.com/kyleneideck/BackgroundMusic/issues/396#issuecomment-741992157)), Discord ([workaround](https://github.com/kyleneideck/BackgroundMusic/issues/210#issuecomment-507048957), [see also](https://github.com/kyleneideck/BackgroundMusic/issues/267#issuecomment-617327850)), Chrome (sometimes)

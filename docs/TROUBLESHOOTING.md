@@ -58,7 +58,7 @@ password prompt to read from and will fail exactly this way (confirmed empirical
 `docs/LESSONS.md`). Run:
 
 ```
-cd /Users/damato/Projects/mac-volume-mixer && ./setup.sh
+cd /Users/damato/Projects/wavecraft && ./setup.sh
 ```
 
 ### Verifying an install actually worked

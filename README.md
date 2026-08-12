@@ -1,241 +1,251 @@
 <!-- vim: set tw=120: -->
 
-![](Images/README/FermataIcon.png)
+<img src="BGMApp/BGMApp/Images.xcassets/AppIcon.appiconset/appicon_128.png" width="96" height="96" />
 
-# Background Music
-##### macOS audio utility
+# Wavecraft
+##### A free, native per-app audio mixer for macOS
 
-<img src="Images/README/Screenshot.png" width="340" height="443" />
+Per-app volume, per-app EQ, and per-app output routing — the things SoundSource charges for — as a
+CoreAudio virtual device you build yourself. No subscription, no App Store account, no license key.
 
-[Overview](#overview)<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Auto-pause music](#auto-pause-music)<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Application volume](#application-volume)<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Recording system audio](#recording-system-audio)<br/>
-[Download](#download)<br/>
+Free forever, but if it's useful to you: [ko-fi.com/phaenex](https://ko-fi.com/phaenex).
+
+[What is this](#what-is-this)<br/>
+[Features](#features)<br/>
+[Requirements](#requirements)<br/>
+[Install (build from source)](#install-build-from-source)<br/>
 [Run / Configure](#run--configure)<br/>
-[Build and Install](#installing-from-source-code)</br>
+[Full guide](docs/GUIDE.md)<br/>
 [Uninstall](#uninstall)<br/>
+[Known limitations](#known-limitations)<br/>
 [Troubleshooting](#troubleshooting)<br/>
-[Related Projects](#related-projects)<br/>
+[Why a fork instead of a paid app](#why-a-fork-instead-of-a-paid-app)<br/>
+[Contributing](#contributing)<br/>
+[Related projects](#related-projects)<br/>
 [License](#license)<br/>
 
-# Overview
+# What is this
 
-+ Automatically pause/unpause your music player when other audio sources are playing/stopped
-+ Per-application volume control
-+ Record system audio
-+ No restart required to install
+**Wavecraft** is a fork of [Background Music](https://github.com/kyleneideck/BackgroundMusic) by
+Kyle Neideck and contributors — a free, open-source (GPL-2.0) macOS audio utility that installs a
+CoreAudio HAL virtual device so every app's output can be routed through it, remixed, and sent back
+out. That's the entire reason per-app volume is possible at all on macOS: the OS has no native API
+for it, so someone has to sit in the middle of the audio path.
 
-##### *Note: Background Music is still in alpha.*
+<img src="Images/README/how-it-works.png" width="700" alt="Diagram: apps flow into the Wavecraft virtual device, which applies per-app volume and EQ, then sends most apps to the normal output except any app explicitly routed elsewhere, which goes to a different output device" />
 
-## Auto-pause music
+Wavecraft adds two things on top of upstream Background Music:
 
-**Background Music** automatically pauses your music player when a second audio source is playing and unpauses the player when the second source has stopped.
+- **Per-app EQ** — a 5-band equalizer per application, not just a volume slider.
+- **Per-app output routing** — send one app's audio to your headphones while everything else stays
+  on your speakers, via [CoreAudio Process Taps](docs/PROCESS-TAP-ROUTING.md) rather than the
+  single shared virtual device upstream's architecture is built around.
 
-The auto-pause feature currently supports following music players:
+Everything else — auto-pause, per-app volume/pan/mute, recording system audio — is upstream
+Background Music, unchanged.
 
-+ [iTunes](https://www.apple.com/itunes/)
-+ [Spotify](https://www.spotify.com)
-+ [VLC](https://www.videolan.org/vlc/)
-+ [VOX](https://vox.rocks/mac-music-player)
-+ [Decibel](https://sbooth.org/Decibel/)
-+ [Hermes](http://hermesapp.org/)
-+ [Swinsian](https://swinsian.com/)
-+ [GPMDP](https://www.googleplaymusicdesktopplayer.com/)
+# Features
 
-Adding support for a new music player is usually straightforward.<sup id="a1">[1](#f1)</sup> If you don't know how to program, or just don't feel
-like it, feel free to [create an issue](https://github.com/kyleneideck/BackgroundMusic/issues/new). Otherwise, see
-[BGMMusicPlayer.h](BGMApp/BGMApp/Music%20Players/BGMMusicPlayer.h).
+- **Per-app volume** — a volume slider for every running app, independent of the system volume.
+  You can boost quiet apps above their normal maximum.
+- **Per-app EQ** *(new in Wavecraft)* — 5 bands per app (60Hz / 250Hz / 1kHz / 4kHz / 12kHz, ±12dB
+  each), applied in real time in the driver.
+- **Per-app output routing** *(new in Wavecraft)* — pick a different physical output device for an
+  individual app's audio, independent of your system's default output.
+- **Auto-pause music** — pauses your music player when another app starts playing audio, and
+  unpauses it when that audio stops. Supports iTunes/Music, Spotify, VLC, VOX, Decibel, Hermes,
+  Swinsian, and GPMDP.
+- **Record system audio** — with Wavecraft running, select it as the input device in QuickTime
+  Player (**File > New Audio Recording**) to record whatever your Mac is playing. You can combine
+  it with a microphone using an [aggregate device](https://support.apple.com/en-us/HT202000) in
+  **Audio MIDI Setup**.
+- **No restart required to install.**
 
-## Application volume
+# Requirements
 
-**Background Music** provides a volume slider for each application running your system. You can boost quiet applications above their maximum volume.
+**macOS 10.13+** for the base app (per-app volume, auto-pause, recording).
 
-## Recording system audio
+**macOS 26.0+** for per-app output routing specifically — it's built on
+[`CATapDescription.processRestoreEnabled`](docs/PROCESS-TAP-ROUTING.md), which doesn't exist on
+older systems. On an older macOS, everything else works normally; routing just isn't available.
 
-You can record system audio with **Background Music**. With **Background Music** running, launch **QuickTime Player** and select **File > New Audio Recording** (or **New Screen Recording**, **New Movie Recording**). Then click the dropdown menu (`⌄`) next to the record button and select **Background Music** as the input device.
+Per-app EQ has no extra requirement beyond the base app.
 
-You can record system audio and a microphone together by creating an [aggregate
-device](https://support.apple.com/en-us/HT202000) that combines your input device (usually Built-in Input) with
-the **Background Music** device. You can create the aggregate device using the **Audio MIDI Setup** utility under
-***/Applications/Utilities***.
+# Install (build from source)
 
-# Download
+There's no signed release build — no download, no Homebrew cask, no `.pkg`. Building from source is
+the point — the *only* reason this fork exists is that [upstream's official release binary runs
+under Rosetta on Apple Silicon](https://github.com/kyleneideck/BackgroundMusic/issues/395), and
+building it yourself with a current Xcode produces a native `arm64` build instead. It usually takes
+under a minute, and doesn't need any macOS restart.
 
-**Requires macOS 10.13+**.
+**Requires [Xcode](https://apps.apple.com/us/app/xcode/id497799835) (not just the Command Line
+Tools) — the driver target needs the full Xcode toolchain.**
 
-You can download the current version of **Background Music** using the following options. We also have [snapshot builds](https://github.com/kyleneideck/BackgroundMusic/releases).
+### Option 1 — one command
 
-### Option 1
-
-Download **version 0.5.0**:
-
-<a href="https://github.com/kyleneideck/BackgroundMusic/releases/download/v0.5.0/BackgroundMusic-0.5.0.pkg"><img
-src="Images/README/pkg-icon.png" width="32" height="32" align="absmiddle" />
-BackgroundMusic-0.5.0.pkg</a> (788 KB)
-
-> <sub>MD5: 2405d83ac3e2a29fb2c9bf5beb6eaceb</sub><br/>
-> <sub>SHA256: c7742b48ac2e9ea955fea66e5c13bb56be5f1487e0b12bad93820984bccb69ef</sub><br/>
-> <sub>PGP:
-> [sig](https://github.com/kyleneideck/BackgroundMusic/releases/download/v0.5.0/BackgroundMusic-0.5.0.pkg.asc),
-> [key (0595DF814E41A6F69334C5E2CAA8D9B8E39EC18C)](https://bearisdriving.com/kyle-neideck.gpg)</sub>
-
-### Option 2
-
-Install using [Homebrew](https://brew.sh/) by running the following command in **Terminal**:
-
-```bash
-brew install --cask background-music
-```
-
-# Run / Configure
-
-Just run `Applications > Background Music.app`! **Background Music** sets itself as your default output device under
-`System Settings > Sound` when it starts up (and sets it back on Quit).
-
-### Launch at Startup (Optional)
-
-Add **Background Music** to `System Settings > General > Login Items`.
-
-# Installing from Source Code
-
-**Background Music** usually takes less than a minute to build. You need [Xcode](https://developer.apple.com/xcode/download/) version
-10 or higher.
-
-### Option 1
-
-1. Open **Terminal**.
-2. Copy and paste the following command into **Terminal**:
+Open **Terminal** and paste this in:
 
 ```shell
-(set -eo pipefail; URL='https://github.com/kyleneideck/BackgroundMusic/archive/master.tar.gz'; \
+(set -eo pipefail; URL='https://github.com/Phaenex/wavecraft/archive/main.tar.gz'; \
     cd $(mktemp -d); echo Downloading $URL to $(pwd); curl -qfL# $URL | gzcat - | tar x && \
-    /bin/bash BackgroundMusic-master/build_and_install.sh -w && rm -rf BackgroundMusic-master)
+    /bin/bash wavecraft-main/build_and_install.sh && rm -rf wavecraft-main)
 ```
 
 <details><summary>More info...</summary>
 
-This command uses `/bin/bash` instead of `bash` in case someone has a nonstandard Bash in their `$PATH`. However, it doesn't do this for `tar` or `curl`. In addition, `build_and_install.sh` doesn't call programs by absolute paths. This command also uses `gzcat - | tar x` instead of `tar xz` because `gzcat` will also check the file's integrity (gzip files
-include a checksum), and will ensure that a half-downloaded copy of `build_and_install.sh` doesn't run.
+This downloads a tarball of the repo to a temporary directory, builds it, installs it, and cleans
+up after itself. It uses `/bin/bash` instead of `bash` in case you have a nonstandard Bash in your
+`$PATH`. It uses `gzcat - | tar x` instead of `tar xz` because `gzcat` also checks the download's
+integrity (gzip files include a checksum), so a half-downloaded archive won't silently run a broken
+script.
 
 </details>
 
-### Option 2
+### Option 2 — clone it yourself
 
-1. Clone or [download](https://github.com/kyleneideck/BackgroundMusic/archive/master.zip) the project.
-2. If the project is in a zip, unzip it.
-3. Open **Terminal** and [change the directory](https://github.com/0nn0/terminal-mac-cheatsheet#core-commands) to the
-   directory containing the project.
-4. Run: `/bin/bash build_and_install.sh`.
+```shell
+git clone https://github.com/Phaenex/wavecraft.git
+cd wavecraft
+./build_and_install.sh
+```
 
-The script restarts the system audio process (coreaudiod) at the end of the installation, so pause any applications
-playing audio if you can.
+Either way, `build_and_install.sh` builds all three components (the driver, the XPC helper, and the
+menu bar app), installs the driver to `/Library/Audio/Plug-Ins/HAL/`, and restarts `coreaudiod`. It
+needs `sudo` — macOS only loads CoreAudio HAL drivers from that one system-owned path, so there's no
+way around installing as root. Audio will glitch briefly while `coreaudiod` restarts, so pause
+anything that's playing first.
 
-To manually build and install, see [MANUAL_INSTALL.md](https://github.com/kyleneideck/BackgroundMusic/blob/master/MANUAL-INSTALL.md).
+For a manual, step-by-step build (no install script), see
+[MANUAL-INSTALL.md](MANUAL-INSTALL.md). If something goes wrong, check
+[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) first — it's a running log of build/install
+problems that actually happened while developing this fork, with the real fix for each.
+
+# Run / Configure
+
+Run `Applications > Wavecraft.app` (the built app bundle is still internally named "Background
+Music.app" — none of the underlying Xcode targets, bundle identifiers, or launchd labels were
+renamed, only this fork's own branding and docs). It sets itself as your system's default output
+device on launch and puts an icon in the menu bar — click it for volume/EQ/routing controls per
+app, and it reverts your default output device on quit.
+
+Once installed, each app's row in the menu also has EQ sliders and an output-device picker under
+its "show more controls" arrow, alongside the existing volume and pan controls. See
+[docs/GUIDE.md](docs/GUIDE.md) for a full walkthrough of every control in the menu.
+
+### Launch at Startup (optional)
+
+Add it to **System Settings > General > Login Items**.
 
 # Uninstall
 
-To uninstall **Background Music** from your system, follow these steps:
+```shell
+cd /Applications/Background\ Music.app/Contents/Resources/
+bash uninstall.sh
+```
 
-1. Open **Terminal**.
-2. To locate `uninstall.sh`, run: `cd /Applications/Background\ Music.app/Contents/Resources/`.
-3. Run: `bash uninstall.sh`.
+For a manual uninstall, see [MANUAL-UNINSTALL.md](MANUAL-UNINSTALL.md).
 
-If you cannot locate `uninstall.sh`, you can [download the project](https://github.com/kyleneideck/BackgroundMusic/archive/master.zip) again.
+# Known limitations
 
-To manually uninstall, see [MANUAL_UNINSTALL.md](https://github.com/kyleneideck/BackgroundMusic/blob/master/MANUAL-UNINSTALL.md).
+Inherited from upstream, not introduced by this fork:
+
+- Only 2-channel (stereo) output devices are supported as the *main* output device. An 8-channel
+  monitor caused a "severe choppiness" report that looked like an OS regression but was actually
+  this — check **Audio MIDI Setup** for your output device's channel count before assuming
+  something else is broken.
+- Setting an app's volume above 50% can clip. Keep your main output near max and lower individual
+  apps instead of boosting them.
+- First run needs "Microphone" permission in System Settings for the virtual input device — it
+  doesn't actually listen to your microphone; macOS just classifies Wavecraft's input side that way
+  because it's a virtual audio input.
+- **Because of that, the orange "microphone in use" pill shows in your menu bar the whole time
+  Wavecraft is running.** This isn't Wavecraft's icon and isn't something the app can turn off —
+  it's macOS's own system-wide privacy indicator (since Monterey), and it does this for *any*
+  virtual/loopback audio device, including BlackHole and Loopback, not just this one. The only
+  control over it is system-wide: **System Settings > Privacy & Security > Microphone > Privacy
+  Indicators**, which also affects the indicator for apps using a real microphone — there's no way
+  to exempt one specific device.
+
+Specific to this fork's new features:
+
+- Per-app output routing needs macOS 26.0+ (see [Requirements](#requirements)).
+- Routing assignments are held in the menu bar app's own process, not the driver (a deliberate
+  design choice — see [docs/PROCESS-TAP-ROUTING.md](docs/PROCESS-TAP-ROUTING.md)), so they don't
+  survive the app itself restarting the way per-app volume does. They *do* survive the routed app
+  being quit and reopened.
 
 # Troubleshooting
 
-If Background Music crashes and your audio stops working, open `System Settings > Sound` and change your
-system's default output device to something other than the **Background Music device**. If it already is, then
-change the default device and then change it back again.
+See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for build/install issues, and
+[docs/LESSONS.md](docs/LESSONS.md) for the less obvious things that came up while developing this
+fork (an "open Tahoe bug" that turned out to be the 2-channel limitation above, a build-vs-test
+sandbox permission gotcha, etc.).
 
-Make sure you allow "microphone access" when you first run Background Music. If you denied it, go to
-`System Settings > Security & Privacy > Privacy > Microphone`, find Background Music in the list
-and check the box next to it. Background Music doesn't actually listen to your microphone. It needs
-the permission because it gets your system audio from its virtual input device, which macOS counts
-as a microphone. (We're working on it in [#177](/../../issues/177).)
+If Wavecraft crashes and your audio stops working, open **System Settings > Sound** and change your
+default output device to something other than the Wavecraft device — if it's already something
+else, switch away and back again.
 
-If the volume slider for an app isn't working, try looking in `More Apps` for entries like `Some
-App (Helper)`. For some meeting or video chat apps, you may need to do this to change the current
-meeting volume.
+If a volume slider isn't working for an app, check **More Apps** for entries like `Some App
+(Helper)` — some meeting/video apps route audio through a helper process you need to control
+instead.
 
-## Known issues and solutions
+# Why a fork instead of a paid app
 
-- **Setting an application's volume above 50% can cause [clipping](https://en.wikipedia.org/wiki/Clipping_(audio)).**
+We tried [SoundSource](https://rogueamoeba.com/soundsource/) first. It's a good app, but per-app
+volume, EQ, and output routing are things the operating system should let you do without paying a
+subscription for a feature the hardware and OS already support — Background Music does the same
+core job for $0 and is GPL-2.0, it just needed a native Apple Silicon build and a couple of the
+features SoundSource charges for.
 
-    - Set your volume to its maximum level and lower the volumes of other applications.
+<img src="Images/README/comparison.png" width="700" alt="Comparison table: Wavecraft is free and open source with per-app volume, 5-band EQ, and per-app output routing; SoundSource is $49 one-time with per-app volume, 10-band EQ, and per-app output routing; Sound Control is $25 one-time or subscription with per-app volume, 10/31-band EQ plus AutoEQ, and per-app output routing" />
 
-- **Only 2-channel (stereo) audio devices are currently supported for output.**
+Wavecraft's EQ has fewer bands than either paid app — that's the honest tradeoff of a smaller,
+volunteer-built project, not something to hide. Feature parity (more EQ bands, AutoEQ, etc.) is on
+the roadmap; see [TODO.md](TODO.md).
 
-- **VLC pauses iTunes or Spotify when playing, and stops Background Music from unpausing your music afterward.**
+# Contributing
 
-    - Under VLC's preferences, select **Show All**. Navigate to **Interface > Main interfaces > macosx** and change *Control external music players* to either *Do nothing* or *Pause and resume iTunes/Spotify*.
-
-- **Skype pauses iTunes during calls.**
-
-    - To disable this, uncheck *Pause iTunes during calls* on the **General** tab of **Skype**'s preferences.
-
-- **Plugging in or unplugging headphones when Background Music isn't running causes silence in the system audio.**
-    - Navigate to **System Settings > Sound**. Click the **Output** tab and change your default output device to something other than the **Background Music** device. Alternatively, press **Option + Click** on the sound icon within the menu bar to select a different output device. This happens when macOS remembers that the **Background Music** device was your default audio device the last time you used (or didn't use) headphones.
-
-- **[A Chrome bug](https://bugs.chromium.org/p/chromium/issues/detail?id=557620) stops Chrome from switching to the Background Music device after you open Background Music.**
-    - Chrome's audio will still play, but **Background Music** won't be aware of it.
-
-- **Some applications play notification sounds that are only just long enough to trigger an auto-pause.**
-    - Increase the `kPauseDelayNSec` constant in [BGMAutoPauseMusic.mm](/BGMApp/BGMApp/BGMAutoPauseMusic.mm). It will increase your music's overlap time over other audio, so don't increase it too much. See [#5](https://github.com/kyleneideck/BackgroundMusic/issues/5) for details.
-
-Many other issues are listed in [TODO.md](/TODO.md) and in [GitHub
-Issues](https://github.com/kyleneideck/BackgroundMusic/issues).
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 # Related projects
 
+- [Background Music](https://github.com/kyleneideck/BackgroundMusic) — the upstream project this
+  is forked from. If your issue isn't specific to per-app EQ, output routing, or the native build,
+  it's probably worth checking there too.
 - [Core Audio User-Space Driver
-  Examples](https://developer.apple.com/library/mac/samplecode/AudioDriverExamples/Introduction/Intro.html)
-  The sample code from Apple that BGMDriver is based on.
-- [Soundflower](https://github.com/mattingalls/Soundflower) - "MacOS system extension that allows applications to pass
-  audio to other applications."
-- [WavTap](https://github.com/pje/WavTap) - "globally capture whatever your mac is playing—-as simply as a screenshot"
-- [eqMac](http://www.bitgapp.com/eqmac/), [GitHub](https://github.com/nodeful/eqMac2) - "System-wide Audio Equalizer for the Mac"
-- [llaudio](https://github.com/mountainstorm/llaudio) - "An old piece of work to reverse engineer the Mac OSX
-  user/kernel audio interface. Shows how to read audio straight out of the kernel as you would on Darwin (where most the
-  OSX goodness is missing)"
-- [mute.fm](http://www.mutefm.com), [GitHub](https://github.com/jaredsohn/mutefm) (Windows) - Auto-pause music
-- [Jack OS X](http://www.jackosx.com) - "A Jack audio connection kit implementation for Mac OS X"
-- [PulseAudio OS X](https://github.com/zonque/PulseAudioOSX) - "PulseAudio for Mac OS X"
-- [Sound Pusher](https://github.com/q-p/SoundPusher) - "Virtual audio device, real-time encoder and SPDIF forwarder for
-  Mac OS X"
-- [Zirkonium](https://code.google.com/archive/p/zirkonium) - "An infrastructure and application for multi-channel sound
-  spatialization on MacOS X."
-- [BlackHole](https://github.com/ExistentialAudio/BlackHole) - "a modern macOS virtual audio driver that allows applications to pass audio to other applications with zero additional latency."
+  Examples](https://developer.apple.com/library/mac/samplecode/AudioDriverExamples/Introduction/Intro.html) —
+  the Apple sample code the driver is based on.
+- [Soundflower](https://github.com/mattingalls/Soundflower) — a virtual audio device for passing
+  audio between apps.
+- [BlackHole](https://github.com/ExistentialAudio/BlackHole) — a modern virtual audio driver with
+  zero added latency.
+- [eqMac](https://github.com/nodeful/eqMac2) — system-wide audio equalizer for the Mac.
+- [Sound Pusher](https://github.com/q-p/SoundPusher) — virtual audio device, real-time encoder and
+  S/PDIF forwarder.
 
 ### Non-free
 
-- [Audio Hijack](https://rogueamoeba.com/audiohijack/), [SoundSource](https://rogueamoeba.com/soundsource/) - "Capture
-  Audio From Anywhere on Your Mac", "Get truly powerful control over all the audio on your Mac!"
-- [Sound Siphon](https://staticz.com/soundsiphon/), [Sound Control](https://staticz.com/soundcontrol/) - System/app audio recording, per-app volumes, system audio equaliser
-- [SoundBunny](https://www.prosofteng.com/soundbunny-mac-volume-control/) - "Control application volume independently."
-- [Boom 2](https://www.globaldelight.com/boom/) - "The Best Volume Booster & Equalizer For Mac"
+- [Audio Hijack](https://rogueamoeba.com/audiohijack/),
+  [SoundSource](https://rogueamoeba.com/soundsource/) — the apps this project exists to be a free
+  alternative to.
+- [Sound Siphon](https://staticz.com/soundsiphon/),
+  [Sound Control](https://staticz.com/soundcontrol/) — per-app volumes and a system EQ.
+- [Boom 2](https://www.globaldelight.com/boom/) — volume booster and equalizer.
 
 ## License
 
-Copyright © 2016-2026 [Background Music contributors](https://github.com/kyleneideck/BackgroundMusic/graphs/contributors).
-Licensed under [GPLv2](https://www.gnu.org/licenses/gpl-2.0.html), or any later version.
+Wavecraft is a fork of [Background Music](https://github.com/kyleneideck/BackgroundMusic),
+copyright © 2016-2026 [Background Music
+contributors](https://github.com/kyleneideck/BackgroundMusic/graphs/contributors), with changes
+copyright © 2026 Wavecraft contributors. Licensed under
+[GPLv2](https://www.gnu.org/licenses/gpl-2.0.html), or any later version — see [LICENSE](LICENSE).
 
-**Background Music** includes code from:
+Also includes code from:
 
 - [Core Audio User-Space Driver
-  Examples](https://developer.apple.com/library/mac/samplecode/AudioDriverExamples/Introduction/Intro.html), [original
-  license](LICENSE-Apple-Sample-Code), Copyright (C) 2013 Apple Inc. All Rights Reserved.
+  Examples](https://developer.apple.com/library/mac/samplecode/AudioDriverExamples/Introduction/Intro.html),
+  [original license](LICENSE-Apple-Sample-Code), Copyright (C) 2013 Apple Inc. All Rights Reserved.
 - [Core Audio Utility
   Classes](https://developer.apple.com/library/content/samplecode/CoreAudioUtilityClasses/Introduction/Intro.html),
   [original license](LICENSE-Apple-Sample-Code), Copyright (C) 2014 Apple Inc. All Rights Reserved.
-
-----
-
-<b id="f1">[1]</b> However, if the music player doesn't support AppleScript, or doesn't support the events Background
-Music needs (`isPlaying`, `isPaused`, `play` and `pause`), it can take significantly more effort to add. (And in some
-cases would require changes to the music player itself.) [↩](#a1)
-
-

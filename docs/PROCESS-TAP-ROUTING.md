@@ -98,3 +98,45 @@ exercised the PID path) on this ad-hoc "linker-signed" build, zero extra codesig
 
 Conclusion: the architecture in this document is sound and buildable. Proceeding to Phase 2 (the
 per-app PlayThrough engine) is justified by real, measured evidence, not just the API reading.
+
+## Phase 2: the routing engine and UI (2026-08-12)
+
+`BGMApp/BGMApp/BGMTapRoute.{h,mm}` is the per-app engine this doc predicted: a `CATapDescription`
+with `bundleIDs` + `muteBehavior = CATapMuted`, wrapped in a private aggregate device, driving a
+`BGMPlayThrough` (generalized in the same change to accept a non-`BGMDevice` input via
+`SetRequireBGMDeviceInput(false)`, so the already-proven ring-buffer/clock-sync code is reused
+rather than reimplemented) that writes to whichever physical device the user picked. `Start()`/
+`Stop()` clean up whatever actually got created, even on a partial failure.
+
+One addition beyond the original design: `CATapDescription.processRestoreEnabled = YES`. Without
+it, a tap only lives as long as the process that owned the bundle ID at `Start()` time -- quit and
+reopen the routed app and routing would silently stop working until the user reselected it in the
+UI. With it (macOS 26.0+, same gate as `bundleIDs`), the tap reattaches to whichever process
+currently owns the bundle ID, so an assignment survives the target app being quit and relaunched.
+
+`BGMAppOutputRoutingController` (`BGMApp/BGMApp/BGMAppOutputRoutingController.{h,mm}`) owns the
+bundle-ID → `BGMTapRoute` map and is the thing the UI actually talks to:
+
+- Each app's menu item has a `BGMAVM_OutputRouteButton` pop-up (`BGMApp/BGMApp/BGMAppVolumes.{h,m}`)
+  listing "Default" plus every output device `BGMOutputDeviceMenuSection` would offer BGMApp's own
+  output, rebuilt fresh from `CAHALAudioSystemObject` every time it's about to open
+  (`NSMenuDelegate.menuNeedsUpdate:`), so it can't go stale between a device being plugged in and
+  the button being clicked.
+- Starting/stopping a route runs on the controller's own serial background queue --
+  `BGMPlayThrough::Start()` blocks waiting for IO, the same way `BGMAudioDeviceManager`'s own
+  `startPlayThroughSync` does, and that can't happen on the main thread without hanging the menu.
+- Assignments persist in `BGMUserDefaults.outputRouteDeviceUIDsByBundleID` (bundle ID → device
+  UID, matched back to a connected `AudioObjectID` the same way `BGMPreferredOutputDevices` matches
+  its preferred-device list) and are restored for apps that are running whenever
+  `NSWorkspace.runningApplications` reports them -- both at `BGMApp` launch and later in the
+  session, so an assignment for an app that wasn't open yet at launch still gets applied once it
+  starts.
+
+**What Phase 2 does not cover**: the `CATapMuted` question flagged as open at the end of Phase 1
+(does muting the source app's normal output actually work) is still unverified by anything other
+than reading the header's documented behavior -- confirming it needs `./build_and_install.sh` (the
+one step that always needs a human) and a real listening test with two apps and two output
+devices. Nothing here has been run against real hardware yet; what's verified so far is that the
+whole thing builds clean and the driver-side `BGM_BiquadTests`/`BGM_ClientsTests`,
+`BGMAppUnitTests`'s `BGMTapRouteTests`, and the full BGMApp/BGMDriver/BGMXPCHelper build all pass
+-- see the "Build & test" section in `CLAUDE.md`.

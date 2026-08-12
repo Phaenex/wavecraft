@@ -2,53 +2,61 @@
 
 # Contributing
 
-Firstly, thanks for reading this. Pull requests, bug reports, feature requests, questions, etc. are all very welcome --
-including ones from non-developers.
+Thanks for reading this. Pull requests, bug reports, feature requests, and questions are all
+welcome, including from non-developers.
 
 ## Issues
 
-You'll probably want to update to the latest version of the code before creating an issue. The easiest way is to just
-run the installation command from [README.md](/README.md#install) again. (But `git pull && ./build_and_install.sh` is
-faster.)
+Update to the latest code before filing an issue — `git pull && ./build_and_install.sh` is fastest.
 
-For bug reports about `build_and_install.sh`, please include your `build_and_install.log`. It should be saved in the
-directory `build_and_install.sh` is in.
+For bug reports about `build_and_install.sh`, include `build_and_install.log` (saved in the same
+directory as the script).
 
-It might also be helpful to include logs in bug reports about Background Music itself. Those logs go to syslog by
-default, so you can use Console.app to read them. (It might help to search for "BGM" or "Background Music".)
+It can help to include logs for bugs in Wavecraft itself. They go to syslog by default, so
+Console.app can read them (search for "BGM" or "Background Music" — the underlying targets keep
+their original names; only this fork's branding and docs changed). Release builds only log errors
+and warnings by default. For more detail, install a debug build with `./build_and_install.sh -d`
+and include those logs instead.
 
-You also might not get any log messages at all. Normally (i.e. in release builds) Background Music only logs errors and
-warnings. We're still working on adding optional debug-level logging to release builds.
-
-If you feel like being really helpful, you could reproduce your bug with a debug build and include the debug logs, which
-are much more detailed. But don't feel obligated to. To install a debug build, use `./build_and_install.sh -d`.
-
-If you make an issue and you're interested in implementing/fixing it yourself, mention that in the issue so we can
-confirm you're on the right track, assign the issue to you and so on.
+If you're planning to fix or implement something yourself, say so in the issue first so we can
+confirm you're on the right track before you put the work in.
 
 ## Code
 
-The code is mostly C++ and Objective-C. But don't worry if you don't know those languages--I don't either. Or Core
-Audio, for that matter. Also don't worry if you're not sure your code is right.
+The code is C++ and Objective-C (and Objective-C++ where they mix, e.g. anything with a `.mm`
+extension). [DEVELOPING.md](DEVELOPING.md) has an overview of the architecture and instructions for
+building/debugging — worth reading before diving into the code, though
+[BGMAppDelegate.mm](BGMApp/BGMApp/BGMAppDelegate.mm) is a reasonable place to start browsing if you
+prefer to learn by reading.
 
-No dependencies so far. (Though you're welcome to add some.)
+This fork's two additions, if you're looking for where they live:
 
-The best place to start is probably [DEVELOPING.md](/DEVELOPING.md), which has an overview of the project and
-instructions for building, debugging, etc. It's kind of long, though, and not very interesting, so you might prefer to
-go straight into the code. In that case, you'll probably want to start with
-[BGMAppDelegate.mm](/BGMApp/BGMApp/BGMAppDelegate.mm).
+- **Per-app EQ** — DSP in `BGMDriver/BGMDriver/DeviceClients/BGM_Biquad.*`, the device property in
+  `BGMBackgroundMusicDevice::GetAppEQ`/`SetAppEQBandGains`, and the UI in
+  `BGMApp/BGMApp/BGMAppVolumes.{h,m}` (`BGMAVM_EQBandSlider`).
+- **Per-app output routing** — the engine in `BGMApp/BGMApp/BGMTapRoute.{h,mm}`, the controller in
+  `BGMApp/BGMApp/BGMAppOutputRoutingController.{h,mm}`, and the UI in `BGMAppVolumes.{h,m}`
+  (`BGMAVM_OutputRouteButton`). Read [docs/PROCESS-TAP-ROUTING.md](docs/PROCESS-TAP-ROUTING.md)
+  first — the design decisions there (why routing runs in the app's own process, not the driver)
+  aren't obvious from the code alone.
 
-If you get stuck or have questions about the project, feel free to open an issue. You could also [email
-me](mailto:kyle@bearisdriving.com) or try [#backgroundmusic on
-Freenode](https://webchat.freenode.net/?channels=backgroundmusic).
+If you add a substantial amount of code, add a copyright notice with your name to the files you
+changed. Say so in the PR if you've deliberately left one out.
 
-If you have questions related to Core Audio, the [Core Audio mailing
-list](https://lists.apple.com/archives/coreaudio-api) is very useful. There's also the [Core Audio
+## Before opening a PR
+
+- `xcodebuild ... -only-testing:BGMAppUnitTests test` and `-only-testing:BGMDriverTests test` (see
+  [CLAUDE.md](CLAUDE.md) for the exact commands) should both pass. Neither needs `sudo` or an
+  installed driver.
+- If you touched anything CoreAudio-device-facing, note in the PR whether you were able to test it
+  against real hardware — a lot of this codebase (this fork's `BGMTapRoute` included) can't be
+  exercised in the unit test targets at all, since they link mocked `CAHALAudioDevice` objects. See
+  `BGMTapRouteTests.mm`'s comment for the specifics.
+
+## Core Audio background
+
+If you have questions about Core Audio itself, the [Core Audio mailing
+list](https://lists.apple.com/archives/coreaudio-api) is useful, along with Apple's [Core Audio
 Overview](https://developer.apple.com/library/mac/documentation/MusicAudio/Conceptual/CoreAudioOverview/Introduction/Introduction.html)
-and the [Core Audio
+and [Core Audio
 Glossary](https://developer.apple.com/library/mac/documentation/MusicAudio/Reference/CoreAudioGlossary/Glossary/core_audio_glossary.html).
-
-If you remember to, add a copyright notice with your name to any source files you change substantially. Let us know in
-the PR if you've intentionally not added one so we know not to add one for you.
-
-

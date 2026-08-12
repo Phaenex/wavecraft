@@ -214,6 +214,24 @@ To test with Address Sanitizer, you might have to set the environment var `ASAN_
 around [Issue #647](https://github.com/google/sanitizers/issues/647). (In Xcode, go `Product` > `Scheme` > `Edit
 Scheme...`, select the Background Music scheme, and add the environment var in Run > Arguments.)
 
+## Wavecraft's additions
+
+Everything above describes upstream Background Music's architecture, unchanged. Wavecraft adds two
+features on top of it, each with its own doc:
+
+- **Per-app EQ** — driver-side DSP (`BGM_Biquad`/`BGM_AppEQ` in
+  `BGMDriver/BGMDriver/DeviceClients/`) applied in `BGM_Device::ApplyClientEQ`, following the same
+  device-property pattern as `AppVolumes` (`kAudioDeviceCustomPropertyAppEQ` mirrors
+  `kAudioDeviceCustomPropertyAppVolumes`). UI in `BGMApp/BGMApp/BGMAppVolumes.{h,m}`
+  (`BGMAVM_EQBandSlider`).
+- **Per-app output routing** — a second, independent audio path that runs entirely in `BGMApp`'s
+  own process rather than the driver. Read
+  [docs/PROCESS-TAP-ROUTING.md](docs/PROCESS-TAP-ROUTING.md) before touching this; the "hybrid, not
+  a replacement" design decision there (why routed apps get pulled out via a Process Tap instead of
+  changing how the driver itself works) isn't obvious from the code alone. `BGMTapRoute` reuses
+  `BGMPlayThrough` (generalized to accept a non-`BGMDevice` input via
+  `SetRequireBGMDeviceInput(false)`) rather than reimplementing the ring-buffer/clock-sync engine.
+
 ----
 
 <b id="f1">[1]</b> It actually publishes two devices -- the main one and one for UI-related sounds, but you probably
