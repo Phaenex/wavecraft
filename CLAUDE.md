@@ -100,8 +100,13 @@ the design rationale. The menu bar status icon (`Images.xcassets/WavecraftIcon.i
 a microphone/recording icon at status-bar size, which is a bad look for an app that separately
 needs "Microphone" permission for its virtual input device (see Known limitations, below) for
 unrelated reasons. It's now four rounded bars (an EQ-meter motif matching the app icon), generated
-with `reportlab` as a vector PDF at the same 283.46×283.46pt canvas size upstream's icon used —
-regenerate it with a similar script rather than hand-editing the PDF if it ever needs to change.
+with `reportlab` as a vector PDF at the same 283.46×283.46pt canvas size upstream's icon used.
+`tools/generate-icons.py` regenerates all three icon deliverables (the AppIcon PNGs, DeviceIcon.icns,
+and this PDF) from that same four-bar design — colors and geometry were measured directly off the
+shipped `appicon_1024.png`, not hand-copied — rather than hand-editing any of them if the design
+ever needs to change; pass `--out-dir` to render to a scratch location first rather than overwriting
+the real assets directly. `iconutil` (used for the `.icns` step) needs to run unsandboxed if you're
+doing this from an AI coding agent's shell — see the script's own docstring.
 `tools/verify-icons.py` measures every icon file's actual pixel dimensions
 against what `Contents.json` declares, rather than trusting a generation script got it right; run
 it after regenerating any icon. The app icon updates in `/Applications` without `sudo` (that
