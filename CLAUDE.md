@@ -36,10 +36,14 @@ xcodebuild -workspace BGM.xcworkspace -scheme "Background Music" -configuration 
 # Unit tests (no sudo needed, safe to run anytime):
 xcodebuild -workspace BGM.xcworkspace -scheme "Background Music" -configuration Debug -destination 'platform=macOS' -only-testing:BGMAppUnitTests test
 xcodebuild -workspace BGM.xcworkspace -scheme "Background Music Device" -configuration Debug -destination 'platform=macOS' -only-testing:BGMDriverTests test
+
+# Icon assets (measures real pixel dimensions, doesn't just trust filenames):
+python3 tools/verify-icons.py
 ```
 
-All three targets build clean as of the initial fork setup (2026-08-11), 36/36 unit tests passing
-(27 BGMAppUnitTests + 9 BGMDriverTests, 0 failures).
+All three targets build clean. 43/43 unit tests passing as of the per-app EQ DSP core
+(27 BGMAppUnitTests + 16 BGMDriverTests — 9 original + 7 for `BGM_Biquad`/`BGM_AppEQ`, verified by
+measuring actual RMS gain from a real sine wave, not just checking the code runs), 0 failures.
 
 ## The one step that always needs a human
 
@@ -62,14 +66,43 @@ DerivedData isn't installed until this script (or a manual copy) puts it in plac
 
 ```bash
 system_profiler SPAudioDataType | grep -A5 "Background Music"
-launchctl list | grep bearisdriving
+launchctl print system/com.bearisdriving.BGM.XPCHelper | grep "state = running"
 ps aux | grep "Background Music" | grep -v grep
 ```
 
-The device should show up in `SPAudioDataType`, the XPC helper should be a running launchd job
-under `com.bearisdriving.BGM.XPCHelper`, and the menu bar app should be running. Actual audio
-verification (does moving a slider actually change an app's volume) needs a human ear — no
-headless check can confirm that.
+The device should show up in `SPAudioDataType`, the XPC helper should report `state = running`,
+and the menu bar app should be running. **Don't use plain `launchctl list` for the XPC helper** —
+it only shows the calling user's launchd domain, not root-owned system `LaunchDaemon`s, so it
+reports the helper as missing even when it's genuinely running (`setup.sh` had this bug and it was
+fixed; see `docs/TROUBLESHOOTING.md`). Actual audio verification (does moving a slider actually
+change an app's volume) needs a human ear — no headless check can confirm that.
+
+`setup.sh` runs the install and all of the above checks in one pass — see it for the exact
+commands.
+
+### Icons
+
+Custom app + device icon (not upstream's Fermata mark) — see the commit that introduced them for
+the design rationale. `tools/verify-icons.py` measures every icon file's actual pixel dimensions
+against what `Contents.json` declares, rather than trusting a generation script got it right; run
+it after regenerating any icon. The app icon updates in `/Applications` without `sudo` (that
+bundle is user-owned after install); `DeviceIcon.icns`, shown in Audio MIDI Setup, is inside the
+root-owned driver bundle and needs a real reinstall to update.
+
+## In-progress work beyond stock Background Music
+
+Two features being built on top of upstream, past parity with SoundSource:
+
+- **Per-app EQ** — DSP core done and tested (`BGMDriver/BGMDriver/DeviceClients/BGM_Biquad.*`,
+  `BGMDriverTests/BGM_BiquadTests.mm`). Not yet wired to a settable property or the real-time IO
+  path — see `docs/LESSONS.md` for the filter-state-ownership design decision that has to hold
+  before that wiring goes in (real-time delay-line state can't live where `BGM_Client` gets copied
+  by value).
+- **Per-app output routing** (send one app to headphones while another stays on speakers) — not
+  possible in upstream's architecture at all (one virtual device, one `PlayThrough` output). Being
+  built via CoreAudio Process Taps instead — see `docs/PROCESS-TAP-ROUTING.md` for the verified API
+  surface and `tools/tap-poc/` for the proof-of-concept that confirmed the approach works (real
+  audio measured, no unexpected permission prompt).
 
 ## Known limitations (inherited from upstream, not introduced by us)
 
@@ -88,6 +121,10 @@ headless check can confirm that.
 Read `docs/LESSONS.md` first — it has the specific things that turned out not to be what they
 looked like on first read (an "open Tahoe bug" that wasn't, an "official fix PR" that was half
 rejected by the maintainer for looking unverified). Don't re-learn those the slow way.
+
+Hit a build error, install failure, or icon-not-updating problem? Check `docs/TROUBLESHOOTING.md`
+first — every entry there is something that actually happened while building this fork, with the
+real fix, not a guess.
 
 Before pulling in any more upstream PRs: check the PR's own review comments first. The maintainer
 (kyleneideck) reviews everything by hand and has already cherry-picked the legitimate fixes out of
