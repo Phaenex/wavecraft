@@ -37,7 +37,9 @@ Every running app with audio (that isn't hidden or a background helper) gets its
 - **Mute button** — click to mute/unmute. Un-muting restores the volume you had before you muted.
 - **Volume slider** — always visible. Snaps to the midpoint (unity gain) if you drop it near the
   middle, so it's easy to find "unchanged" again.
-- **The small arrow (▾)** on the right — click it to expand the row and reveal three more sections:
+- **The small arrow (▾)** on the right — click it to expand the row and reveal three more sections.
+  It highlights (a colored tint on the arrow) whenever the app currently has non-default pan or EQ
+  set, so you can tell before expanding the row.
 
 ### Pan
 
@@ -45,20 +47,20 @@ A slider that shifts the app's audio left/right in the stereo field.
 
 ### EQ
 
-Five vertical-stacked sliders, one per band: **60Hz, 250Hz, 1kHz, 4kHz, 12kHz**, each adjustable
-from −12dB to +12dB. These apply in the driver, in real time, independently per app — turning down
-an app's 60Hz band doesn't affect any other app's bass.
-
-There's no visual indicator on the collapsed row for whether an app currently has non-flat EQ set
-(same known gap as Pan already had — see [TODO.md](../TODO.md)), so if something sounds off, expand
-the row and check.
+Ten vertical-stacked sliders, one per band — the standard ISO octave-band spread: **31Hz, 62Hz,
+125Hz, 250Hz, 500Hz, 1kHz, 2kHz, 4kHz, 8kHz, 16kHz**, each adjustable from −12dB to +12dB. These
+apply in the driver, in real time, independently per app — turning down an app's 31Hz band doesn't
+affect any other app's bass.
 
 ### Output routing
 
 A pop-up button listing **Default** plus every output device currently connected. Pick a device to
 send that specific app's audio there instead of your main output — for example, routing a video
 call to headphones while music keeps playing on speakers. Pick **Default** again to send it back
-through the normal path.
+through the normal path. Apps with an active route are marked with a small icon next to their name
+in the main menu, so you can see which apps are routed without opening each row. If the device
+you've routed an app to disconnects, Wavecraft automatically clears that route (the assignment is
+still remembered — reconnect the device and reselect it, or just relaunch the app, to restore it).
 
 This needs macOS 26.0+ (see the README's Requirements section). The assignment is remembered even
 if you quit and reopen the app you routed — it's tied to the app's bundle ID, not the specific
@@ -122,3 +124,21 @@ you'll have two nearly-identical icons in your menu bar if that one's also showi
 
 Not built into the app — add `Wavecraft.app` (installed as `Background Music.app` in
 `/Applications`) to **System Settings > General > Login Items**.
+
+## AppleScript
+
+Wavecraft is scriptable — open **Script Editor** and target "Background Music" (its underlying
+app/process name; see CLAUDE.md's Icons section for why the display name and process name differ).
+Each running app exposes `volume`, `pan`, `EQ band gains` (a list of 10 numbers, lowest frequency
+first), and `output device` (an output device object, or `missing value` for no override):
+
+```applescript
+tell application "Background Music"
+    set volume of application "Music" to 50
+    set EQ band gains of application "Music" to {0, 0, 0, 0, 0, 3, 3, 0, 0, 0}
+    set output device of application "Music" to (first output device whose name is "AirPods")
+end tell
+```
+
+The app-level `selected output device`, `output devices`, and `output volume` properties already
+documented by upstream Background Music still work unchanged.

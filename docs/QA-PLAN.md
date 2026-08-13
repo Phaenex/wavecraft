@@ -42,11 +42,12 @@ This is the minimum bar before claiming any of this session's work "works," not 
       Drag to max — audibly louder than system volume alone. Mute button silences it; unmute
       restores the exact prior level.
 - [ ] **Per-app EQ**: pick a playing app with sustained tone content (music, not silence), expand
-      its row, drag the 60Hz band to -12dB — audible bass cut on *that app only*, not on anything
-      else playing simultaneously. Drag +12dB on 4kHz — audible presence boost. Return all 5 bands
-      to 0 — audio returns to how it sounded before touching EQ (this is the actual claim from
-      `BGM_BiquadTests::testZeroGainIsExactUnity`; verify it holds for real audio, not just the
-      unit test's synthetic signal).
+      its row, drag the 31Hz band to -12dB — audible bass cut on *that app only*, not on anything
+      else playing simultaneously. Drag +12dB on 4kHz — audible presence boost. Confirm all 10
+      bands are visible and correctly labeled (31/62/125/250/500Hz, 1/2/4/8/16kHz), not clipped by
+      the new taller menu row. Return all 10 bands to 0 — audio returns to how it sounded before
+      touching EQ (this is the actual claim from `BGM_BiquadTests::testZeroGainIsExactUnity`;
+      verify it holds for real audio, not just the unit test's synthetic signal).
 - [ ] **Per-app output routing**: with two output devices connected (e.g. built-in speakers +
       headphones/AirPods), route one playing app to the non-default device via its pop-up. Confirm:
       - Audio from the routed app comes out the *new* device
@@ -87,21 +88,34 @@ Every control, once, confirming it does what the code says it does:
       `BGM_Biquad::SetAllBandGainsDB` — it should only call `SetParameters`, which resets filter
       state, for bands whose value actually changed)
 - [ ] EQ: an app with non-flat EQ set quits and relaunches — does the driver still have the old
-      gains for that bundle ID, and does the menu show them correctly on the new process (there's
-      no visual "this app has EQ set" indicator on the collapsed row — confirm that's merely a
-      missing affordance, not a sign the state itself was lost)
-- [ ] Routing: unplug the device an app is currently routed to, while it's routed — confirm this
-      fails gracefully (error alert, not a crash or silent hang) rather than assuming
-      `findConnectedDeviceIDForUID:` returning `kAudioObjectUnknown` is enough on its own
+      gains for that bundle ID, and does the menu show them correctly on the new process, including
+      the show-more-controls arrow's highlight (confirm it's on immediately on the freshly-created
+      row, not just after touching a slider)
+- [ ] EQ/Pan: the show-more-controls arrow highlights when either has a non-default value and
+      returns to normal when both are back to default, both at row-creation time (restored from a
+      previous session) and live while dragging a slider with the row already open
+- [ ] Routing: the routed app's name in the main menu shows the route indicator icon immediately
+      after picking a device, and it disappears immediately after picking "Default" or using
+      "Remove All Output Routing Overrides" — check both with the menu already open (does it update
+      without closing and reopening?) and freshly opened
+- [ ] Routing: unplug the device an app is currently routed to, while it's routed — confirm the
+      route clears automatically (audio falls back to the default output, not silence) within a few
+      seconds, the persisted assignment is still there (not lost), and reconnecting the device and
+      reselecting it from the pop-up restores the route
 - [ ] Routing: quit and relaunch the *routed app* (not Wavecraft) — audio should still be routed
       correctly afterward, unattended (this is the actual point of `processRestoreEnabled`)
 - [ ] Routing: quit and relaunch *Wavecraft itself* — the assignment should be gone from the
       running state (by design, see TODO.md's known limitation) but still show as persisted next
       time that app's row exists — confirm the UI doesn't lie about which one is true
 - [ ] Routing: on a system below macOS 26 (if one's available to test on), confirm the pop-up
-      shows a clear "needs macOS 26+" error rather than a generic/confusing CoreAudio error code
+      shows the specific "Per-app output routing needs macOS 26 or later" message (`BGMTapRoute::
+      kMacOSTooOld`), not a generic/confusing CoreAudio error code
 - [ ] Routing: route two different apps to two different non-default devices simultaneously —
       confirm neither route interferes with the other or with the default-output apps
+- [ ] AppleScript: from Script Editor, get and set `volume`, `pan`, `EQ band gains`, and
+      `output device` of a running app via `tell application "Background Music"` — confirm each
+      round-trips correctly and that setting `output device` actually starts a route (audible, and
+      visible via the new route indicator) the same as using the pop-up would
 
 ## 4. Regression check against upstream behavior
 

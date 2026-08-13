@@ -36,7 +36,7 @@ for it, so someone has to sit in the middle of the audio path.
 
 Wavecraft adds two things on top of upstream Background Music:
 
-- **Per-app EQ** — a 5-band equalizer per application, not just a volume slider.
+- **Per-app EQ** — a 10-band equalizer per application, not just a volume slider.
 - **Per-app output routing** — send one app's audio to your headphones while everything else stays
   on your speakers, via [CoreAudio Process Taps](docs/PROCESS-TAP-ROUTING.md) rather than the
   single shared virtual device upstream's architecture is built around.
@@ -52,10 +52,14 @@ and [docs/QA-PLAN.md](docs/QA-PLAN.md) for exactly what's still unverified.
 
 - **Per-app volume** — a volume slider for every running app, independent of the system volume.
   You can boost quiet apps above their normal maximum.
-- **Per-app EQ** *(new in Wavecraft)* — 5 bands per app (60Hz / 250Hz / 1kHz / 4kHz / 12kHz, ±12dB
-  each), applied in real time in the driver.
+- **Per-app EQ** *(new in Wavecraft)* — 10 bands per app, the standard ISO octave-band spread
+  (31Hz / 62Hz / 125Hz / 250Hz / 500Hz / 1kHz / 2kHz / 4kHz / 8kHz / 16kHz, ±12dB each), applied in
+  real time in the driver. The row highlights when an app has non-default EQ or pan set, so it's
+  visible without expanding every app's controls.
 - **Per-app output routing** *(new in Wavecraft)* — pick a different physical output device for an
-  individual app's audio, independent of your system's default output.
+  individual app's audio, independent of your system's default output. Routed apps are marked in
+  the main menu so you can see which ones are routed without opening each row, and a route
+  automatically clears (without losing the saved assignment) if its target device disconnects.
 - **Auto-pause music** — pauses your music player when another app starts playing audio, and
   unpauses it when that audio stops. Supports iTunes/Music, Spotify, VLC, VOX, Decibel, Hermes,
   Swinsian, and GPMDP.
@@ -217,7 +221,7 @@ subscription for a feature the hardware and OS already support — Background Mu
 core job for $0 and is GPL-2.0, it just needed a native Apple Silicon build and a couple of the
 features SoundSource charges for.
 
-<img src="Images/README/comparison.png" width="700" alt="Comparison table: Wavecraft is free and open source with per-app volume, 5-band EQ, and per-app output routing; SoundSource is $49 one-time with per-app volume, 10-band EQ, and per-app output routing; Sound Control is $25 one-time or subscription with per-app volume, 10/31-band EQ plus AutoEQ, and per-app output routing" />
+<img src="Images/README/comparison.png" width="700" alt="Comparison table: Wavecraft is free and open source with per-app volume, 10-band EQ, and per-app output routing; SoundSource is $49 one-time with per-app volume, 10-band EQ, and per-app output routing; Sound Control is $25 one-time or subscription with per-app volume, 10/31-band EQ plus AutoEQ, and per-app output routing" />
 
 Wavecraft's EQ has fewer bands than either paid app — that's the honest tradeoff of a smaller,
 volunteer-built project, not something to hide. Feature parity (more EQ bands, AutoEQ, etc.) is on

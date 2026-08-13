@@ -427,3 +427,28 @@ misleading errors with no "Operation not permitted" text to grep for. When a sys
 (`iconutil`, `codesign`, `sips`, anything under `/usr/bin` or a `.app`'s own CLI) fails with a
 vague, non-specific error and the *logic* around the call looks correct, retry unsandboxed before
 spending time debugging the code that invoked it.
+
+## `xcodebuild build`'s static analyzer only runs for Release, not the Debug test builds already being run
+
+**The trap:** a new `menuWillOpen:` code path (`BGMAppDelegate.mm`) passed a possibly-nil local
+`NSTextField*` into a new helper method whose parameter wasn't marked nullable. Every verification
+run up to that point -- `-only-testing:BGMAppUnitTests test` (Debug), repeated many times across
+this session -- built and passed clean, 28/28, with zero warnings. The problem only surfaced on the
+next plain `-configuration Release build`, as `** BUILD SUCCEEDED **` followed by a separate,
+easy-to-miss line: `The following commands produced analyzer issues: AnalyzeShallow
+BGMAppDelegate.mm`.
+
+**What was actually true:** Xcode's static analyzer (`clang --analyze`, deeper flow-sensitive
+nullability/nil-flow checking than the ordinary compiler's `-Wnullable-to-nonnull-conversion`) runs
+as part of the Release build's `AnalyzeShallow` step but is **not** part of the Debug/test
+invocations this project runs constantly for fast iteration. So a real nil-flow defect can pass
+every `BGMAppUnitTests test` run in a session and only show up the first time a Release build
+actually happens -- which, in this project's rhythm, is often the *last* verification step before
+declaring something done, not an early one.
+
+**How to apply:** `-only-testing:... test` (Debug) is necessary but not sufficient verification for
+this codebase -- always run the three plain `-configuration Release build` commands too (already
+part of this project's standard verification sequence) and specifically grep the output for
+`produced analyzer issues`, not just `BUILD SUCCEEDED`/`BUILD FAILED`, since an analyzer finding
+doesn't fail the build or show up in the pass/fail summary line. `** BUILD SUCCEEDED **` on its own
+is not proof there's nothing to fix.

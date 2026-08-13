@@ -11,24 +11,32 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
 
 ### Added
 
-- **Per-app EQ.** A 5-band equalizer (60Hz/250Hz/1kHz/4kHz/12kHz, ±12dB) per running app, alongside
-  the existing volume/pan controls.
+- **Per-app EQ.** A 10-band equalizer (the standard ISO octave-band spread — 31/62/125/250/500Hz/
+  1/2/4/8/16kHz, ±12dB) per running app, alongside the existing volume/pan controls. Started as 5
+  bands and grew to 10 in the same "Unreleased" window — see the `Changed` section below.
   - Driver: DSP core (`BGMDriver/BGMDriver/DeviceClients/BGM_Biquad.*`), the
     `kAudioDeviceCustomPropertyAppEQ` device property, and real-time application in
     `BGM_Device::ApplyClientEQ`.
   - App: `BGMAVM_EQBandSlider` in `BGMApp/BGMApp/BGMAppVolumes.{h,m}`, wired to
-    `BGMBackgroundMusicDevice::SetAppEQBandGains`/`GetAppEQ`.
+    `BGMBackgroundMusicDevice::SetAppEQBandGains`/`GetAppEQ`. The show-more-controls arrow
+    highlights when an app has non-default EQ or pan set.
 - **Per-app output routing.** Send an individual app's audio to a different physical output device
   than everything else, via CoreAudio Process Taps — not possible in upstream's single-virtual-
   device architecture. See [docs/PROCESS-TAP-ROUTING.md](docs/PROCESS-TAP-ROUTING.md) for the full
   design.
   - `BGMTapRoute` (`BGMApp/BGMApp/BGMTapRoute.{h,mm}`) — the per-app tap/aggregate-device/
-    `BGMPlayThrough` engine.
-  - `BGMAppOutputRoutingController` — owns routing assignments, persists them, and restores them
-    for running apps.
+    `BGMPlayThrough` engine. Distinguishes macOS-too-old, target-device-vanished, and generic
+    CoreAudio failures when `Start()` throws, so the error alert names the actual cause.
+  - `BGMAppOutputRoutingController` — owns routing assignments, persists them, restores them for
+    running apps, and now watches for the routed device disconnecting mid-route (clears the route,
+    keeps the persisted assignment so it reapplies if the device reconnects).
   - `BGMAVM_OutputRouteButton` — the per-app output-device pop-up in the menu.
+  - Routed apps are marked in the main menu (an icon appended to the app's name) so a route is
+    visible without opening that app's row.
   - Requires macOS 26.0+ (`CATapDescription.processRestoreEnabled`); everything else in Wavecraft
     still targets macOS 10.13+.
+- **AppleScript support for per-app EQ and output routing** — `BGMASApplication` gained
+  `eqBandGains` and `outputDevice` properties, alongside the existing `volume`/`pan`.
 - Native Apple Silicon (`arm64`) build from source — the reason this fork exists at all. Upstream's
   official release binary runs under Rosetta on Apple Silicon
   ([issue #395](https://github.com/kyleneideck/BackgroundMusic/issues/395)); building from source
@@ -56,6 +64,9 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
 
 - `BGMPlayThrough` generalized to accept a non-`BGMDevice` input (`SetRequireBGMDeviceInput`), so
   `BGMTapRoute` can reuse its ring-buffer/clock-sync engine instead of reimplementing it.
+- Per-app EQ grew from 5 bands (60Hz/250Hz/1kHz/4kHz/12kHz) to 10 (the standard ISO octave-band
+  spread) — `BGM_AppEQ::kNumBands`/`kBandCenterFreqs` (`BGM_Biquad.h`) and `kBGMAppEQNumBands`
+  (`SharedSource/BGM_Types.h`), plus 5 more slider/label pairs added to `MainMenu.xib`.
 
 ### Fixed
 

@@ -42,19 +42,22 @@ xcodebuild -workspace BGM.xcworkspace -scheme "Background Music Device" -configu
 python3 tools/verify-icons.py
 ```
 
-All three targets build clean (Debug and Release). 51/51 unit tests passing (28 BGMAppUnitTests +
-23 BGMDriverTests, 0 failures — re-run directly via the commands above, not carried over from an
-older count). The 23rd driver test
-(`BGM_DeviceTests::testCustomPropertyInfoListSizeMatchesActualEntryCount`) is a regression test for
-a real crash found on this fork's first actual install — see docs/LESSONS.md's "device-wide crash
-on first real install" entry. No unit tests were added for the EQ/routing UI itself: it's ordinary
-AppKit/CoreAudio glue code (`BGMAppVolumesController`, `BGMOutputDeviceMenuSection`,
-`BGMPreferredOutputDevices` already follow the same pattern), and `BGMTapRouteTests`'s own comment
-explains why — this test target links mocked `CAHALAudioDevice`/`CAHALAudioSystemObject`, so
-anything that touches a real device or `BGMPlayThrough` can't be exercised here regardless of how
-the test is written. **A fully mocked/isolated test suite passing 100% is not the same claim as
-"works on a real install"** — see that same LESSONS.md entry for exactly how that gap showed up in
-practice.
+All three targets build clean (Debug and Release). 52/52 unit tests passing (28 BGMAppUnitTests +
+24 BGMDriverTests, 0 failures — re-run directly via the commands above, not carried over from an
+older count). Two driver tests are regression tests for real bugs found in this fork, not ordinary
+feature tests:
+`BGM_DeviceTests::testCustomPropertyInfoListSizeMatchesActualEntryCount` (a property-discovery-list
+size mismatch that crashed `BGMApp` on this fork's first real install) and
+`BGM_DeviceTests::testConcurrentAddRemoveClientDuringProcessOutputDoesNotCorruptEQProcessorMap` (a
+genuine data race in `BGM_Device::DoIOOperation`'s real-time IO path — reliably reproduced a real
+crash when reverted, see docs/LESSONS.md for both). No unit tests were added for the EQ/routing UI
+itself: it's ordinary AppKit/CoreAudio glue code (`BGMAppVolumesController`,
+`BGMOutputDeviceMenuSection`, `BGMPreferredOutputDevices` already follow the same pattern), and
+`BGMTapRouteTests`'s own comment explains why — this test target links mocked
+`CAHALAudioDevice`/`CAHALAudioSystemObject`, so anything that touches a real device or
+`BGMPlayThrough` can't be exercised here regardless of how the test is written. **A fully
+mocked/isolated test suite passing 100% is not the same claim as "works on a real install"** — see
+that same LESSONS.md entry for exactly how that gap showed up in practice.
 
 ## The one step that always needs a human
 
@@ -123,15 +126,24 @@ always needs a human, above) followed by actually moving the new sliders/pop-up 
 - **Per-app EQ** — DSP core (`BGMDriver/BGMDriver/DeviceClients/BGM_Biquad.*`), the
   `kAudioDeviceCustomPropertyAppEQ` device property (get/set/validate, mirroring how
   `AppVolumes` already works), and real-time application in `BGM_Device::ApplyClientEQ`
-  (called from `DoIOOperation`, before `ApplyClientRelativeVolume`) — all driver-side, 22/22
-  `BGMDriverTests` passing. See `docs/LESSONS.md` for the filter-state-ownership design decision
-  this was built around (real-time delay-line state can't live where `BGM_Client` gets copied by
-  value; it's owned by `BGM_Device` instead, in `mClientEQProcessors`). **UI**: each app's menu
-  item now has 5 band sliders (60Hz/250Hz/1kHz/4kHz/12kHz, ±12dB, in the "extra controls" area
+  (called from `DoIOOperation`, before `ApplyClientRelativeVolume`, both inside the same
+  `mIOMutex` critical section — see the data-race entry in docs/LESSONS.md for why that matters).
+  See `docs/LESSONS.md` for the filter-state-ownership design decision this was built around
+  (real-time delay-line state can't live where `BGM_Client` gets copied by value; it's owned by
+  `BGM_Device` instead, in `mClientEQProcessors`). **10 bands**, the standard ISO octave-band
+  spread (31/62/125/250/500/1k/2k/4k/8k/16k Hz, ±12dB each) — `BGM_AppEQ::kNumBands`
+  (`BGM_Biquad.h`) and `kBGMAppEQNumBands` (`SharedSource/BGM_Types.h`) are two independent
+  constants that have to be edited together; a `static_assert` in `BGM_Device.cpp` catches them
+  drifting apart. **UI**: each app's menu item has 10 band sliders (in the "extra controls" area
   alongside Pan) — `BGMAVM_EQBandSlider` in `BGMApp/BGMApp/BGMAppVolumes.{h,m}`, wired straight to
   the existing `BGMAppVolumesController::setEQBandGains:forAppWithProcessID:bundleID:`. Initial
   gains are read back from `BGMBackgroundMusicDevice::GetAppEQ()` the same way Volume/Pan already
-  are, in `BGMAppVolumesController::getEQBandGainsForApp:fromEQ:`.
+  are, via the now-public `BGMAppVolumesController::getEQBandGainsForApp:` (wraps the original
+  private `fromEQ:` version — added for AppleScript support, see below). The show-more-controls
+  arrow (`BGMAVM_ShowMoreControlsButton::bgm_syncHighlightForCurrentControls`) highlights when an
+  app has non-default EQ or pan set, so that state isn't invisible on the collapsed row; has to run
+  *after* `insertMenuItemForApp:...` writes real slider values, not from `setUpWithApp:` itself,
+  since siblings don't have their real values yet at that point in setup.
 - **Per-app output routing** (send one app to headphones while another stays on speakers) — not
   possible in upstream's architecture at all (one virtual device, one `PlayThrough` output). Built
   via CoreAudio Process Taps instead — see `docs/PROCESS-TAP-ROUTING.md` for the verified API
@@ -147,7 +159,23 @@ always needs a human, above) followed by actually moving the new sliders/pop-up 
   quit and relaunched (`CATapDescription.processRestoreEnabled`, macOS 26.0+) — they do **not**
   survive an app that was never running again during the `BGMApp` session it was assigned in, since
   restoring only happens for apps `NSWorkspace` already knows about; that's an inherent limit of
-  routing living in `BGMApp`'s own process rather than the driver, not a bug to fix.
+  routing living in `BGMApp`'s own process rather than the driver, not a bug to fix. Routed apps are
+  marked in the main menu (`BGMAppDelegate::menuWillOpen:`, an SF Symbol appended to the app name
+  via `NSTextAttachment`) so a route is visible without opening that app's row. If the routed
+  device disconnects mid-route, `BGMAppOutputRoutingController` now listens for
+  `kAudioHardwarePropertyDevices` and tears the route down automatically (keeping the persisted
+  assignment so it reapplies if the device reconnects) instead of leaving `BGMTapRoute::IsRunning()`
+  reporting `true` against a dead device indefinitely. `BGMTapRoute::Start()`'s thrown
+  `CAException` now distinguishes `kMacOSTooOld`, `kOutputDeviceVanished` (checked directly via
+  `CAHALAudioObject::ObjectExists`/`IsAlive`, not inferred from an ambiguous OSStatus), and a
+  generic CoreAudio failure, so the error alert shown for a failed route names the actual cause
+  instead of always blaming "needs macOS 26."
+- **AppleScript support** — `BGMASApplication` (`BGMApp/BGMApp/Scripting/`) gained `eqBandGains`
+  (wraps the getter/setter above) and `outputDevice` (resolves to/from a `BGMASOutputDevice` via
+  `BGMAppOutputRoutingController`'s newly-public `outputOverrideDeviceUIDForBundleID:`/
+  `findConnectedDeviceIDForUID:`) properties, declared in `BGMApp.sdef`. `BGMAppDelegate` gained a
+  public `outputRoutingController` property (mirroring the existing `appVolumes` one) so the
+  scripting layer can reach it.
 
 ## Also new in Wavecraft: troubleshooters, hotkeys, customization
 
@@ -173,7 +201,7 @@ a real install**:
   `kSystemVolumeSteps`/`kAppVolumeSteps` arrays in `BGMHotkeys.mm`) — both persisted in
   `BGMUserDefaults` and shown live in the Preferences menu via `currentBindingsDescription`.
 
-51/51 unit tests passing after this work (28 BGMAppUnitTests + 23 BGMDriverTests — no new tests
+52/52 unit tests passing after this work (28 BGMAppUnitTests + 24 BGMDriverTests — no new tests
 were added for these three features specifically; they depend on real system state
 (`AXIsProcessTrusted()`, `NSWorkspace.frontmostApplication`, live `AudioObjectSetPropertyData`,
 `AVCaptureDevice` authorization) that the mocked `BGMAppUnitTests` target can't exercise, the same
