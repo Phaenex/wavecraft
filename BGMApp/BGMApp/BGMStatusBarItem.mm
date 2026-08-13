@@ -48,23 +48,24 @@ static CGFloat const kVolumeIconAdditionalVerticalPadding = 0.075;
     NSImage* volumeIcon3SoundWaves;
 
     NSStatusItem* statusBarItem;
+    BGMMainPanel* mainPanel;
     BGMDebugLoggingMenuItem* debugLoggingMenuItem;
 
     BGMVolumeChangeListener* volumeChangeListener;
-    id __nullable clickEventHandler;
 
     BGMStatusBarIcon _icon;
 }
 
 #pragma mark Initialisation
 
-- (instancetype) initWithMenu:(NSMenu*)bgmMenu
-                 audioDevices:(BGMAudioDeviceManager*)devices
-                 userDefaults:(BGMUserDefaults*)defaults {
+- (instancetype) initWithPanel:(BGMMainPanel*)panel
+                  audioDevices:(BGMAudioDeviceManager*)devices
+                  userDefaults:(BGMUserDefaults*)defaults {
     if ((self = [super init])) {
         statusBarItem =
                 [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
 
+        mainPanel = panel;
         audioDevices = devices;
         userDefaults = defaults;
 
@@ -74,18 +75,17 @@ static CGFloat const kVolumeIconAdditionalVerticalPadding = 0.075;
         // Set the initial icon.
         self.icon = userDefaults.statusBarIcon;
 
-        // Set the menu item to open the main menu.
-        statusBarItem.menu = bgmMenu;
-
-        // Monitor click events so we can show extra options in the menu if the user was holding the
-        // option key.
-        clickEventHandler = [self addClickMonitor];
-
-        // Set the accessibility label to "Background Music". (We intentionally don't set a title or
-        // a tooltip.)
+        // Clicking the button toggles the main panel -- there's no automatic "menu" wiring to do
+        // here any more (see BGMMainPanel's header for why this app moved off NSMenu for its main
+        // dropdown), so this is the one place that has to explicitly open/close it.
         if ([BGMStatusBarItem buttonAvailable]) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpartial-availability"
+            statusBarItem.button.target = self;
+            statusBarItem.button.action = @selector(statusBarButtonClicked:);
+
+            // Set the accessibility label to "Background Music". (We intentionally don't set a
+            // title or a tooltip.)
             statusBarItem.button.accessibilityLabel =
                     [NSRunningApplication currentApplication].localizedName;
 #pragma clang diagnostic pop
@@ -101,25 +101,8 @@ static CGFloat const kVolumeIconAdditionalVerticalPadding = 0.075;
     return self;
 }
 
-- (id __nullable) addClickMonitor {
-    NSEvent* __nullable (^handlerBlock)(NSEvent*) =
-        ^NSEvent* __nullable (NSEvent* event) {
-            [self statusBarItemWasClicked:event];
-            return event;
-        };
-
-    // TODO: I doubt this works well with VoiceOver.
-    return [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskLeftMouseDown
-                                                 handler:handlerBlock];
-}
-
 - (void) dealloc {
     delete volumeChangeListener;
-
-    if (clickEventHandler) {
-        [NSEvent removeMonitor:(id)clickEventHandler];
-        clickEventHandler = nil;
-    }
 }
 
 - (void) initIcons {
@@ -137,20 +120,15 @@ static CGFloat const kVolumeIconAdditionalVerticalPadding = 0.075;
         volumeIcon3SoundWaves = [NSImage imageNamed:@"Volume3"];
     }
 
-    // Set the icons' sizes.
-    NSRect statusBarItemFrame;
-
-    if ([BGMStatusBarItem buttonAvailable]) {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wpartial-availability"
-        statusBarItemFrame = statusBarItem.button.frame;
-#pragma clang diagnostic pop
-    } else {
-        // OS X 10.9 fallback. I haven't tested this (or anything else on 10.9).
-        statusBarItemFrame = statusBarItem.view.frame;
-    }
-
-    CGFloat heightMinusPadding = statusBarItemFrame.size.height * (1 - kStatusBarIconPadding);
+    // Set the icons' sizes based on the menu bar's own thickness (a stable constant, e.g. 22pt --
+    // not the status item's button frame. This runs immediately after the item is created, before
+    // it's ever actually been laid out, so button.frame.size.height can still be 0 at this exact
+    // moment; sizing the icon off that would resize it to literally 0x0 pixels -- present, but
+    // genuinely invisible, independent of when the image gets assigned. Confirmed against a real
+    // install (see docs/LESSONS.md) after fixing a separate, also-real timing bug in setIcon: below
+    // didn't make the icon appear on its own.
+    CGFloat heightMinusPadding =
+        [NSStatusBar systemStatusBar].thickness * (1 - kStatusBarIconPadding);
 
     // The Wavecraft icon has equal width and height.
     [wavecraftIcon setSize:NSMakeSize(heightMinusPadding, heightMinusPadding)];
@@ -203,8 +181,17 @@ static CGFloat const kVolumeIconAdditionalVerticalPadding = 0.075;
     // Save the setting.
     userDefaults.statusBarIcon = self.icon;
 
-    // Change the icon (i.e. the image). Dispatch this to the main thread because it changes the UI.
-    dispatch_async(dispatch_get_main_queue(), ^{
+    // Change the icon (i.e. the image). Must run on the main thread because it changes the UI --
+    // but only actually dispatch when we're not already there. Unconditionally dispatching, even
+    // from the main thread, defers the update to the next run loop turn instead of running it
+    // inline. This setter's very first call comes from initWithMenu:, already on the main thread
+    // during app launch -- when that call went through the deferred path, NSStatusItem's initial
+    // layout pass ran before the image was ever set, computed a zero width, and never
+    // recalculated it once the image did land a moment later: a real, "visible" NSStatusItem with
+    // no icon and no width, permanently invisible in the actual menu bar. Confirmed against a real
+    // install via diagnostic logging (button.image was still nil immediately after this call
+    // returned) -- see docs/LESSONS.md.
+    void (^updateIcon)(void) = ^{
         if (_icon == BGMWavecraftStatusBarIcon) {
             [self setImage:wavecraftIcon];
 
@@ -220,7 +207,13 @@ static CGFloat const kVolumeIconAdditionalVerticalPadding = 0.075;
 
             [self updateVolumeStatusBarIcon];
         }
-    });
+    };
+
+    if ([NSThread isMainThread]) {
+        updateIcon();
+    } else {
+        dispatch_async(dispatch_get_main_queue(), updateIcon);
+    }
 }
 
 #pragma mark Volume Icon
@@ -288,16 +281,34 @@ static CGFloat const kVolumeIconAdditionalVerticalPadding = 0.075;
              statusBarItem.image.name.UTF8String);
 }
 
-#pragma mark Debug Logging Menu Item
+#pragma mark Button Click
 
-- (void) statusBarItemWasClicked:(NSEvent* __nonnull)event {
-    if ((event.modifierFlags & NSEventModifierFlagOption) != 0) {
-        DebugMsg("BGMStatusBarItem::statusBarItemWasClicked: Option key held");
-        [debugLoggingMenuItem setMenuShowingExtraOptions:YES];
-    } else {
-        [debugLoggingMenuItem setMenuShowingExtraOptions:NO];
+- (void) statusBarButtonClicked:(id)sender {
+    #pragma unused (sender)
+
+    NSEvent* __nullable event = NSApp.currentEvent;
+    BOOL optionHeld = event && ((event.modifierFlags & NSEventModifierFlagOption) != 0);
+
+    if (optionHeld) {
+        DebugMsg("BGMStatusBarItem::statusBarButtonClicked: Option key held");
+    }
+
+    [debugLoggingMenuItem setMenuShowingExtraOptions:optionHeld];
+
+    if ([BGMStatusBarItem buttonAvailable]) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wpartial-availability"
+        // The button always exists once the status item itself does -- see initWithPanel:...
+        // above, which sets statusBarItem.button.target/action unconditionally under the same
+        // buttonAvailable check as here.
+        NSStatusBarButton* button = BGMNN(statusBarItem.button);
+#pragma clang diagnostic pop
+
+        [mainPanel toggleRelativeToStatusItemButton:button];
     }
 }
+
+#pragma mark Debug Logging Menu Item
 
 - (void) setDebugLoggingMenuItem:(BGMDebugLoggingMenuItem*)menuItem {
     debugLoggingMenuItem = menuItem;

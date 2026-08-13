@@ -50,14 +50,18 @@
 
 #pragma mark Initialisation
 
-- (id) initWithMenu:(NSMenu*)menu
-      appVolumeView:(NSView*)view
-       audioDevices:(BGMAudioDeviceManager*)devices
-outputRoutingController:(BGMAppOutputRoutingController*)outputRoutingController {
+- (id) initWithYourAppsStack:(NSStackView*)yourAppsStack
+       systemAndOtherAppsStack:(NSStackView*)systemAndOtherAppsStack
+              disclosureButton:(NSButton*)disclosureButton
+                 appVolumeView:(NSView*)view
+                  audioDevices:(BGMAudioDeviceManager*)devices
+       outputRoutingController:(BGMAppOutputRoutingController*)outputRoutingController {
     if ((self = [super init])) {
         audioDevices = devices;
         appVolumes = [[BGMAppVolumes alloc] initWithController:self
-                                                       bgmMenu:menu
+                                                  yourAppsStack:yourAppsStack
+                                        systemAndOtherAppsStack:systemAndOtherAppsStack
+                                               disclosureButton:disclosureButton
                                                  appVolumeView:view
                                        outputRoutingController:outputRoutingController];
 
@@ -99,7 +103,7 @@ outputRoutingController:(BGMAppOutputRoutingController*)outputRoutingController 
                                                          fromVolumes:volumesFromBGMDevice];
             NSArray<NSNumber*>* __nullable initialEQ = [self getEQBandGainsForApp:app
                                                                               fromEQ:eqFromBGMDevice];
-            [appVolumes insertMenuItemForApp:app
+            [appVolumes insertRowForApp:app
                                initialVolume:initial.volume
                                   initialPan:initial.pan
                           initialEQBandGains:initialEQ];
@@ -109,6 +113,10 @@ outputRoutingController:(BGMAppOutputRoutingController*)outputRoutingController 
 
 - (BGMAppVolumeAndPan) getVolumeAndPanForApp:(NSRunningApplication *)app {
     return [appVolumes getVolumeAndPanForApp:app];
+}
+
+- (void) refreshRoutedIndicators {
+    [appVolumes refreshRoutedIndicators];
 }
 
 - (void) setVolumeAndPan:(BGMAppVolumeAndPan)volumeAndPan forApp:(NSRunningApplication*)app {
@@ -213,7 +221,7 @@ outputRoutingController:(BGMAppOutputRoutingController*)outputRoutingController 
     NSAssert([NSThread isMainThread], @"removeMenuItemsForApps is not thread safe");
 
     for (NSRunningApplication* app in apps) {
-        [appVolumes removeMenuItemForApp:app];
+        [appVolumes removeRowForApp:app];
     }
 }
 
@@ -316,7 +324,7 @@ forAppWithProcessID:(pid_t)processID
                 break;
 
             case NSKeyValueChangeSetting:
-                [appVolumes removeAllAppVolumeMenuItems];
+                [appVolumes removeAllAppVolumeRows];
                 [self insertMenuItemsForApps:newApps];
                 break;
         }

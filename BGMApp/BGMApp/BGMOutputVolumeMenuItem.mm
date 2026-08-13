@@ -61,17 +61,15 @@ NSString* const __nonnull      kGenericOutputDeviceName = @"Output Device";
                                  view:(NSView*)view
                                slider:(NSSlider*)slider
                           deviceLabel:(NSTextField*)label {
-    if ((self = [super initWithTitle:@"" action:nil keyEquivalent:@""])) {
+    if ((self = [super init])) {
         audioDevices = devices;
         deviceLabel = label;
         volumeSlider = slider;
         outputDevice = audioDevices.outputDevice;
+        _view = view;
 
         // volumeChangeListener and updateLabelListenerBlock are initialised in the methods called
         // below.
-
-        // Apply our custom view from MainMenu.xib.
-        self.view = view;
 
         // Set up the UI components in the view.
         [self initSlider];
@@ -208,13 +206,13 @@ NSString* const __nonnull      kGenericOutputDeviceName = @"Output Device";
 }
 
 // Sets the label to the output device's name or, if it has one, its current datasource. If it has a
-// datasource, the device's name is set as this menu item's tooltip. Falls back to a generic name if
+// datasource, the device's name is set as this row's tooltip. Falls back to a generic name if
 // the device returns an error when queried.
 - (void) updateLabelAndToolTip {
     if (outputDevice.GetObjectID() == kAudioObjectUnknown) {
         DebugMsg("BGMOutputVolumeMenuItem::updateLabelAndToolTip: Output device unknown. Using the "
                  "generic label.");
-        self.toolTip = nil;
+        self.view.toolTip = nil;
         deviceLabel.stringValue = kGenericOutputDeviceName;
     } else {
         BOOL didSetLabel = NO;
@@ -239,21 +237,20 @@ NSString* const __nonnull      kGenericOutputDeviceName = @"Output Device";
                 didSetLabel = YES;
 
                 DebugMsg("BGMOutputVolumeMenuItem::updateLabelAndToolTip: Getting device name");
-                // Set the tooltip of the menu item (the container) rather than the label because
-                // menu items' tooltips will still appear when a different app is focused and, as
-                // far as I know, BGMApp should never be the foreground app.
-                self.toolTip = (__bridge_transfer NSString*)outputDevice.CopyName();
+                // Set the tooltip on the row's whole view rather than just the label, so it's not
+                // limited to the small area the text itself covers.
+                self.view.toolTip = (__bridge_transfer NSString*)outputDevice.CopyName();
             } else {
                 DebugMsg("BGMOutputVolumeMenuItem::updateLabelAndToolTip: Getting device name");
                 deviceLabel.stringValue = (__bridge_transfer NSString*)outputDevice.CopyName();
-                self.toolTip = nil;
+                self.view.toolTip = nil;
             }
         } catch (const CAException& e) {
             BGMLogException(e);
 
             // The device returned an error, so set the label to a generic device name, since we
             // don't want to leave it set to the previous device's name.
-            self.toolTip = nil;
+            self.view.toolTip = nil;
 
             if (!didSetLabel) {
                 deviceLabel.stringValue = kGenericOutputDeviceName;
@@ -263,7 +260,7 @@ NSString* const __nonnull      kGenericOutputDeviceName = @"Output Device";
 
     DebugMsg("BGMOutputVolumeMenuItem::updateLabelAndToolTip: Label: '%s' Tooltip: '%s'",
              deviceLabel.stringValue.UTF8String,
-             self.toolTip.UTF8String);
+             self.view.toolTip.UTF8String);
 
     // Take the label out of the accessibility hierarchy, which also moves the slider up a level.
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= 101000  // MAC_OS_X_VERSION_10_10

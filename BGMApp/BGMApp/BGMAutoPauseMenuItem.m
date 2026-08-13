@@ -17,7 +17,7 @@
 //  BGMAutoPauseMenuItem.m
 //  BGMApp
 //
-//  Copyright © 2016, 2019 Kyle Neideck
+//  Copyright © 2016, 2019, 2026 Kyle Neideck
 //  Copyright © 2016 Tanner Hoke
 //
 
@@ -30,158 +30,108 @@
 
 #pragma clang assume_nonnull begin
 
-static NSString* const kMenuItemTitleFormat = @"Auto-pause %@";
-static NSString* const kMenuItemDisabledToolTipFormat = @"%@ doesn't appear to be running.";
+static NSString* const kButtonTitleFormat = @"Auto-pause %@";
+static NSString* const kDisabledLookToolTipFormat = @"%@ doesn't appear to be running.";
 
-// Wait time to disable/enable the auto-pause menu item, in seconds.
-static SInt64 const kMenuItemUpdateWaitTime = 1;
+// Wait time to update the button's enabled-look after the selected player launches/quits, in
+// seconds.
+static SInt64 const kButtonUpdateWaitTime = 1;
 
 @implementation BGMAutoPauseMenuItem {
     BGMUserDefaults* userDefaults;
-    NSMenuItem* menuItem;
+    NSButton* button;
     BGMAutoPauseMusic* autoPauseMusic;
     BGMMusicPlayers* musicPlayers;
     BGMAppWatcher* appWatcher;
 }
 
-- (instancetype) initWithMenuItem:(NSMenuItem*)item
-                   autoPauseMusic:(BGMAutoPauseMusic*)autoPause
-                     musicPlayers:(BGMMusicPlayers*)players
-                     userDefaults:(BGMUserDefaults*)defaults {
+- (instancetype) initWithButton:(NSButton*)inButton
+                  autoPauseMusic:(BGMAutoPauseMusic*)autoPause
+                    musicPlayers:(BGMMusicPlayers*)players
+                    userDefaults:(BGMUserDefaults*)defaults {
     if ((self = [super init])) {
-        menuItem = item;
+        button = inButton;
         autoPauseMusic = autoPause;
         musicPlayers = players;
         userDefaults = defaults;
-        
+
         // Enable/disable auto-pause to match the user's preferences setting.
         if (userDefaults.autoPauseMusicEnabled) {
-            menuItem.state = NSOnState;
+            button.state = NSControlStateValueOn;
             [autoPauseMusic enable];
         } else {
-            menuItem.state = NSOffState;
+            button.state = NSControlStateValueOff;
             [autoPauseMusic disable];
         }
-        
-        // Toggle auto-pause when the menu item is clicked.
-        menuItem.target = self;
-        menuItem.action = @selector(toggleAutoPauseMusic);
 
-        [self initMenuItemTitle];
+        button.target = self;
+        button.action = @selector(toggleAutoPauseMusic);
+
+        [self updateButtonTitle];
+
+        // Avoid retain cycles in case we ever want to destroy instances of this class.
+        BGMAutoPauseMenuItem* __weak weakSelf = self;
+
+        // Update the button's title/enabled-look when the music player is launched/terminated.
+        void (^callback)(void) = ^{
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, kButtonUpdateWaitTime * NSEC_PER_SEC),
+                           dispatch_get_main_queue(),
+                           ^{
+                               [weakSelf updateButtonTitle];
+                           });
+        };
+
+        appWatcher = [[BGMAppWatcher alloc] initWithAppLaunched:callback
+                                                  appTerminated:callback
+                                             isMatchingBundleID:^BOOL(NSString* appBundleID) {
+            BGMAutoPauseMenuItem* __strong strongSelf = weakSelf;
+            NSString* __nullable playerBundleID = strongSelf->musicPlayers.selectedMusicPlayer.bundleID;
+            return playerBundleID && [appBundleID isEqualToString:(NSString*)playerBundleID];
+        }];
     }
-    
+
     return self;
 }
 
-- (void) initMenuItemTitle {
-    // Set the initial text, tool-tip, state, etc.
-    [self updateMenuItemTitle];
-
-    // Avoid retain cycles in case we ever want to destroy instances of this class.
-    BGMAutoPauseMenuItem* __weak weakSelf = self;
-
-    // Add a callback that enables/disables the Auto-pause Music menu item when the music player
-    // is launched/terminated.
-    void (^callback)(void) = ^{
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, kMenuItemUpdateWaitTime * NSEC_PER_SEC),
-                       dispatch_get_main_queue(),
-                       ^{
-                           BGMAutoPauseMenuItem* strongSelf = weakSelf;
-                           [strongSelf updateMenuItemTitle];
-                       });
-    };
-
-    appWatcher = [[BGMAppWatcher alloc] initWithAppLaunched:callback
-                                              appTerminated:callback
-                                         isMatchingBundleID:^BOOL(NSString* appBundleID) {
-        BGMAutoPauseMenuItem* strongSelf = weakSelf;
-        NSString* __nullable playerBundleID =
-                strongSelf->musicPlayers.selectedMusicPlayer.bundleID;
-        return playerBundleID && [appBundleID isEqualToString:(NSString*)playerBundleID];
-    }];
-}
-
 - (void) toggleAutoPauseMusic {
-    // The menu item was clicked.
-    
-    if (menuItem.state == NSOnState) {
-        menuItem.state = NSOffState;
+    if (button.state == NSControlStateValueOn) {
+        button.state = NSControlStateValueOff;
         [autoPauseMusic disable];
     } else {
-        menuItem.state = NSOnState;
+        button.state = NSControlStateValueOn;
         [autoPauseMusic enable];
     }
-    
-    // Persist the change in the user's preferences.
-    userDefaults.autoPauseMusicEnabled = (menuItem.state == NSOnState);
+
+    userDefaults.autoPauseMusicEnabled = (button.state == NSControlStateValueOn);
 }
 
-- (void) updateMenuItemTitle {
-    [self updateMenuItemTitleWithHighlight:menuItem.isHighlighted];
-}
-
-- (void) updateMenuItemTitleWithHighlight:(BOOL)highlight {
-    // Set the title of the Auto-pause Music menu item, including the name of the selected music player.
+// Sets the button's title, including the selected music player's name, and gives it a
+// disabled-looking (but still clickable) appearance if that player isn't currently running. Not
+// actually disabled: someone might want to turn auto-pause off while their player isn't running,
+// e.g. right after installing Wavecraft and before they've decided whether they want this feature
+// at all.
+- (void) updateButtonTitle {
     NSString* musicPlayerName = musicPlayers.selectedMusicPlayer.name;
-    menuItem.title = [NSString stringWithFormat:kMenuItemTitleFormat, musicPlayerName];
-    
-    // Make the Auto-pause Music menu item appear disabled if the application is not running.
-    //
-    // We don't actually disable it just in case the user decides to disable auto-pause and their music player isn't
-    // running. E.g. someone who only recently installed Background Music and doesn't want to use auto-pause at all.
+    button.title = [NSString stringWithFormat:kButtonTitleFormat, musicPlayerName];
+
     if (musicPlayers.selectedMusicPlayer.running) {
-        menuItem.attributedTitle = nil;
-        menuItem.toolTip = nil;
+        button.attributedTitle = [[NSAttributedString alloc] initWithString:button.title];
+        button.toolTip = nil;
     } else {
-        // Hardcode the text colour grey to match disabled menu items (unless the menu item is highlighted, in which
-        // case use white).
-        //
-        // I couldn't figure out a way to do this without hardcoding the colours. There's no colour constant for this,
-        // except possibly disabledControlTextColor, which just leaves the text black for me. I also couldn't get the
-        // colours from the built-in NSColorLists.
-        //
-        // TODO: Can we make the tick mark grey as well?
-        NSString* __nullable appleInterfaceStyle =
-            [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
-        BOOL darkMode = [appleInterfaceStyle isEqualToString:@"Dark"];
-        NSColor* textColor = [NSColor colorWithHue:0
-                                        saturation:0
-                                        brightness:(highlight ? 1 : (darkMode ? 0.25 : 0.75))
-                                             alpha:1];
-        
-        NSDictionary* attributes = @{ NSFontAttributeName: [NSFont menuBarFontOfSize:0],  // Default font size
-                                      NSForegroundColorAttributeName: textColor };
-        NSAttributedString* pseudoDisabledTitle = [[NSAttributedString alloc] initWithString:menuItem.title
-                                                                                  attributes:attributes];
-        menuItem.attributedTitle = pseudoDisabledTitle;
-
-        menuItem.toolTip = [NSString stringWithFormat:kMenuItemDisabledToolTipFormat, musicPlayerName];
+        NSDictionary* attributes = @{
+            NSFontAttributeName: [NSFont menuFontOfSize:0],
+            NSForegroundColorAttributeName: [NSColor disabledControlTextColor],
+        };
+        button.attributedTitle = [[NSAttributedString alloc] initWithString:button.title
+                                                                   attributes:attributes];
+        button.toolTip = [NSString stringWithFormat:kDisabledLookToolTipFormat, musicPlayerName];
     }
 }
 
-#pragma mark Parent menu events
-
-- (void) parentMenuNeedsUpdate {
-    [self updateMenuItemTitle];
-}
-
-- (void) parentMenuItemWillHighlight:(NSMenuItem* __nullable)item {
-    // Used to make the auto-pause menu item's text white when it's highlighted and change it back after.
-    //
-    // TODO: If you click the auto-pause menu item while it's disabled, it will initially appear highlighted next time
-    //       you open the main menu.
-    
-    // If item is nil or any other menu item, the auto-pause menu item will be unhighlighted.
-    BOOL willHighlightMenuItem = [item isEqual:menuItem];
-    
-    // Only update the menu item if it's changing (from highlighted to unhighlighted or vice versa) to save a little
-    // CPU.
-    if (willHighlightMenuItem != menuItem.highlighted) {
-        [self updateMenuItemTitleWithHighlight:willHighlightMenuItem];
-    }
+- (void) refreshBeforeShow {
+    [self updateButtonTitle];
 }
 
 @end
 
 #pragma clang assume_nonnull end
-

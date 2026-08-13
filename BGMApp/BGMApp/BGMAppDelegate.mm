@@ -35,6 +35,7 @@
 #import "BGMDoNotDisturb.h"
 #import "BGMDebugLogging.h"
 #import "BGMDebugLoggingMenuItem.h"
+#import "BGMMainPanel.h"
 #import "BGMMusicPlayers.h"
 #import "BGMOutputDeviceMenuSection.h"
 #import "BGMOutputVolumeMenuItem.h"
@@ -57,9 +58,13 @@ static NSString* const kOptNoPersistentData  = @"--no-persistent-data";
 static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
 
 @implementation BGMAppDelegate {
-    // The button in the system status bar that shows the main menu.
+    // The button in the system status bar that shows the main panel.
     BGMStatusBarItem* statusBarItem;
-    
+
+    // The panel itself -- see BGMMainPanel's header for why this app moved off NSMenu for its
+    // main dropdown.
+    BGMMainPanel* mainPanel;
+
     // Only show the 'BGMXPCHelper is missing' error dialog once.
     BOOL haveShownXPCHelperErrorMessage;
 
@@ -93,13 +98,13 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
 
 - (void) awakeFromNib {
     [super awakeFromNib];
-    
+
     // Show BGMApp in the dock, if the command-line option for that was passed. This is used by the
     // UI tests.
     if ([NSProcessInfo.processInfo.arguments indexOfObject:kOptShowDockIcon] != NSNotFound) {
         [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
     }
-    
+
     haveShownXPCHelperErrorMessage = NO;
 
     // Set up audioDevices, which coordinates BGMDevice and the output device. It manages
@@ -117,10 +122,14 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
     // Stored user settings
     userDefaults = [self createUserDefaults];
 
-    // Add the status bar item. (The thing you click to show BGMApp's main menu.)
-    statusBarItem = [[BGMStatusBarItem alloc] initWithMenu:self.bgmMenu
-                                              audioDevices:audioDevices
-                                              userDefaults:userDefaults];
+    // The main dropdown's window. Created before statusBarItem so there's something for the
+    // status bar button's click handler to show/hide.
+    mainPanel = [BGMMainPanel new];
+
+    // Add the status bar item. (The thing you click to show BGMApp's main panel.)
+    statusBarItem = [[BGMStatusBarItem alloc] initWithPanel:mainPanel
+                                                audioDevices:audioDevices
+                                                userDefaults:userDefaults];
 }
 
 - (void) applicationDidFinishLaunching:(NSNotification*)aNotification {
@@ -334,137 +343,21 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
     }
 }
 
-- (void) menuWillOpen:(NSMenu*)menu {
-    if (@available(macOS 10.16, *)) {
-        // Set menu offset and check for any active menu items
-        float menuOffset = 12.0;
-        for (NSMenuItem* menuItem in self.bgmMenu.itemArray) {
-            if (menuItem.state == NSControlStateValueOn && menuItem.indentationLevel == 0) {
-                menuOffset += 10;
-                break;
-            }
-        }
-        
-        // Align volume output device and slider
-        for (NSView* subview in self.outputVolumeView.subviews) {
-            CGRect newSubview = subview.frame;
-            newSubview.origin.x = menuOffset;
-            subview.frame = newSubview;
-        }
-
-        // Align system sounds and app volumes. Identify each row by a reliable marker instead of
-        // subview count, which broke silently once already: this used to check for exactly 7
-        // subviews (app-volume rows) or 3 (the system-sounds row), and both counts went stale the
-        // moment EQ sliders, pan controls, and the output-route pop-up were added to the per-app
-        // row's view -- a real app-volume row has 29 direct subviews today, and the system-sounds
-        // row has 4, so this whole block (including the routed-app indicator below) silently
-        // stopped running entirely. An app-volume row's menuItem.representedObject is always the
-        // NSRunningApplication it belongs to (set in BGMAppVolumes.m's insertMenuItemForApp:, and
-        // already relied on a few lines below here too), and the system-sounds row's view is
-        // always exactly self.systemSoundsView -- both are exact-identity checks, not fragile
-        // counts that silently drift out of sync the next time either row's layout changes.
-        double appIconTitleOffset = 0;
-        for (NSMenuItem* menuItem in self.bgmMenu.itemArray) {
-            BOOL isAppVolumeRow = [menuItem.representedObject isKindOfClass:[NSRunningApplication class]];
-            BOOL isSystemSoundsRow = (menuItem.view == self.systemSoundsView);
-
-            if (isAppVolumeRow || isSystemSoundsRow) {
-                NSTextField* appTitle;
-                NSImageView* appIcon;
-
-                for (NSView* subview in menuItem.view.subviews) {
-                    if (isSystemSoundsRow) {
-                        // System sounds
-                        if ([subview isKindOfClass:[NSTextField class]]) {
-                            appTitle = (NSTextField*)subview;
-                        }
-                        if ([subview isKindOfClass:[NSImageView class]]) {
-                            appIcon = (NSImageView*)subview;
-                        }
-                    } else {
-                        // App volumes
-                        if ([subview isKindOfClass:[BGMAVM_AppNameLabel class]]) {
-                            appTitle = (NSTextField*)subview;
-                        }
-                        if ([subview isKindOfClass:[BGMAVM_AppIcon class]]) {
-                            appIcon = (NSImageView*)subview;
-                        }
-                    }
-                }
-
-                if (appIconTitleOffset == 0) {
-                    appIconTitleOffset = appTitle.frame.origin.x - appIcon.frame.origin.x;
-                }
-
-                CGRect newAppIcon = appIcon.frame;
-                newAppIcon.origin.x = menuOffset;
-                appIcon.frame = newAppIcon;
-                CGRect newAppTitle = appTitle.frame;
-                newAppTitle.origin.x = menuOffset + appIconTitleOffset;
-                appTitle.frame = newAppTitle;
-
-                // Show which apps have an active output-route override without opening their row
-                // -- hasOutputOverrideForBundleID: already existed with no callers (a per-app
-                // output-routing feature with no way to tell it's active without expanding every
-                // row individually). This runs every time the menu opens, which naturally picks up
-                // routes added/removed since the last time it was open.
-                if (isAppVolumeRow && appTitle) {
-                    NSRunningApplication* app = menuItem.representedObject;
-                    NSString* bundleID = app.bundleIdentifier;
-                    BOOL isRouted = bundleID && [outputRoutingController hasOutputOverrideForBundleID:bundleID];
-                    [self bgm_setAppNameLabel:appTitle
-                                       toName:(app.localizedName ? (NSString*)app.localizedName : @"")
-                                    isRouted:isRouted];
-                }
-            }
-        }
-    }
-}
-
-// Sets appTitle's text to name, appending a small icon indicating an active output-route override
-// when isRouted is true -- see the routing-indicator comment in menuWillOpen: above.
-- (void) bgm_setAppNameLabel:(NSTextField*)appTitle toName:(NSString*)name isRouted:(BOOL)isRouted {
-    if (!isRouted) {
-        appTitle.stringValue = name;
-        return;
-    }
-
-    NSMutableAttributedString* title =
-        [[NSMutableAttributedString alloc] initWithString:[name stringByAppendingString:@"  "]];
-
-    if ([NSImage respondsToSelector:@selector(imageWithSystemSymbolName:accessibilityDescription:)]) {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wpartial-availability"
-        NSImage* routedIcon = [NSImage imageWithSystemSymbolName:@"airplayaudio"
-                                          accessibilityDescription:@"Output routed to another device"];
-#pragma clang diagnostic pop
-        NSTextAttachment* attachment = [NSTextAttachment new];
-        attachment.image = routedIcon;
-        // Sized and nudged to sit on the text baseline instead of towering over lowercase letters
-        // the way an unscaled 17pt SF Symbol glyph does next to a system-size menu font.
-        attachment.bounds = NSMakeRect(0, -2, 12, 10);
-        [title appendAttributedString:[NSAttributedString attributedStringWithAttachment:attachment]];
-    } else {
-        [title appendAttributedString:[[NSAttributedString alloc] initWithString:@"↦"]];
-    }
-
-    appTitle.attributedStringValue = title;
-}
-
 - (void) setUpMainMenu {
     autoPauseMenuItem =
-        [[BGMAutoPauseMenuItem alloc] initWithMenuItem:self.autoPauseMenuItemUnwrapped
-                                        autoPauseMusic:autoPauseMusic
-                                          musicPlayers:musicPlayers
-                                          userDefaults:userDefaults];
+        [[BGMAutoPauseMenuItem alloc] initWithButton:mainPanel.mainContentView.autoPauseButton
+                                       autoPauseMusic:autoPauseMusic
+                                         musicPlayers:musicPlayers
+                                         userDefaults:userDefaults];
 
     [self initVolumesMenuSection];
 
     // Output device selection.
     outputDeviceMenuSection =
-            [[BGMOutputDeviceMenuSection alloc] initWithBGMMenu:self.bgmMenu
-                                                   audioDevices:audioDevices
-                                               preferredDevices:preferredOutputDevices];
+            [[BGMOutputDeviceMenuSection alloc]
+                    initWithDeviceStack:mainPanel.mainContentView.outputDeviceStack
+                           audioDevices:audioDevices
+                       preferredDevices:preferredOutputDevices];
     [audioDevices setOutputDeviceMenuSection:outputDeviceMenuSection];
 
     // Global keyboard shortcuts. Constructing this doesn't request any permission or start
@@ -477,7 +370,9 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
     doNotDisturb = [[BGMDoNotDisturb alloc] initWithAudioDevices:audioDevices
                                                      userDefaults:userDefaults];
 
-    // Preferences submenu.
+    // Preferences submenu. self.bgmMenu is loaded from the XIB but never shown directly any more
+    // -- this just extracts its Preferences submenu's static structure. See prefsMenu.menu's
+    // wiring below and BGMAppDelegate.h's comment on bgmMenu.
     prefsMenu = [[BGMPreferencesMenu alloc] initWithBGMMenu:self.bgmMenu
                                                audioDevices:audioDevices
                                                musicPlayers:musicPlayers
@@ -490,14 +385,36 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
                                                     hotkeys:hotkeys
                                                doNotDisturb:doNotDisturb];
 
+    mainPanel.mainContentView.preferencesButton.target = self;
+    mainPanel.mainContentView.preferencesButton.action = @selector(showPreferencesMenu:);
+
+    mainPanel.mainContentView.quitButton.target = NSApp;
+    mainPanel.mainContentView.quitButton.action = @selector(terminate:);
+
     // Enable/disable debug logging. Hidden unless you option-click the status bar icon.
     debugLoggingMenuItem =
-        [[BGMDebugLoggingMenuItem alloc] initWithMenuItem:self.debugLoggingMenuItemUnwrapped
-                                             audioDevices:audioDevices];
+        [[BGMDebugLoggingMenuItem alloc] initWithButton:mainPanel.mainContentView.debugLoggingButton
+                                            audioDevices:audioDevices];
     [statusBarItem setDebugLoggingMenuItem:debugLoggingMenuItem];
 
-    // Handle events about the main menu. (See the NSMenuDelegate methods below.)
-    self.bgmMenu.delegate = self;
+    // Refresh content that can go stale while the panel's closed (the routed-app indicator, the
+    // Auto-pause row's title) right before it's shown again -- the equivalent of the old
+    // NSMenu-based design's -menuWillOpen:.
+    BGMAppDelegate* __weak weakSelf = self;
+    mainPanel.willShowBlock = ^{
+        BGMAppDelegate* __strong strongSelf = weakSelf;
+        [strongSelf.appVolumes refreshRoutedIndicators];
+        [strongSelf->autoPauseMenuItem refreshBeforeShow];
+    };
+}
+
+// Pops the Preferences menu up from the button that was clicked, positioned the same way an
+// NSMenu opened from a status item would be -- see BGMPreferencesMenu.menu's header comment for
+// why this stays a real NSMenu instead of also moving into the panel.
+- (void) showPreferencesMenu:(NSButton*)sender {
+    [prefsMenu.menu popUpMenuPositioningItem:nil
+                                    atLocation:NSMakePoint(0, sender.bounds.size.height)
+                                        inView:sender];
 }
 
 - (BGMUserDefaults*) createUserDefaults {
@@ -508,7 +425,7 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
 }
 
 - (void) initVolumesMenuSection {
-    // Create the menu item with the (main) output volume slider.
+    // Create the row with the (main) output volume slider.
     BGMOutputVolumeMenuItem* outputVolume =
             [[BGMOutputVolumeMenuItem alloc] initWithAudioDevices:audioDevices
                                                              view:self.outputVolumeView
@@ -516,12 +433,12 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
                                                       deviceLabel:self.outputVolumeLabel];
     [audioDevices setOutputVolumeMenuItem:outputVolume];
 
-    NSInteger headingIdx = [self.bgmMenu indexOfItemWithTag:kVolumesHeadingMenuItemTag];
+    NSStackView* volumesStack = mainPanel.mainContentView.volumesStack;
 
-    // Add it to the main menu below the "Volumes" heading.
-    [self.bgmMenu insertItem:outputVolume atIndex:(headingIdx + 1)];
+    [volumesStack addArrangedSubview:
+        [BGMMainPanelContentView rowContainerWithControl:outputVolume.view height:kBGMMainPanelRowHeight]];
 
-    // Add the volume control for system (UI) sounds to the menu.
+    // Add the volume control for system (UI) sounds.
     BGMAudioDevice uiSoundsDevice = [audioDevices bgmDevice].GetUISoundsBGMDeviceInstance();
 
     systemSoundsVolume =
@@ -529,20 +446,26 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
                                                          view:self.systemSoundsView
                                                        slider:self.systemSoundsSlider];
 
-    [self.bgmMenu insertItem:systemSoundsVolume.menuItem atIndex:(headingIdx + 2)];
+    [volumesStack addArrangedSubview:
+        [BGMMainPanelContentView rowContainerWithControl:systemSoundsVolume.view
+                                                    height:kBGMMainPanelRowHeight]];
 
     // Owns per-app output-device routing overrides. Created here (rather than earlier, alongside
-    // audioDevices) because it doesn't need to exist until there are app volume menu items whose
+    // audioDevices) because it doesn't need to exist until there are app volume rows whose
     // output-route pop-up buttons can use it, and restoring persisted routes needs userDefaults,
     // which isn't set up until awakeFromNib.
     outputRoutingController =
         [[BGMAppOutputRoutingController alloc] initWithUserDefaults:userDefaults];
 
-    // Add the app volumes to the menu.
-    appVolumes = [[BGMAppVolumesController alloc] initWithMenu:self.bgmMenu
-                                                 appVolumeView:self.appVolumeView
-                                                  audioDevices:audioDevices
-                                       outputRoutingController:outputRoutingController];
+    // Add the app volume rows.
+    BGMMainPanelContentView* contentView = mainPanel.mainContentView;
+    appVolumes = [[BGMAppVolumesController alloc]
+            initWithYourAppsStack:contentView.yourAppsStack
+           systemAndOtherAppsStack:contentView.systemAndOtherAppsStack
+                  disclosureButton:contentView.systemAndOtherAppsDisclosureButton
+                     appVolumeView:self.appVolumeView
+                      audioDevices:audioDevices
+           outputRoutingController:outputRoutingController];
 }
 
 - (void) applicationWillTerminate:(NSNotification*)aNotification {
@@ -699,23 +622,6 @@ exitAfterMessageDismissed:(BOOL)fatal {
     [sysPrefs activate];
 }
 
-#pragma mark NSMenuDelegate
-
-- (void) menuNeedsUpdate:(NSMenu*)menu {
-    if ([menu isEqual:self.bgmMenu]) {
-        [autoPauseMenuItem parentMenuNeedsUpdate];
-    } else {
-        DebugMsg("BGMAppDelegate::menuNeedsUpdate: Warning: unexpected menu. menu=%s", menu.description.UTF8String);
-    }
-}
-
-- (void) menu:(NSMenu*)menu willHighlightItem:(NSMenuItem* __nullable)item {
-    if ([menu isEqual:self.bgmMenu]) {
-        [autoPauseMenuItem parentMenuItemWillHighlight:item];
-    } else {
-        DebugMsg("BGMAppDelegate::menu: Warning: unexpected menu. menu=%s", menu.description.UTF8String);
-    }
-}
 @end
 
 #pragma clang assume_nonnull end

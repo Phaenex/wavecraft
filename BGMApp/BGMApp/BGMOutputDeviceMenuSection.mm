@@ -27,6 +27,7 @@
 #import "BGM_Utils.h"
 #import "BGM_Types.h"
 #import "BGMAudioDevice.h"
+#import "BGMMainPanelContentView.h"
 
 // PublicUtility Includes
 #import "CAAutoDisposer.h"
@@ -38,17 +39,22 @@
 #import <set>
 #import <vector>
 
+// System Includes
+#import <objc/runtime.h>
+
 
 #pragma clang assume_nonnull begin
 
-static NSInteger const kOutputDeviceMenuItemTag = 5;
+// Associated-object key used in place of NSMenuItem.representedObject -- see the comment on
+// deviceInfoForButton:/setDeviceInfo:forButton: below.
+static char kDeviceInfoAssociatedObjectKey;
 
 @implementation BGMOutputDeviceMenuSection {
-    NSMenu* bgmMenu;
+    NSStackView* deviceStack;
     BGMAudioDeviceManager* audioDevices;
     BGMPreferredOutputDevices* preferredDevices;
-    NSMutableArray<NSMenuItem*>* outputDeviceMenuItems;
-    // Called when a CoreAudio property has changed and we might need to update the menu. For
+    NSMutableArray<NSButton*>* outputDeviceButtons;
+    // Called when a CoreAudio property has changed and we might need to update the list. For
     // example, when a device is connected or disconnected.
     AudioObjectPropertyListenerBlock refreshNeededListener;
     // The devices we've added refreshNeededListener to. Used to avoid adding it to a device twice
@@ -57,20 +63,32 @@ static NSInteger const kOutputDeviceMenuItemTag = 5;
     std::set<BGMAudioDevice> listenedDevices_kAudioDevicePropertyDataSource;
 }
 
-- (instancetype) initWithBGMMenu:(NSMenu*)inBGMMenu
-                    audioDevices:(BGMAudioDeviceManager*)inAudioDevices
-                preferredDevices:(BGMPreferredOutputDevices*)inPreferredDevices {
+- (instancetype) initWithDeviceStack:(NSStackView*)inDeviceStack
+                         audioDevices:(BGMAudioDeviceManager*)inAudioDevices
+                     preferredDevices:(BGMPreferredOutputDevices*)inPreferredDevices {
     if ((self = [super init])) {
-        bgmMenu = inBGMMenu;
+        deviceStack = inDeviceStack;
         audioDevices = inAudioDevices;
         preferredDevices = inPreferredDevices;
-        outputDeviceMenuItems = [NSMutableArray new];
+        outputDeviceButtons = [NSMutableArray new];
 
         [self listenForDevicesAddedOrRemoved];
-        [self populateBGMMenu];
+        [self populateDeviceList];
     }
-    
+
     return self;
+}
+
+// NSButton has no equivalent of NSMenuItem.representedObject, so this pair of helpers attaches
+// the same {deviceID, dataSourceID} dictionary to a button via the Objective-C runtime's
+// associated-object API instead.
+- (void) setDeviceInfo:(NSDictionary*)info forButton:(NSButton*)button {
+    objc_setAssociatedObject(button, &kDeviceInfoAssociatedObjectKey, info,
+                              OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+- (NSDictionary* __nullable) deviceInfoForButton:(NSButton*)button {
+    return objc_getAssociatedObject(button, &kDeviceInfoAssociatedObjectKey);
 }
 
 - (void) dealloc {
@@ -113,7 +131,7 @@ static NSInteger const kOutputDeviceMenuItemTag = 5;
         #pragma unused (inNumberAddresses, inAddresses)
 
         BGM_Utils::LogAndSwallowExceptions(BGMDbgArgs, [&] {
-            [weakSelf populateBGMMenu];
+            [weakSelf populateDeviceList];
         });
     };
 
@@ -126,49 +144,51 @@ static NSInteger const kOutputDeviceMenuItemTag = 5;
     });
 }
 
-- (void) populateBGMMenu {
+- (void) populateDeviceList {
     // TODO: Technically, we should assert we're on the main queue rather than just the main thread.
     BGMAssert([NSThread isMainThread],
-              "BGMOutputDeviceMenuSection::populateBGMMenu called on non-main thread");
+              "BGMOutputDeviceMenuSection::populateDeviceList called on non-main thread");
 
-    // Remove existing menu items
-    for (NSMenuItem* item in outputDeviceMenuItems) {
-        DebugMsg("BGMOutputDeviceMenuSection::populateBGMMenu: Removing %s",
-                 item.description.UTF8String);
-        [bgmMenu removeItem:item];
+    // Remove existing buttons.
+    for (NSButton* button in outputDeviceButtons) {
+        DebugMsg("BGMOutputDeviceMenuSection::populateDeviceList: Removing %s",
+                 button.description.UTF8String);
+        // The button's container row (see BGMMainPanelContentView's rowContainerWithControl:
+        // height:) is the actual arranged subview of deviceStack, not the button itself. Every
+        // button still in outputDeviceButtons was added with a wrapping row and never had it
+        // removed independently, so superview should always be set here.
+        NSView* row = BGMNN(button.superview);
+        [deviceStack removeArrangedSubview:row];
+        [row removeFromSuperview];
     }
-    
-    [outputDeviceMenuItems removeAllObjects];
-    
-    // Add a menu item for each output device
+
+    [outputDeviceButtons removeAllObjects];
+
+    // Add a button for each output device.
     CAHALAudioSystemObject audioSystem;
     UInt32 numDevices = audioSystem.GetNumberAudioDevices();
-    
+
     if (numDevices > 0) {
         CAAutoArrayDelete<AudioObjectID> devices(numDevices);
         audioSystem.GetAudioDevices(numDevices, devices);
-        
+
         for (UInt32 i = 0; i < numDevices; i++) {
-            [self insertMenuItemsForDevice:devices[i]];
+            [self insertButtonsForDevice:devices[i]];
         }
     }
 }
 
-- (void) insertMenuItemsForDevice:(BGMAudioDevice)device {
-    // Insert menu items after the item for the "Output Device" heading.
-    const NSInteger menuItemsIdx = [bgmMenu indexOfItemWithTag:kOutputDeviceMenuItemTag] + 1;
-
+- (void) insertButtonsForDevice:(BGMAudioDevice)device {
     BOOL canBeOutputDevice = YES;
     BGM_Utils::LogAndSwallowExceptions(BGMDbgArgs, [&] {
         canBeOutputDevice = device.CanBeOutputDeviceInBGMApp();
     });
 
     if (canBeOutputDevice) {
-        for (NSMenuItem* item : [self createMenuItemsForDevice:device]) {
-            DebugMsg("BGMOutputDeviceMenuSection::insertMenuItemsForDevice: Inserting %s",
-                     item.description.UTF8String);
-            [bgmMenu insertItem:item atIndex:menuItemsIdx];
-            [outputDeviceMenuItems addObject:item];
+        for (NSButton* button : [self createButtonsForDevice:device]) {
+            DebugMsg("BGMOutputDeviceMenuSection::insertButtonsForDevice: Inserting %s",
+                     button.description.UTF8String);
+            [outputDeviceButtons addObject:button];
         }
 
         // Add listeners to update the menu when the device's data source changes or it changes its
@@ -197,10 +217,10 @@ static NSInteger const kOutputDeviceMenuItemTag = 5;
     }
 }
 
-- (NSArray<NSMenuItem*>*) createMenuItemsForDevice:(CAHALAudioDevice)device {
-    // We fill this array with a menu item for each output device (or each data source for each device) on
+- (NSArray<NSButton*>*) createButtonsForDevice:(CAHALAudioDevice)device {
+    // We fill this array with a button for each output device (or each data source for each device) on
     // the system.
-    NSMutableArray<NSMenuItem*>* items = [NSMutableArray new];
+    NSMutableArray<NSButton*>* items = [NSMutableArray new];
 
     AudioObjectPropertyScope scope = kAudioObjectPropertyScopeOutput;
     UInt32 channel = kAudioObjectPropertyElementMain;
@@ -226,8 +246,8 @@ static NSInteger const kOutputDeviceMenuItemTag = 5;
         device.GetAvailableDataSources(scope, channel, numDataSources, dataSourceIDs.data());
         
         for (UInt32 i = 0; i < numDataSources; i++) {
-            DebugMsg("BGMOutputDeviceMenuSection::createMenuItemsForDevice: "
-                     "Creating item. %s%u %s%u",
+            DebugMsg("BGMOutputDeviceMenuSection::createButtonsForDevice: "
+                     "Creating button. %s%u %s%u",
                      "Device ID:", device.GetObjectID(),
                      ", Data source ID:", dataSourceIDs[i]);
 
@@ -235,75 +255,92 @@ static NSInteger const kOutputDeviceMenuItemTag = 5;
                 NSString* dataSourceName =
                     CFBridgingRelease(device.CopyDataSourceNameForID(scope, channel, dataSourceIDs[i]));
                 NSString* deviceName = CFBridgingRelease(device.CopyName());
-                
-                [items addObject:[self createMenuItemForDevice:device
-                                                  dataSourceID:@(dataSourceIDs[i])
-                                                         title:dataSourceName
-                                                       toolTip:deviceName]];
+
+                [items addObject:[self createButtonForDevice:device
+                                                 dataSourceID:@(dataSourceIDs[i])
+                                                        title:dataSourceName
+                                                      toolTip:deviceName]];
             });
         }
     } else {
-        DebugMsg("BGMOutputDeviceMenuSection::createMenuItemsForDevice: Creating item. %s%u",
+        DebugMsg("BGMOutputDeviceMenuSection::createButtonsForDevice: Creating button. %s%u",
                  "Device ID:", device.GetObjectID());
 
         BGM_Utils::LogAndSwallowExceptions(BGMDbgArgs, [&] {
-            [items addObject:[self createMenuItemForDevice:device
-                                              dataSourceID:nil
-                                                     title:CFBridgingRelease(device.CopyName())
-                                                   toolTip:nil]];
+            [items addObject:[self createButtonForDevice:device
+                                             dataSourceID:nil
+                                                    title:CFBridgingRelease(device.CopyName())
+                                                  toolTip:nil]];
         });
     }
-    
+
     return items;
 }
 
-- (NSMenuItem*) createMenuItemForDevice:(CAHALAudioDevice)device
-                           dataSourceID:(NSNumber* __nullable)dataSourceID
-                                  title:(NSString* __nullable)title
-                                toolTip:(NSString* __nullable)toolTip {
+// Returns the button itself -- button.superview is its row container (see
+// BGMMainPanelContentView.rowContainerWithControl:height:), which is what actually gets added to
+// deviceStack.
+- (NSButton*) createButtonForDevice:(CAHALAudioDevice)device
+                        dataSourceID:(NSNumber* __nullable)dataSourceID
+                               title:(NSString* __nullable)title
+                             toolTip:(NSString* __nullable)toolTip {
     // If we don't have a title, use the tool-tip text instead.
     if (!title) {
         title = (toolTip ? toolTip : @"");
     }
-    
-    NSMenuItem* item = [[NSMenuItem alloc] initWithTitle:BGMNN(title)
-                                                  action:@selector(outputDeviceMenuItemSelected:)
-                                           keyEquivalent:@""];
-    
+
+    // Indented one level to match the old menu's indentationLevel=1 for device rows, relative to
+    // the "Output Device" section header above them.
+    NSButton* button = [NSButton buttonWithTitle:[@"    " stringByAppendingString:BGMNN(title)]
+                                            target:self
+                                            action:@selector(outputDeviceButtonClicked:)];
+    button.bezelStyle = NSBezelStyleRegularSquare;
+    button.bordered = NO;
+    button.alignment = NSTextAlignmentLeft;
+    button.buttonType = NSButtonTypeSwitch;
+    button.translatesAutoresizingMaskIntoConstraints = NO;
+
     // Add the AirPlay icon to the labels of AirPlay devices.
     //
     // TODO: Test this with real hardware that supports AirPlay. (I don't have any.)
     BGM_Utils::LogAndSwallowExceptions(BGMDbgArgs, [&] {
         if (device.GetTransportType() == kAudioDeviceTransportTypeAirPlay) {
-            item.image = [NSImage imageNamed:@"AirPlayIcon"];
-            
-            // Make the icon a "template image" so it gets drawn colour-inverted when it's highlighted or
-            // OS X is in dark mode.
-            [item.image setTemplate:YES];
+            NSImage* airplayIcon = [NSImage imageNamed:@"AirPlayIcon"];
+
+            // Make the icon a "template image" so it gets drawn colour-inverted when it's
+            // highlighted or the system is in dark mode.
+            [airplayIcon setTemplate:YES];
+            button.image = airplayIcon;
+            button.imagePosition = NSImageLeft;
         }
     });
-    
-    // The menu item should be selected if it's the menu item for the current output device. If the device
-    // has data sources, only the menu item for the current data source should be selected.
+
+    // The button should show as selected if it's for the current output device. If the device has
+    // data sources, only the button for the current data source should be selected.
     BOOL isSelected =
         [audioDevices isOutputDevice:device.GetObjectID()] &&
             (!dataSourceID || [audioDevices isOutputDataSource:[dataSourceID unsignedIntValue]]);
-    
-    item.state = (isSelected ? NSOnState : NSOffState);
-    item.toolTip = toolTip;
-    item.target = self;
-    item.indentationLevel = 1;
-    item.representedObject = @{ @"deviceID": @(device.GetObjectID()),
-                                @"dataSourceID": dataSourceID ? BGMNN(dataSourceID) : [NSNull null] };
 
-#if __clang_major__ >= 9
+    button.state = (isSelected ? NSControlStateValueOn : NSControlStateValueOff);
+    button.toolTip = toolTip;
+
+    [self setDeviceInfo:@{ @"deviceID": @(device.GetObjectID()),
+                          @"dataSourceID": dataSourceID ? BGMNN(dataSourceID) : [NSNull null] }
+              forButton:button];
+
     if (@available(macOS 10.10, *)) {
         // Used for UI tests.
-        item.accessibilityIdentifier = @"output-device";
+        button.accessibilityIdentifier = @"output-device";
     }
-#endif
-    
-    return item;
+
+    // Add the row to deviceStack immediately, in the same call that creates it -- an NSView's
+    // superview backreference is unretained, so if this button's wrapping row were left
+    // unattached to any view hierarchy even briefly, nothing would keep it alive and it (and this
+    // button along with it) could be deallocated before the caller ever uses it.
+    NSView* row = [BGMMainPanelContentView rowContainerWithControl:button height:kBGMMainPanelRowHeight];
+    [deviceStack addArrangedSubview:row];
+
+    return button;
 }
 
 // Called by BGMAudioDeviceManager to tell us a different device has been set as the output device.
@@ -312,24 +349,30 @@ static NSInteger const kOutputDeviceMenuItemTag = 5;
 
     dispatch_async(dispatch_get_main_queue(), ^{
         BGM_Utils::LogAndSwallowExceptions(BGMDbgArgs, [&] {
-            [weakSelf populateBGMMenu];
+            [weakSelf populateDeviceList];
         });
     });
 }
 
-- (void) outputDeviceMenuItemSelected:(NSMenuItem*)menuItem {
-    DebugMsg("BGMOutputDeviceMenuSection::outputDeviceMenuItemSelected: '%s' menu item selected",
-             [menuItem.title UTF8String]);
-    
-    // Make sure the menu item is actually for an output device.
-    if (![outputDeviceMenuItems containsObject:menuItem]) {
+- (void) outputDeviceButtonClicked:(NSButton*)button {
+    DebugMsg("BGMOutputDeviceMenuSection::outputDeviceButtonClicked: '%s' button clicked",
+             [button.title UTF8String]);
+
+    // Make sure the button is actually for an output device.
+    if (![outputDeviceButtons containsObject:button]) {
         return;
     }
-    
+
+    NSDictionary* __nullable deviceInfo = [self deviceInfoForButton:button];
+
+    if (!deviceInfo) {
+        return;
+    }
+
     // Change to the new output device.
-    AudioDeviceID newDeviceID = [[menuItem representedObject][@"deviceID"] unsignedIntValue];
-    id newDataSourceID = [menuItem representedObject][@"dataSourceID"];
-    
+    AudioDeviceID newDeviceID = [deviceInfo[@"deviceID"] unsignedIntValue];
+    id newDataSourceID = deviceInfo[@"dataSourceID"];
+
     BOOL changingDevice = ![audioDevices isOutputDevice:newDeviceID];
     BOOL changingDataSource =
         (newDataSourceID != [NSNull null]) &&
@@ -337,9 +380,9 @@ static NSInteger const kOutputDeviceMenuItemTag = 5;
 
     if (changingDevice || changingDataSource) {
         NSString* deviceName =
-            menuItem.toolTip ?
-                [NSString stringWithFormat:@"%@ (%@)", menuItem.title, menuItem.toolTip] :
-                menuItem.title;
+            button.toolTip ?
+                [NSString stringWithFormat:@"%@ (%@)", button.title, button.toolTip] :
+                button.title;
 
         if (changingDevice) {
             // Add the new output device to the list of preferred devices.

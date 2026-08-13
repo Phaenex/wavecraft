@@ -32,9 +32,12 @@
 
 @interface BGMOutputDeviceMenuSection : NSObject
 
-- (instancetype) initWithBGMMenu:(NSMenu*)inBGMMenu
-                    audioDevices:(BGMAudioDeviceManager*)inAudioDevices
-                preferredDevices:(BGMPreferredOutputDevices*)inPreferredDevices;
+// deviceStack is a vertical NSStackView (BGMMainPanelContentView.outputDeviceStack) that this
+// class adds/removes one button per output device (or per data source, for devices with more than
+// one) to, keeping it in sync as devices connect/disconnect.
+- (instancetype) initWithDeviceStack:(NSStackView*)deviceStack
+                         audioDevices:(BGMAudioDeviceManager*)inAudioDevices
+                     preferredDevices:(BGMPreferredOutputDevices*)inPreferredDevices;
 
 // To be called when BGMApp has been set to use a different output device. For example, when a new
 // device is connected and BGMPreferredOutputDevices decides BGMApp should switch to it.

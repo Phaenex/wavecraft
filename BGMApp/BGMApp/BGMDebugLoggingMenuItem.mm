@@ -36,24 +36,24 @@
 #pragma clang assume_nonnull begin
 
 @implementation BGMDebugLoggingMenuItem {
-    NSMenuItem* _menuItem;
+    NSButton* _button;
     BOOL _menuShowingExtraOptions;
     BGMAudioDeviceManager* _audioDevices;
 }
 
-- (instancetype) initWithMenuItem:(NSMenuItem*)menuItem
-                     audioDevices:(BGMAudioDeviceManager*)audioDevices {
+- (instancetype) initWithButton:(NSButton*)button
+                   audioDevices:(BGMAudioDeviceManager*)audioDevices {
     if ((self = [super init])) {
-        _menuItem = menuItem;
+        _button = button;
         _audioDevices = audioDevices;
-        _menuItem.state =
+        _button.state =
                 BGMDebugLoggingIsEnabled() ? NSControlStateValueOn : NSControlStateValueOff;
 
         [self setMenuShowingExtraOptions:NO];
 
-        // Enable/disable debug logging when the menu item is clicked.
-        menuItem.target = self;
-        menuItem.action = @selector(toggleDebugLogging);
+        // Enable/disable debug logging when the button is clicked.
+        button.target = self;
+        button.action = @selector(toggleDebugLogging);
     }
 
     return self;
@@ -61,15 +61,20 @@
 
 - (void) setMenuShowingExtraOptions:(BOOL)showingExtra {
     _menuShowingExtraOptions = showingExtra;
-    _menuItem.hidden = !BGMDebugLoggingIsEnabled() && !showingExtra;
 
-    DebugMsg("BGMDebugLoggingMenuItem::menuShowingExtraOptions: %s the menu item",
-             _menuItem.hidden ? "Hiding" : "Showing");
+    // The button's own container row (see BGMMainPanelContentView's wrapInRowContainer:height:)
+    // has to be hidden, not just the button, or NSStackView leaves an empty gap where the row
+    // would be instead of collapsing it.
+    BOOL hidden = !BGMDebugLoggingIsEnabled() && !showingExtra;
+    _button.superview.hidden = hidden;
+
+    DebugMsg("BGMDebugLoggingMenuItem::menuShowingExtraOptions: %s the row",
+             hidden ? "Hiding" : "Showing");
 }
 
 - (void) toggleDebugLogging {
     BGMSetDebugLoggingEnabled(!BGMDebugLoggingIsEnabled());
-    _menuItem.state = BGMDebugLoggingIsEnabled() ? NSControlStateValueOn : NSControlStateValueOff;
+    _button.state = BGMDebugLoggingIsEnabled() ? NSControlStateValueOn : NSControlStateValueOff;
 
     // Keep BGMDriver's debug logging in sync with ours.
     BGMLogAndSwallowExceptions("BGMDebugLoggingMenuItem::toggleDebugLogging", [&] {

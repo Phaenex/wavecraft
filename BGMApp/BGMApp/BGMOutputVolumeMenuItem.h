@@ -29,16 +29,20 @@
 
 #pragma clang assume_nonnull begin
 
-@interface BGMOutputVolumeMenuItem : NSMenuItem
+@interface BGMOutputVolumeMenuItem : NSObject
 
-// A menu item with a slider for controlling the volume of the output device. Similar to the one in
-// macOS's Volume menu extra.
+// A row with a slider for controlling the volume of the output device, hosted in BGMMainPanel.
+// Similar to the one in macOS's Volume menu extra.
 //
 // view, slider and deviceLabel are the UI elements from MainMenu.xib.
 - (instancetype) initWithAudioDevices:(BGMAudioDeviceManager*)devices
                                  view:(NSView*)view
                                slider:(NSSlider*)slider
                           deviceLabel:(NSTextField*)label;
+
+// The row's view, added as an arranged subview of BGMMainPanel's row stack by whoever constructs
+// this object.
+@property (nonatomic, readonly) NSView* view;
 
 - (void) outputDeviceDidChange;
 

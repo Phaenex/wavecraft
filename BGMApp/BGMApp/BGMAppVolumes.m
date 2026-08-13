@@ -32,14 +32,14 @@
 #import "BGM_Utils.h"
 #import "BGMAppDelegate.h"
 #import "BGMAppOutputRoutingController.h"
+#import "BGMMainPanelContentView.h"
 
 // PublicUtility Includes
 #import "CADebugMacros.h"
 
 
-static float const     kSlidersSnapWithin          = 5;
-static CGFloat const   kAppVolumeViewInitialHeight = 20;
-static NSString* const kMoreAppsMenuTitle          = @"More Apps";
+static float const   kSlidersSnapWithin          = 5;
+static CGFloat const kAppVolumeViewInitialHeight = 20;
 
 // Labels for the EQ band sliders' tooltips/accessibility descriptions. Must be in the same order
 // (lowest frequency first) as BGM_AppEQ::kBandCenterFreqs in BGM_Biquad.h -- there's no shared
@@ -56,7 +56,7 @@ static const NSUInteger kEQBandFreqLabelsCount =
     sizeof(kEQBandFreqLabels) / sizeof(kEQBandFreqLabels[0]);
 
 // Shared by BGMAVM_PanSlider/BGMAVM_EQBandSlider's live-update paths and
-// BGMAppVolumes::insertMenuItemForApp:... to find the show-more-controls button so its
+// BGMAppVolumes::insertRowForApp:... to find the show-more-controls button so its
 // non-default-controls highlight can be kept in sync -- see
 // BGMAVM_ShowMoreControlsButton::bgm_syncHighlightForCurrentControls.
 static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(NSView* siblingContainer) {
@@ -68,144 +68,146 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
     return nil;
 }
 
+// Deep-copies a view (with its whole subview hierarchy, including custom subclasses) via
+// archiving, the standard technique for cloning a view that isn't loaded fresh from a nib each
+// time -- NSView itself doesn't conform to NSCopying. Used once per app row, to get a fresh,
+// independent copy of the appVolumeView template instead of the same instance being reused (and
+// fought over) by every row.
+static NSView* __nullable BGM_DeepCopyView(NSView* view) {
+    NSError* __nullable archiveError;
+    NSData* __nullable data = [NSKeyedArchiver archivedDataWithRootObject:view
+                                                     requiringSecureCoding:NO
+                                                                     error:&archiveError];
+
+    if (!data) {
+        DebugMsg("BGM_DeepCopyView: Failed to archive view: %s",
+                 archiveError.description.UTF8String);
+        return nil;
+    }
+
+    NSError* __nullable unarchiveError;
+    NSKeyedUnarchiver* unarchiver =
+        [[NSKeyedUnarchiver alloc] initForReadingFromData:BGMNN(data) error:&unarchiveError];
+
+    if (!unarchiver) {
+        DebugMsg("BGM_DeepCopyView: Failed to create unarchiver: %s",
+                 unarchiveError.description.UTF8String);
+        return nil;
+    }
+
+    unarchiver.requiresSecureCoding = NO;
+
+    return [unarchiver decodeObjectOfClass:[NSView class] forKey:NSKeyedArchiveRootObjectKey];
+}
+
 @implementation BGMAppVolumes {
     BGMAppVolumesController* controller;
 
-    NSMenu* bgmMenu;
-    NSMenu* moreAppsMenu;
-    NSMenuItem* moreAppsMenuItem;
+    NSStackView* yourAppsStack;
+    NSStackView* systemAndOtherAppsStack;
+    NSButton* systemAndOtherAppsDisclosureButton;
 
     NSView* appVolumeView;
     CGFloat appVolumeViewFullHeight;
 
-    // The number of menu items this class has added to bgmMenu. Doesn't include the More Apps menu.
-    NSInteger numMenuItems;
+    // Maps each running app to the row view showing its controls -- the identity-lookup mechanism
+    // that replaced scanning NSMenuItem.representedObject across a fixed index range in the old
+    // NSMenu-based design. Weak keys: this map shouldn't be what keeps an NSRunningApplication
+    // alive past whenever NSWorkspace itself would.
+    NSMapTable<NSRunningApplication*, NSView*>* appRowViews;
 }
 
 @synthesize outputRoutingController = outputRoutingController;
 
 - (id) initWithController:(BGMAppVolumesController*)inController
-                  bgmMenu:(NSMenu*)inMenu
-            appVolumeView:(NSView*)inView
+             yourAppsStack:(NSStackView*)inYourAppsStack
+   systemAndOtherAppsStack:(NSStackView*)inSystemAndOtherAppsStack
+          disclosureButton:(NSButton*)inDisclosureButton
+             appVolumeView:(NSView*)inView
   outputRoutingController:(BGMAppOutputRoutingController*)inOutputRoutingController {
     if ((self = [super init])) {
         controller = inController;
-        bgmMenu = inMenu;
-        moreAppsMenu = [[NSMenu alloc] initWithTitle:kMoreAppsMenuTitle];
+        yourAppsStack = inYourAppsStack;
+        systemAndOtherAppsStack = inSystemAndOtherAppsStack;
+        systemAndOtherAppsDisclosureButton = inDisclosureButton;
         appVolumeView = inView;
         appVolumeViewFullHeight = appVolumeView.frame.size.height;
-        numMenuItems = 0;
         outputRoutingController = inOutputRoutingController;
+        appRowViews = [NSMapTable weakToStrongObjectsMapTable];
 
-        // Add the More Apps menu to the main menu.
-        moreAppsMenuItem =
-            [[NSMenuItem alloc] initWithTitle:kMoreAppsMenuTitle action:nil keyEquivalent:@""];
-        moreAppsMenuItem.submenu = moreAppsMenu;
-        // Starts with nothing in it -- see updateMoreAppsMenuItemEnabled, called every time an app
-        // is added to or removed from moreAppsMenu, for why this isn't just hardcoded to NO here.
-        moreAppsMenuItem.enabled = NO;
-
-        [bgmMenu insertItem:moreAppsMenuItem atIndex:([self lastMenuItemIndex] + 1)];
-        numMenuItems++;
-
-        // Put an empty menu item above the More Apps menu item to fix its top margin.
-        NSMenuItem* spacer = [[NSMenuItem alloc] initWithTitle:@"" action:nil keyEquivalent:@""];
-        spacer.view = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 0, 4)];
-        spacer.hidden = YES;  // Tells accessibility clients to ignore this menu item.
-
-        [bgmMenu insertItem:spacer atIndex:[self lastMenuItemIndex]];
-        numMenuItems++;
+        [self updateDisclosureButtonEnabled];
     }
-    
+
     return self;
 }
 
 #pragma mark UI Modifications
 
-- (void) insertMenuItemForApp:(NSRunningApplication*)app
-                initialVolume:(int)volume
-                   initialPan:(int)pan
-           initialEQBandGains:(NSArray<NSNumber*>* __nullable)gainsDB {
-    NSMenuItem* appVolItem = [self createBlankAppVolumeMenuItem];
+- (void) insertRowForApp:(NSRunningApplication*)app
+            initialVolume:(int)volume
+               initialPan:(int)pan
+       initialEQBandGains:(NSArray<NSNumber*>* __nullable)gainsDB {
+    NSView* __nullable copiedRowView = BGM_DeepCopyView(appVolumeView);
 
-    // Look through the menu item's subviews for the ones we want to set up
-    for (NSView* subview in appVolItem.view.subviews) {
+    if (!copiedRowView) {
+        DebugMsg("BGMAppVolumes::insertRowForApp: Failed to copy the app volume row template");
+        return;
+    }
+
+    NSView* rowView = copiedRowView;
+
+    // Look through the row's subviews for the ones we want to set up.
+    for (NSView* subview in rowView.subviews) {
         if ([subview conformsToProtocol:@protocol(BGMAppVolumeMenuItemSubview)]) {
             [(NSView<BGMAppVolumeMenuItemSubview>*)subview setUpWithApp:app
-                                                                context:self
-                                                             controller:controller
-                                                               menuItem:appVolItem];
+                                                                  context:self
+                                                               controller:controller
+                                                                  rowView:rowView];
         }
     }
 
-    // Store the NSRunningApplication object with the menu item so when the app closes we can find the item to remove it
-    appVolItem.representedObject = app;
+    [appRowViews setObject:rowView forKey:app];
 
-    // Set the slider to the volume for this app if we got one from the driver
-    [self setVolumeOfMenuItem:appVolItem relativeVolume:volume panPosition:pan];
+    // Set the slider to the volume for this app if we got one from the driver.
+    [self setVolumeOfRow:rowView relativeVolume:volume panPosition:pan];
 
     if (gainsDB) {
-        [self setEQBandGainsOfMenuItem:appVolItem gainsDB:BGMNN(gainsDB)];
+        [self setEQBandGainsOfRow:rowView gainsDB:BGMNN(gainsDB)];
     }
 
     // Now that pan/EQ have their real (possibly restored, non-default) values, sync the
     // show-more-controls button's highlight to match -- has to happen after both calls above, not
     // from BGMAVM_ShowMoreControlsButton::setUpWithApp: itself, since siblings don't have their
     // real values yet at that point in setup.
-    [BGM_FindShowMoreControlsButton(appVolItem.view) bgm_syncHighlightForCurrentControls];
+    [BGM_FindShowMoreControlsButton(rowView) bgm_syncHighlightForCurrentControls];
 
-    // NSMenuItem didn't implement NSAccessibility before OS X SDK 10.12.
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= 101200  // MAC_OS_X_VERSION_10_12
-    if ([appVolItem respondsToSelector:@selector(setAccessibilityTitle:)]) {
-        // TODO: This doesn't show up in Accessibility Inspector for me. Not sure why.
+    if ([rowView respondsToSelector:@selector(setAccessibilityTitle:)]) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpartial-availability"
-        appVolItem.accessibilityTitle = [NSString stringWithFormat:@"%@", [app localizedName]];
+        rowView.accessibilityTitle = [NSString stringWithFormat:@"%@", [app localizedName]];
 #pragma clang diagnostic pop
     }
-#endif
 
-    // Add the menu item to its menu.
+    NSView* row = [BGMMainPanelContentView rowContainerWithControl:rowView height:kBGMMainPanelRowHeight];
+
     if (app.activationPolicy == NSApplicationActivationPolicyRegular) {
-        [bgmMenu insertItem:appVolItem atIndex:[self firstMenuItemIndex]];
-        numMenuItems++;
+        [yourAppsStack addArrangedSubview:row];
     } else if (app.activationPolicy == NSApplicationActivationPolicyAccessory) {
-        [moreAppsMenu insertItem:appVolItem atIndex:0];
-        [self updateMoreAppsMenuItemEnabled];
+        [systemAndOtherAppsStack addArrangedSubview:row];
+        [self updateDisclosureButtonEnabled];
     }
 }
 
-// "More Apps" only makes sense to click when it actually has something in it -- otherwise it's a
-// hoverable/clickable item that opens onto a visibly empty submenu, which happens whenever no
-// NSApplicationActivationPolicyAccessory app is currently running (uncommon, but not rare: e.g.
-// shortly after boot, or on a system with few background/menu-bar-only apps).
-- (void) updateMoreAppsMenuItemEnabled {
-    moreAppsMenuItem.enabled = (moreAppsMenu.numberOfItems > 0);
+// The "System & Other Apps" disclosure only makes sense to click when it actually has something
+// behind it -- otherwise it's a clickable control that opens onto a visibly empty section, which
+// happens whenever no NSApplicationActivationPolicyAccessory app is currently running (uncommon,
+// but not rare: e.g. shortly after boot, or on a system with few background/menu-bar-only apps).
+- (void) updateDisclosureButtonEnabled {
+    systemAndOtherAppsDisclosureButton.enabled = (systemAndOtherAppsStack.arrangedSubviews.count > 0);
 }
 
-- (NSMenuItem*) getMenuItemForApp:(NSRunningApplication*)app {
-    NSInteger lastAppVolumeMenuItemIndex = [self lastMenuItemIndex] - 2;
-
-    for (NSInteger i = [self firstMenuItemIndex]; i <= lastAppVolumeMenuItemIndex; i++) {
-        NSMenuItem* item = [bgmMenu itemAtIndex:i];
-        NSRunningApplication* itemApp = item.representedObject;
-        BGMAssert(itemApp, "!itemApp for %s", item.title.UTF8String);
-
-        if ([itemApp isEqual:app]) {
-            return item;
-        }
-    }
-    for (NSInteger i = 0; i < [moreAppsMenu numberOfItems]; i++) {
-        NSMenuItem* item = [moreAppsMenu itemAtIndex:i];
-        NSRunningApplication* itemApp = item.representedObject;
-        BGMAssert(itemApp, "!itemApp for %s", item.title.UTF8String);
-
-        if ([itemApp isEqual:app]) {
-            return item;
-        }
-    }
-
-    return nil;
+- (NSView* __nullable) getRowViewForApp:(NSRunningApplication*)app {
+    return [appRowViews objectForKey:app];
 }
 
 - (BGMAppVolumeAndPan) getVolumeAndPanForApp:(NSRunningApplication*)app {
@@ -214,13 +216,13 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
         .pan = kAppPanNoValue
     };
 
-    NSMenuItem *item = [self getMenuItemForApp:app];
+    NSView* __nullable rowView = [self getRowViewForApp:app];
 
-    if (item == nil) {
+    if (rowView == nil) {
         return result;
     }
 
-    for (NSView* subview in item.view.subviews) {
+    for (NSView* subview in rowView.subviews) {
         // Get the volume.
         if ([subview isKindOfClass:[BGMAVM_VolumeSlider class]]) {
             result.volume = [(BGMAVM_VolumeSlider*)subview intValue];
@@ -236,13 +238,13 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
 }
 
 - (void) setVolumeAndPan:(BGMAppVolumeAndPan)volumeAndPan forApp:(NSRunningApplication*)app {
-    NSMenuItem *item = [self getMenuItemForApp:app];
+    NSView* __nullable rowView = [self getRowViewForApp:app];
 
-    if (item == nil) {
+    if (rowView == nil) {
         return;
     }
 
-    for (NSView* subview in item.view.subviews) {
+    for (NSView* subview in rowView.subviews) {
         // Set the volume.
         if (volumeAndPan.volume != -1 && [subview isKindOfClass:[BGMAVM_VolumeSlider class]]) {
             [(BGMAVM_VolumeSlider*)subview setRelativeVolume:volumeAndPan.volume];
@@ -253,36 +255,22 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
             [(BGMAVM_PanSlider*)subview setPanPosition:volumeAndPan.pan];
         }
     }
-
 }
 
-// Create a blank menu item to copy as a template.
-- (NSMenuItem*) createBlankAppVolumeMenuItem {
-    NSMenuItem* menuItem = [[NSMenuItem alloc] initWithTitle:@"" action:nil keyEquivalent:@""];
-    
-    menuItem.view = appVolumeView;
-    menuItem = [menuItem copy];  // So we can modify a copy of the view, rather than the template itself.
-    
-    return menuItem;
-}
-
-- (void) setVolumeOfMenuItem:(NSMenuItem*)menuItem relativeVolume:(int)volume panPosition:(int)pan {
-    // Update the sliders.
-    for (NSView* subview in menuItem.view.subviews) {
-        // Set the volume.
+- (void) setVolumeOfRow:(NSView*)rowView relativeVolume:(int)volume panPosition:(int)pan {
+    for (NSView* subview in rowView.subviews) {
         if (volume != -1 && [subview isKindOfClass:[BGMAVM_VolumeSlider class]]) {
             [(BGMAVM_VolumeSlider*)subview setRelativeVolume:volume];
         }
 
-        // Set the pan position.
         if (pan != kAppPanNoValue && [subview isKindOfClass:[BGMAVM_PanSlider class]]) {
             [(BGMAVM_PanSlider*)subview setPanPosition:pan];
         }
     }
 }
 
-- (void) setEQBandGainsOfMenuItem:(NSMenuItem*)menuItem gainsDB:(NSArray<NSNumber*>*)gainsDB {
-    for (NSView* subview in menuItem.view.subviews) {
+- (void) setEQBandGainsOfRow:(NSView*)rowView gainsDB:(NSArray<NSNumber*>*)gainsDB {
+    for (NSView* subview in rowView.subviews) {
         if ([subview isKindOfClass:[BGMAVM_EQBandSlider class]]) {
             NSInteger band = ((BGMAVM_EQBandSlider*)subview).tag;
             if (band >= 0 && (NSUInteger)band < gainsDB.count) {
@@ -292,62 +280,36 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
     }
 }
 
-- (NSInteger) firstMenuItemIndex {
-    return [self lastMenuItemIndex] - numMenuItems + 1;
-}
+- (void) removeRowForApp:(NSRunningApplication*)app {
+    NSView* __nullable rowView = [self getRowViewForApp:app];
 
-- (NSInteger) lastMenuItemIndex {
-    return [bgmMenu indexOfItemWithTag:kSeparatorBelowVolumesMenuItemTag] - 1;
-}
-
-- (void) removeMenuItemForApp:(NSRunningApplication*)app {
-    // Subtract two extra positions to skip the More Apps menu and the spacer menu item above it.
-    NSInteger lastAppVolumeMenuItemIndex = [self lastMenuItemIndex] - 2;
-
-    // Check each app volume menu item and remove the item that controls the given app.
-
-    // Look through the main menu.
-    for (NSInteger i = [self firstMenuItemIndex]; i <= lastAppVolumeMenuItemIndex; i++) {
-        NSMenuItem* item = [bgmMenu itemAtIndex:i];
-        NSRunningApplication* itemApp = item.representedObject;
-        BGMAssert(itemApp, "!itemApp for %s", item.title.UTF8String);
-
-        if ([itemApp isEqual:app]) {
-            [bgmMenu removeItem:item];
-            numMenuItems--;
-            return;
-        }
+    if (rowView == nil) {
+        return;
     }
 
-    // Look through the More Apps menu.
-    for (NSInteger i = 0; i < [moreAppsMenu numberOfItems]; i++) {
-        NSMenuItem* item = [moreAppsMenu itemAtIndex:i];
-        NSRunningApplication* itemApp = item.representedObject;
-        BGMAssert(itemApp, "!itemApp for %s", item.title.UTF8String);
+    NSView* __nullable row = rowView.superview;
+    BOOL wasInSystemAndOtherApps = (row.superview == systemAndOtherAppsStack);
 
-        if ([itemApp isEqual:app]) {
-            [moreAppsMenu removeItem:item];
-            [self updateMoreAppsMenuItemEnabled];
-            return;
-        }
+    [row removeFromSuperview];
+    [appRowViews removeObjectForKey:app];
+
+    if (wasInSystemAndOtherApps) {
+        [self updateDisclosureButtonEnabled];
     }
 }
 
 - (void) showHideExtraControls:(BGMAVM_ShowMoreControlsButton*)button {
-    // Show or hide an app's extra controls, currently only pan, in its App Volumes menu item.
-    
-    NSMenuItem* menuItem = button.cell.representedObject;
-    
+    // Show or hide an app's extra controls, currently only pan, in its app volume row.
+
+    NSView* rowView = button.cell.representedObject;
+
     BGMAssert(button, "!button");
-    BGMAssert(menuItem, "!menuItem");
+    BGMAssert(rowView, "!rowView");
 
-    CGFloat width = menuItem.view.frame.size.width;
+    CGFloat width = rowView.frame.size.width;
 #if DEBUG
-    CGFloat height = menuItem.view.frame.size.height;
+    CGFloat height = rowView.frame.size.height;
 #endif
-
-    const char* appName =
-        [((NSRunningApplication*)menuItem.representedObject).localizedName UTF8String];
 
     // Using this function (instead of just ==) shouldn't be necessary, but just in case.
 #if DEBUG
@@ -355,24 +317,24 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
         return fabs(x - y) < 0.01;  // We don't need much precision.
     };
 #endif
-    
+
     bool allSubviewsShowing = true;
-    for (NSView* subview in menuItem.view.subviews) {
+    for (NSView* subview in rowView.subviews) {
         if (subview.hidden) {
             allSubviewsShowing = false;
             break;
         }
-        //DebugMsg("BGMAppVolumes:: subview hash / hidden: (%lu) / (%hhd)", (unsigned long)subview.hash, subview.hidden);
     }
 
     if (allSubviewsShowing) {
-        // Hide extra controls
-        DebugMsg("BGMAppVolumes::showHideExtraControls: Hiding extra controls (%s)", appName);
-        
+        // Hide extra controls.
+        DebugMsg("BGMAppVolumes::showHideExtraControls: Hiding extra controls");
+
         BGMAssert(nearEnough(height, appVolumeViewFullHeight), "Extra controls were already hidden");
-        
-        // Make the menu item shorter to hide the extra controls. Keep the width unchanged.
-        menuItem.view.frameSize = NSMakeSize(width, kAppVolumeViewInitialHeight);
+
+        // Make the row shorter to hide the extra controls. Keep the width unchanged.
+        rowView.frameSize = NSMakeSize(width, kAppVolumeViewInitialHeight);
+        [self updateRowContainerHeight:rowView.superview toMatchRowView:rowView];
         // Turn the button upside down so the arrowhead points down.
         button.frameCenterRotation = 180.0;
         // Move the button up slightly so it aligns with the volume slider.
@@ -380,60 +342,125 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
 
         // Set the extra controls, and anything else below the fold, to hidden so accessibility
         // clients can skip over them.
-        for (NSView* subview in menuItem.view.subviews) {
+        for (NSView* subview in rowView.subviews) {
             CGFloat top = subview.frame.origin.y + subview.frame.size.height;
             if (top <= 0.0) {
                 subview.hidden = YES;
             }
         }
     } else {
-        // Show extra controls
-        DebugMsg("BGMAppVolumes::showHideExtraControls: Showing extra controls (%s)", appName);
-        
+        // Show extra controls.
+        DebugMsg("BGMAppVolumes::showHideExtraControls: Showing extra controls");
+
         BGMAssert(nearEnough(button.frameCenterRotation, 180.0), "Unexpected button rotation");
         BGMAssert(nearEnough(height, kAppVolumeViewInitialHeight), "Extra controls were already shown");
-        
-        // Make the menu item taller to show the extra controls. Keep the width unchanged.
-        menuItem.view.frameSize = NSMakeSize(width, appVolumeViewFullHeight);
+
+        // Make the row taller to show the extra controls. Keep the width unchanged.
+        rowView.frameSize = NSMakeSize(width, appVolumeViewFullHeight);
+        [self updateRowContainerHeight:rowView.superview toMatchRowView:rowView];
         // Turn the button rightside up so the arrowhead points up.
         button.frameCenterRotation = 0.0;
         // Move the button down slightly, back to its original position.
         [button setFrameOrigin:NSMakePoint(button.frame.origin.x, button.frame.origin.y + 1)];
 
-        // Set all of the UI elements in the menu item to "not hidden" for accessibility clients.
-        for (NSView* subview in menuItem.view.subviews) {
+        // Set all of the UI elements in the row to "not hidden" for accessibility clients.
+        for (NSView* subview in rowView.subviews) {
             subview.hidden = NO;
         }
     }
 }
 
-- (void) removeAllAppVolumeMenuItems {
-    // Remove all of the menu items this class adds to the menu except for the last two, which are
-    // the More Apps menu item and the invisible spacer above it.
-    while (numMenuItems > 2) {
-        [bgmMenu removeItemAtIndex:[self firstMenuItemIndex]];
-        numMenuItems--;
+// rowView's wrapping row container (see BGMMainPanelContentView.rowContainerWithControl:height:)
+// has a fixed-height Auto Layout constraint, separate from rowView's own manually-managed
+// frameSize -- collapsing/expanding rowView alone would leave the container's height stale (and
+// the row's siblings in the stack wouldn't reflow around the new size) unless this constraint is
+// updated to match every time.
+- (void) updateRowContainerHeight:(NSView* __nullable)rowContainer toMatchRowView:(NSView*)rowView {
+    for (NSLayoutConstraint* constraint in rowContainer.constraints) {
+        if (constraint.firstAttribute == NSLayoutAttributeHeight) {
+            constraint.constant = rowView.frame.size.height;
+            return;
+        }
+    }
+}
+
+- (void) refreshRoutedIndicators {
+    for (NSRunningApplication* app in appRowViews) {
+        NSView* rowView = [appRowViews objectForKey:app];
+        NSString* __nullable bundleID = app.bundleIdentifier;
+        BOOL isRouted =
+            bundleID && [outputRoutingController hasOutputOverrideForBundleID:BGMNN(bundleID)];
+
+        for (NSView* subview in rowView.subviews) {
+            if ([subview isKindOfClass:[BGMAVM_AppNameLabel class]]) {
+                NSString* name = app.localizedName ? (NSString*)app.localizedName : @"";
+                [self setAppNameLabel:(NSTextField*)subview toName:name isRouted:isRouted];
+                break;
+            }
+        }
+    }
+}
+
+// Sets appTitle's text to name, appending a small icon indicating an active output-route override
+// when isRouted is true.
+- (void) setAppNameLabel:(NSTextField*)appTitle toName:(NSString*)name isRouted:(BOOL)isRouted {
+    if (!isRouted) {
+        appTitle.stringValue = name;
+        return;
     }
 
-    // The More Apps menu only contains app volume menu items, so we can just remove everything.
-    [moreAppsMenu removeAllItems];
-    [self updateMoreAppsMenuItemEnabled];
+    NSMutableAttributedString* title =
+        [[NSMutableAttributedString alloc] initWithString:[name stringByAppendingString:@"  "]];
+
+    if ([NSImage respondsToSelector:@selector(imageWithSystemSymbolName:accessibilityDescription:)]) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wpartial-availability"
+        NSImage* routedIcon = [NSImage imageWithSystemSymbolName:@"airplayaudio"
+                                          accessibilityDescription:@"Output routed to another device"];
+#pragma clang diagnostic pop
+        NSTextAttachment* attachment = [NSTextAttachment new];
+        attachment.image = routedIcon;
+        // Sized and nudged to sit on the text baseline instead of towering over lowercase letters
+        // the way an unscaled 17pt SF Symbol glyph does next to a system-size menu font.
+        attachment.bounds = NSMakeRect(0, -2, 12, 10);
+        [title appendAttributedString:[NSAttributedString attributedStringWithAttachment:attachment]];
+    } else {
+        [title appendAttributedString:[[NSAttributedString alloc] initWithString:@"↦"]];
+    }
+
+    appTitle.attributedStringValue = title;
+}
+
+- (void) removeAllAppVolumeRows {
+    for (NSView* row in [yourAppsStack.arrangedSubviews copy]) {
+        [yourAppsStack removeArrangedSubview:row];
+        [row removeFromSuperview];
+    }
+
+    for (NSView* row in [systemAndOtherAppsStack.arrangedSubviews copy]) {
+        [systemAndOtherAppsStack removeArrangedSubview:row];
+        [row removeFromSuperview];
+    }
+
+    [appRowViews removeAllObjects];
+
+    [self updateDisclosureButtonEnabled];
 }
 
 @end
 
 #pragma mark Custom Classes (IB)
 
-// Custom classes for the UI elements in the app volume menu items
+// Custom classes for the UI elements in the app volume rows
 
 @implementation BGMAVM_AppIcon
 
 - (void) setUpWithApp:(NSRunningApplication*)app
               context:(BGMAppVolumes*)ctx
            controller:(BGMAppVolumesController*)ctrl
-             menuItem:(NSMenuItem*)menuItem {
-    #pragma unused (ctx, ctrl, menuItem)
-    
+              rowView:(NSView*)rowView {
+    #pragma unused (ctx, ctrl, rowView)
+
     self.image = app.icon;
 
     // Remove the icon from the accessibility hierarchy.
@@ -454,9 +481,9 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
 - (void) setUpWithApp:(NSRunningApplication*)app
               context:(BGMAppVolumes*)ctx
            controller:(BGMAppVolumesController*)ctrl
-             menuItem:(NSMenuItem*)menuItem {
-    #pragma unused (ctx, ctrl, menuItem)
-    
+              rowView:(NSView*)rowView {
+    #pragma unused (ctx, ctrl, rowView)
+
     NSString* name = app.localizedName ? (NSString*)app.localizedName : @"";
     self.stringValue = name;
 }
@@ -468,23 +495,23 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
 - (void) setUpWithApp:(NSRunningApplication*)app
               context:(BGMAppVolumes*)ctx
            controller:(BGMAppVolumesController*)ctrl
-             menuItem:(NSMenuItem*)menuItem {
+              rowView:(NSView*)rowView {
     #pragma unused (app, ctrl)
 
     // Set up the button that show/hide the extra controls (currently only a pan slider) for the app.
-    self.cell.representedObject = menuItem;
+    self.cell.representedObject = rowView;
     self.target = ctx;
     self.action = @selector(showHideExtraControls:);
 
-    // The menu item starts out with the extra controls visible, so we hide them here.
+    // The row starts out with the extra controls visible, so we hide them here.
     [ctx showHideExtraControls:self];
 
     // Not bgm_syncHighlightForCurrentControls here -- at this point in setup, sibling sliders in
-    // the same menu item view haven't had their real values written yet (that happens later, in
-    // BGMAppVolumes::insertMenuItemForApp:..., after every subview's setUpWithApp: has already
-    // run), so every check here would see "all default" regardless of what's actually restored.
-    // insertMenuItemForApp:... calls bgm_syncHighlightForCurrentControls itself once real values
-    // are in place.
+    // the same row haven't had their real values written yet (that happens later, in
+    // BGMAppVolumes::insertRowForApp:..., after every subview's setUpWithApp: has already run),
+    // so every check here would see "all default" regardless of what's actually restored.
+    // insertRowForApp:... calls bgm_syncHighlightForCurrentControls itself once real values are
+    // in place.
 
     // toolTip, not just accessibilityTitle -- this caret is the only way to discover the Pan/EQ/
     // Output Routing controls exist at all, and accessibilityTitle alone only reaches VoiceOver
@@ -592,8 +619,8 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
 - (void) setUpWithApp:(NSRunningApplication*)app
               context:(BGMAppVolumes*)ctx
            controller:(BGMAppVolumesController*)ctrl
-             menuItem:(NSMenuItem*)menuItem {
-#pragma unused (ctx, menuItem)
+              rowView:(NSView*)rowView {
+#pragma unused (ctx, rowView)
 
     controller = ctrl;
     appProcessID = app.processIdentifier;
@@ -652,25 +679,25 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
     NSString* __nullable appBundleID;
     BGMAppVolumesController* controller;
 
-    // Keep the menu item so we can sync the mute button when the slider changes.
-    __weak NSMenuItem* menuItem;
+    // Keep the row so we can sync the mute button when the slider changes.
+    __weak NSView* rowView;
 }
 
 - (void) setUpWithApp:(NSRunningApplication*)app
               context:(BGMAppVolumes*)ctx
            controller:(BGMAppVolumesController*)ctrl
-             menuItem:(NSMenuItem*)inMenuItem {
+              rowView:(NSView*)inRowView {
     #pragma unused (ctx)
-    
+
     controller = ctrl;
-    menuItem = inMenuItem;
-    
+    rowView = inRowView;
+
     self.target = self;
     self.action = @selector(appVolumeChanged);
-    
+
     appProcessID = app.processIdentifier;
     appBundleID = app.bundleIdentifier;
-    
+
     self.maxValue = kAppRelativeVolumeMaxRawValue;
     self.minValue = kAppRelativeVolumeMinRawValue;
 
@@ -699,12 +726,12 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
 
 - (void) appVolumeChanged {
     // TODO: This (sending updates to the driver) should probably be rate-limited. It uses a fair bit of CPU for me.
-    
+
     DebugMsg("BGMAppVolumes::appVolumeChanged: App volume for %s (%d) changed to %d",
              appBundleID.UTF8String,
              appProcessID,
              self.intValue);
-    
+
     [self snap];
 
     // The values from our sliders are in
@@ -712,7 +739,7 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
     [controller setVolume:self.intValue forAppWithProcessID:appProcessID bundleID:appBundleID];
 
     // Sync the mute button so it reflects muted/unmuted when the user drags the slider.
-    for (NSView* subview in menuItem.view.subviews) {
+    for (NSView* subview in rowView.subviews) {
         if ([subview isKindOfClass:[BGMAVM_VolumeMute class]]) {
             [(BGMAVM_VolumeMute*)subview bgm_syncForVolume:self.intValue];
         }
@@ -731,17 +758,17 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
 - (void) setUpWithApp:(NSRunningApplication*)app
               context:(BGMAppVolumes*)ctx
            controller:(BGMAppVolumesController*)ctrl
-             menuItem:(NSMenuItem*)menuItem {
-    #pragma unused (ctx, menuItem)
-    
+              rowView:(NSView*)rowView {
+    #pragma unused (ctx, rowView)
+
     controller = ctrl;
-    
+
     self.target = self;
     self.action = @selector(appPanPositionChanged);
-    
+
     appProcessID = app.processIdentifier;
     appBundleID = app.bundleIdentifier;
-    
+
     self.minValue = kAppPanLeftRawValue;
     self.maxValue = kAppPanRightRawValue;
 
@@ -759,7 +786,7 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
 
 - (void) appPanPositionChanged {
     // TODO: This (sending updates to the driver) should probably be rate-limited. It uses a fair bit of CPU for me.
-    
+
     DebugMsg("BGMAppVolumes::appPanPositionChanged: App pan position for %s changed to %d", appBundleID.UTF8String, self.intValue);
 
     // The values from our sliders are in [kAppPanLeftRawValue, kAppPanRightRawValue] already.
@@ -779,8 +806,8 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
 - (void) setUpWithApp:(NSRunningApplication*)app
               context:(BGMAppVolumes*)ctx
            controller:(BGMAppVolumesController*)ctrl
-             menuItem:(NSMenuItem*)menuItem {
-    #pragma unused (ctx, menuItem)
+              rowView:(NSView*)rowView {
+    #pragma unused (ctx, rowView)
 
     controller = ctrl;
 
@@ -865,8 +892,8 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
 - (void) setUpWithApp:(NSRunningApplication*)app
               context:(BGMAppVolumes*)ctx
            controller:(BGMAppVolumesController*)ctrl
-             menuItem:(NSMenuItem*)menuItem {
-    #pragma unused (ctrl, menuItem)
+              rowView:(NSView*)rowView {
+    #pragma unused (ctrl, rowView)
 
     appBundleID = app.bundleIdentifier;
     appName = app.localizedName;
@@ -904,9 +931,11 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
     }
 }
 
-// NSMenuDelegate. Rebuilds this button's menu from the currently-connected output devices right
-// before it's shown, so it's never stale (a device plugged/unplugged since the menu was last
-// opened, or the routing state changing from elsewhere).
+// NSMenuDelegate. Rebuilds this button's own internal pop-up menu from the currently-connected
+// output devices right before it's shown, so it's never stale (a device plugged/unplugged since
+// the menu was last opened, or the routing state changing from elsewhere). This is a plain
+// NSPopUpButton's own menu, independent of the main panel -- unaffected by this app's move off
+// NSMenu for its main dropdown.
 - (void) menuNeedsUpdate:(NSMenu*)menu {
     #pragma unused (menu)
 
@@ -939,4 +968,3 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
 }
 
 @end
-

@@ -44,6 +44,13 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface BGMPreferencesMenu : NSObject <BGMHotkeyRecorderButtonDelegate, NSMenuDelegate>
 
+// The Preferences NSMenu itself -- extracted from inBGMMenu's XIB-defined structure at init, but
+// never shown as part of inBGMMenu (which the main panel replaced -- see BGMMainPanel's header).
+// The caller pops this menu up directly (e.g. via
+// [NSMenu popUpMenuPositioningItem:atLocation:inView:]) when the user clicks a "Preferences…"
+// button in the panel.
+@property (nonatomic, readonly) NSMenu* menu;
+
 - (id) initWithBGMMenu:(NSMenu*)inBGMMenu
           audioDevices:(BGMAudioDeviceManager*)inAudioDevices
           musicPlayers:(BGMMusicPlayers*)inMusicPlayers

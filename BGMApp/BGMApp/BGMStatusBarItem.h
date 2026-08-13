@@ -26,6 +26,7 @@
 // Local Includes
 #import "BGMAudioDeviceManager.h"
 #import "BGMDebugLoggingMenuItem.h"
+#import "BGMMainPanel.h"
 
 // System Includes
 #import <Cocoa/Cocoa.h>
@@ -47,9 +48,9 @@ static BGMStatusBarIcon const kBGMStatusBarIconDefaultValue = BGMWavecraftStatus
 
 @interface BGMStatusBarItem : NSObject
 
-- (instancetype) initWithMenu:(NSMenu*)bgmMenu
-                 audioDevices:(BGMAudioDeviceManager*)devices
-                 userDefaults:(BGMUserDefaults*)defaults;
+- (instancetype) initWithPanel:(BGMMainPanel*)panel
+                  audioDevices:(BGMAudioDeviceManager*)devices
+                  userDefaults:(BGMUserDefaults*)defaults;
 
 // Set this to BGMWavecraftStatusBarIcon to change the icon to the Wavecraft logo (four bars,
 // replaced the upstream project's fermata-shaped icon here -- see docs/LESSONS.md for why: it

@@ -49,11 +49,8 @@ NSString* const kMenuItemToolTip =
         uiSoundsDevice = inUISoundsDevice;
         volumeSlider = inSlider;
 
-        _menuItem = [[NSMenuItem alloc] initWithTitle:@"" action:nil keyEquivalent:@""];
-        _menuItem.toolTip = kMenuItemToolTip;
-
-        // Apply our custom view from MainMenu.xib. It's very similar to the one for app volumes.
-        _menuItem.view = inView;
+        _view = inView;
+        _view.toolTip = kMenuItemToolTip;
 
         try {
             volumeSlider.floatValue =

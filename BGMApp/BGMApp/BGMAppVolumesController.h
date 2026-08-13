@@ -40,10 +40,14 @@ typedef struct BGMAppVolumeAndPan {
 
 @interface BGMAppVolumesController : NSObject
 
-- (id) initWithMenu:(NSMenu*)menu
-      appVolumeView:(NSView*)view
-       audioDevices:(BGMAudioDeviceManager*)audioDevices
-outputRoutingController:(BGMAppOutputRoutingController*)outputRoutingController;
+// yourAppsStack/systemAndOtherAppsStack/disclosureButton are BGMMainPanelContentView's -- see
+// BGMAppVolumes.h for how they're used.
+- (id) initWithYourAppsStack:(NSStackView*)yourAppsStack
+       systemAndOtherAppsStack:(NSStackView*)systemAndOtherAppsStack
+              disclosureButton:(NSButton*)disclosureButton
+                 appVolumeView:(NSView*)view
+                  audioDevices:(BGMAudioDeviceManager*)audioDevices
+       outputRoutingController:(BGMAppOutputRoutingController*)outputRoutingController;
 
 // See BGMBackgroundMusicDevice::SetAppVolume.
 - (void)  setVolume:(SInt32)volume
@@ -68,6 +72,9 @@ forAppWithProcessID:(pid_t)processID
 
 - (BGMAppVolumeAndPan) getVolumeAndPanForApp:(NSRunningApplication *)app;
 - (void) setVolumeAndPan:(BGMAppVolumeAndPan)volumeAndPan forApp:(NSRunningApplication*)app;
+
+// See BGMAppVolumes.refreshRoutedIndicators.
+- (void) refreshRoutedIndicators;
 
 @end
 

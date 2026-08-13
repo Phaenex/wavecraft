@@ -94,6 +94,7 @@ outputRoutingController:(BGMAppOutputRoutingController*)inOutputRoutingControlle
           doNotDisturb:(BGMDoNotDisturb*)inDoNotDisturb {
     if ((self = [super init])) {
         NSMenu* prefsMenu = [[inBGMMenu itemWithTag:kPreferencesMenuItemTag] submenu];
+        _menu = prefsMenu;
 
         autoPauseMusicPrefs = [[BGMAutoPauseMusicPrefs alloc] initWithPreferencesMenu:prefsMenu
                                                                          audioDevices:inAudioDevices

@@ -19,10 +19,10 @@
 //
 //  Copyright © 2020, 2026 Kyle Neideck
 //
-//  A menu item in the main menu that enables/disables debug logging. Only visible if you hold the
-//  option down when you click the status bar icon to reveal the main menu.
+//  A row in the main panel that enables/disables debug logging. Only visible if you hold the
+//  option down when you click the status bar icon to reveal the main panel.
 //
-//  TODO: It would be better to have this menu item in the Preferences menu (maybe in an Advanced
+//  TODO: It would be better to have this row in the Preferences menu (maybe in an Advanced
 //        section) and always visible, but first we'd need to add something that tells the user how
 //        to view the log messages. Or better yet, something that automatically opens them.
 //
@@ -39,8 +39,8 @@
 @interface BGMDebugLoggingMenuItem : NSObject
 
 // audioDevices is used to keep BGMDriver's debug logging in sync with BGMApp's.
-- (instancetype) initWithMenuItem:(NSMenuItem*)menuItem
-                     audioDevices:(BGMAudioDeviceManager*)audioDevices;
+- (instancetype) initWithButton:(NSButton*)button
+                   audioDevices:(BGMAudioDeviceManager*)audioDevices;
 
 // True if the main menu is showing hidden items/options because the user held the option key when
 // they clicked the icon. This class makes the debug logging menu item visible if this property has

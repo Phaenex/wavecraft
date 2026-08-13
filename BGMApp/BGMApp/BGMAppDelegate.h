@@ -34,8 +34,13 @@
 static NSInteger const kVolumesHeadingMenuItemTag = 3;
 static NSInteger const kSeparatorBelowVolumesMenuItemTag = 4;
 
-@interface BGMAppDelegate : NSObject <NSApplicationDelegate, NSMenuDelegate>
+@interface BGMAppDelegate : NSObject <NSApplicationDelegate>
 
+// Loaded from the XIB but never shown directly -- BGMMainPanel replaced it as the main dropdown
+// (see that class's header for why). Its only remaining job is supplying the Preferences submenu's
+// static structure to BGMPreferencesMenu, which still uses a real NSMenu popped up on demand (see
+// BGMPreferencesMenu.menu) since none of its content has the interaction risk that motivated
+// replacing the *main* dropdown.
 @property (weak) IBOutlet NSMenu* bgmMenu;
 
 @property (weak) IBOutlet NSView* outputVolumeView;

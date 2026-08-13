@@ -47,8 +47,9 @@
                                    view:(NSView*)view
                                  slider:(NSSlider*)slider;
 
-// The menu item with the volume slider for system sounds.
-@property (readonly) NSMenuItem* menuItem;
+// The row's view, added as an arranged subview of BGMMainPanel's row stack by whoever constructs
+// this object.
+@property (readonly) NSView* view;
 
 @end
 

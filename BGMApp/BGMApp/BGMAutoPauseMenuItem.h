@@ -17,7 +17,7 @@
 //  BGMAutoPauseMenuItem.h
 //  BGMApp
 //
-//  Copyright © 2016 Kyle Neideck
+//  Copyright © 2016, 2026 Kyle Neideck
 //
 
 // Local Includes
@@ -33,16 +33,15 @@
 
 @interface BGMAutoPauseMenuItem : NSObject
 
-- (instancetype) initWithMenuItem:(NSMenuItem*)item
-                   autoPauseMusic:(BGMAutoPauseMusic*)autoPause
-                     musicPlayers:(BGMMusicPlayers*)players
-                     userDefaults:(BGMUserDefaults*)defaults;
+- (instancetype) initWithButton:(NSButton*)button
+                  autoPauseMusic:(BGMAutoPauseMusic*)autoPause
+                    musicPlayers:(BGMMusicPlayers*)players
+                    userDefaults:(BGMUserDefaults*)defaults;
 
-// Handle events passed along by the delegate (NSMenuDelegate) of the menu containing this menu item.
-- (void) parentMenuNeedsUpdate;
-- (void) parentMenuItemWillHighlight:(NSMenuItem* __nullable)item;
+// Called right before BGMMainPanel is shown, so the title/enabled-look reflects whether the
+// selected music player is currently running (it can change while the panel's closed).
+- (void) refreshBeforeShow;
 
 @end
 
 #pragma clang assume_nonnull end
-
