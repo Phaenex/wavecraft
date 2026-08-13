@@ -102,6 +102,23 @@ otherwise require, so it's opt-in.
   for small adjustments, Coarse for getting from very quiet to very loud in fewer presses.
 - The current bindings and step size are shown right in the menu, below the four buttons.
 
+## Do Not Disturb
+
+**Preferences > Do Not Disturb** mutes every other app and lets just one you pick stay audible —
+the inverse of auto-pause above, which pauses one specific music player when anything else plays.
+Do Not Disturb works with any running app (a video call, a game, whatever you're actually trying to
+hear), not just a music player.
+
+- **Enable Do Not Disturb** turns it on. Every other running app gets muted immediately, each
+  remembering its own volume from just before — turning this off restores every one of them, not
+  just resets them to a default.
+- **Priority App** picks which app stays audible. Change it any time, including while Do Not
+  Disturb is already on — the app you just switched away from gets muted, the one you switched to
+  gets its own volume back.
+- An app that launches while Do Not Disturb is on gets muted automatically, the moment it appears —
+  you don't have to turn it off and back on to catch it.
+- This resumes automatically the next time Wavecraft launches if you left it on.
+
 ## Troubleshoot
 
 **Preferences > Troubleshoot** has one-click fixes for the most common stuck states, instead of

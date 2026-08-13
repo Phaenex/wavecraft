@@ -79,6 +79,11 @@ what's still unverified.
   states (output not switching back, a volume/pan/EQ setting stuck at an odd value, an output
   route that won't clear, the XPC helper looking disconnected, Microphone permission) in
   **Preferences > Troubleshoot**, instead of a wiki page telling you to restart things by hand.
+- **Do Not Disturb** *(new in Wavecraft)* — mute every other app and let just one you pick stay
+  audible, the inverse of auto-pause. Works with any running app, not just a fixed list of music
+  players. Turn on and pick a **Priority App** in **Preferences > Do Not Disturb**; a newly-launched
+  app gets muted automatically while it's on, and everything gets its own volume back the moment
+  you turn it off.
 - **No restart required to install.**
 
 # Requirements

@@ -195,6 +195,25 @@ None of this has run against a real install either — same rule as everything e
       app (there's no reason to adjust "the frontmost app's volume" when that app is Wavecraft) and
       don't interfere with the same key combination in another app that also uses it
 
+## 7. Do Not Disturb (added 2026-08-12)
+
+None of this has run against a real install either.
+
+- [ ] Play audio in two different apps. Preferences > Do Not Disturb > pick one as **Priority App**,
+      then **Enable Do Not Disturb** — confirm the *other* app actually goes silent (listen for it,
+      don't just check that its slider moved) and the priority app's volume is unaffected
+- [ ] Launch a third app while Do Not Disturb is still on and start playing audio in it — confirm
+      it's muted automatically, without needing to toggle Do Not Disturb off and back on
+- [ ] While Do Not Disturb is on, change **Priority App** to a different app — confirm the
+      previously-exempt app is now muted, and the newly-selected one gets its own volume back
+      audibly, not just silently in the menu
+- [ ] Turn **Do Not Disturb** off — confirm every muted app's volume returns to exactly what it was
+      set to before enabling, not a flat default
+- [ ] Quit and relaunch Wavecraft while Do Not Disturb is on — confirm it resumes muting on launch,
+      same apps affected
+- [ ] Enable Do Not Disturb with **no** Priority App selected ("None") — confirm every running app
+      gets muted, since that's the documented behavior for that state, not an error
+
 ## Reporting back
 
 For each item: pass/fail, and for fails, exactly what happened (error text, screenshot, or

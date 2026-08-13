@@ -26,6 +26,7 @@
 // Local Includes
 #import "BGMAppOutputRoutingController.h"
 #import "BGMAudioDeviceManager.h"
+#import "BGMDoNotDisturb.h"
 #import "BGMHotkeys.h"
 #import "BGMHotkeyRecorderButton.h"
 #import "BGMMusicPlayers.h"
@@ -41,7 +42,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface BGMPreferencesMenu : NSObject <BGMHotkeyRecorderButtonDelegate>
+@interface BGMPreferencesMenu : NSObject <BGMHotkeyRecorderButtonDelegate, NSMenuDelegate>
 
 - (id) initWithBGMMenu:(NSMenu*)inBGMMenu
           audioDevices:(BGMAudioDeviceManager*)inAudioDevices
@@ -52,7 +53,8 @@ NS_ASSUME_NONNULL_BEGIN
           userDefaults:(BGMUserDefaults*)inUserDefaults
 preferredOutputDevices:(BGMPreferredOutputDevices*)inPreferredOutputDevices
 outputRoutingController:(BGMAppOutputRoutingController*)inOutputRoutingController
-               hotkeys:(BGMHotkeys*)inHotkeys;
+               hotkeys:(BGMHotkeys*)inHotkeys
+          doNotDisturb:(BGMDoNotDisturb*)inDoNotDisturb;
 
 // BGMXPCListener isn't constructed yet when this class is -- see BGMTroubleshootMenu's header for
 // why this is a separate, later call instead of an initializer param.

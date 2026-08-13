@@ -46,6 +46,14 @@
 
 @property BOOL autoPauseMusicEnabled;
 
+// Whether Do Not Disturb (mute every app except doNotDisturbPriorityAppBundleID) is on. See
+// BGMDoNotDisturb.
+@property BOOL doNotDisturbEnabled;
+
+// The one app allowed to stay audible while Do Not Disturb is on. nil means none chosen yet --
+// enabling Do Not Disturb with no priority app set mutes every running app.
+@property NSString* __nullable doNotDisturbPriorityAppBundleID;
+
 // The UIDs of the output devices most recently selected by the user. The most-recently selected
 // device is at index 0. See BGMPreferredOutputDevices.
 @property NSArray<NSString*>* preferredDeviceUIDs;

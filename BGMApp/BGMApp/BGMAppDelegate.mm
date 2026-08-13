@@ -32,6 +32,7 @@
 #import "BGMAppVolumesController.h"
 #import "BGMAutoPauseMusic.h"
 #import "BGMAutoPauseMenuItem.h"
+#import "BGMDoNotDisturb.h"
 #import "BGMDebugLogging.h"
 #import "BGMDebugLoggingMenuItem.h"
 #import "BGMMusicPlayers.h"
@@ -81,6 +82,9 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
 
     // Global keyboard shortcuts for system/frontmost-app volume. Off by default -- see its header.
     BGMHotkeys* hotkeys;
+
+    // Mutes every app except a chosen priority app. Off by default -- see its header.
+    BGMDoNotDisturb* doNotDisturb;
 }
 
 @synthesize audioDevices = audioDevices;
@@ -455,6 +459,11 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
     // trust in a previous run -- see BGMHotkeys's header.
     hotkeys = [[BGMHotkeys alloc] initWithAudioDevices:audioDevices userDefaults:userDefaults];
 
+    // Mutes every app except a chosen priority app. Constructing this resumes muting immediately
+    // if it was left enabled from a previous run -- see BGMDoNotDisturb's header.
+    doNotDisturb = [[BGMDoNotDisturb alloc] initWithAudioDevices:audioDevices
+                                                     userDefaults:userDefaults];
+
     // Preferences submenu.
     prefsMenu = [[BGMPreferencesMenu alloc] initWithBGMMenu:self.bgmMenu
                                                audioDevices:audioDevices
@@ -465,7 +474,8 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
                                                userDefaults:userDefaults
                                      preferredOutputDevices:preferredOutputDevices
                                     outputRoutingController:outputRoutingController
-                                                    hotkeys:hotkeys];
+                                                    hotkeys:hotkeys
+                                               doNotDisturb:doNotDisturb];
 
     // Enable/disable debug logging. Hidden unless you option-click the status bar icon.
     debugLoggingMenuItem =

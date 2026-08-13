@@ -216,6 +216,14 @@ a real install**:
   `BGMHotkeys.mm`) still applies to all four actions. **Untested**: whether the recorder's local
   `NSEvent` monitor actually wins the race against the Preferences menu's own tracking loop for
   keys the menu itself might intercept (arrows especially) — see TODO.md's "Needs a human" section.
+- **Do Not Disturb** (added 2026-08-12, `BGMApp/BGMApp/BGMDoNotDisturb.{h,mm}`, **Preferences > Do
+  Not Disturb**) — mutes every app except one chosen priority app, via the same
+  `SetAppVolume`/`GetAppVolumes` API the volume sliders and hotkeys already use, not a separate mute
+  mechanism. Snapshots each muted app's volume to restore on disable; an `NSWorkspace.
+  runningApplications` KVO observer catches apps that launch while it's on. **Untested** like
+  everything else in this section — see TODO.md's "Needs a human" section for the specific
+  real-audio checks it still needs (does the muted app actually go silent, does the restored volume
+  match what it was before, not a default).
 
 62/62 unit tests passing after this work (38 BGMAppUnitTests + 24 BGMDriverTests). The 10 new
 `BGMUserDefaultsTests.mm` tests cover the hotkey-binding storage/defaults/clamping/helper-function

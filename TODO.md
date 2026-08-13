@@ -15,10 +15,6 @@ The goal is to eventually match or beat what the paid alternatives do — see
 [Images/README/comparison.png](Images/README/comparison.png) for where things stand today.
 Roughly ordered by effort, cheapest first:
 
-- **"Do Not Disturb" / priority-app auto-mute** — mute everything except a chosen app, the inverse
-  of auto-pause. Similar shape to the existing auto-pause feature
-  (`BGMApp/BGMApp/BGMAutoPauseMusic.mm`), could likely reuse a lot of its audible-state-change
-  plumbing.
 - **Device grouping / multi-output** — send audio to more than one physical device at once. Doesn't
   fit the current per-app output routing design as-is (`BGMTapRoute` assumes one output device per
   route); would need either multiple simultaneous `BGMPlayThrough` instances per tap or an aggregate
@@ -94,6 +90,13 @@ None of this is started. If you want to tackle one, open an issue first so effor
   defaults). Test: open Preferences > Keyboard Shortcuts, click a record button, press an arrow key
   — does the button's title actually update to show it, or does the menu's own selection move
   instead and the button stays on "Press a key…"?
+- **Verify Do Not Disturb actually mutes and restores real apps** (added 2026-08-12,
+  `BGMDoNotDisturb`). Confirmed by reading `SetAppVolume`/`GetAppVolumes` usage that it calls the
+  same API the volume sliders use, but never run against a real running app. Test: play audio in
+  two apps, enable Do Not Disturb with one as the Priority App — confirm the other actually goes
+  silent (not just that its slider visually moves), launch a third app while it's still on and
+  confirm it's muted immediately, then turn Do Not Disturb off and confirm all volumes return to
+  what they were before, not to a default.
 
 ## Fairly quick
 

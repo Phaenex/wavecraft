@@ -26,6 +26,8 @@
 // Local Includes
 #import "BGMAutoPauseMusicPrefs.h"
 #import "BGMAboutPanel.h"
+#import "BGM_Types.h"
+#import "BGM_Utils.h"
 
 // System Includes
 #import <math.h>
@@ -71,6 +73,12 @@ static NSInteger const kAboutPanelMenuItemTag  = 4;
     NSMenuItem* hotkeyBindingsDescriptionMenuItem;
     // One recorder button per BGMHotkeyAction, indexed by the enum's raw value.
     NSMutableArray<BGMHotkeyRecorderButton*>* hotkeyRecorderButtons;
+
+    // Do Not Disturb preferences
+    BGMDoNotDisturb* doNotDisturb;
+    NSMenuItem* doNotDisturbEnabledMenuItem;
+    NSMenuItem* doNotDisturbPriorityAppMenuItem;
+    NSMenu* doNotDisturbPriorityAppSubmenu;
 }
 
 - (id) initWithBGMMenu:(NSMenu*)inBGMMenu
@@ -82,7 +90,8 @@ static NSInteger const kAboutPanelMenuItemTag  = 4;
           userDefaults:(BGMUserDefaults*)inUserDefaults
 preferredOutputDevices:(BGMPreferredOutputDevices*)inPreferredOutputDevices
 outputRoutingController:(BGMAppOutputRoutingController*)inOutputRoutingController
-               hotkeys:(BGMHotkeys*)inHotkeys {
+               hotkeys:(BGMHotkeys*)inHotkeys
+          doNotDisturb:(BGMDoNotDisturb*)inDoNotDisturb {
     if ((self = [super init])) {
         NSMenu* prefsMenu = [[inBGMMenu itemWithTag:kPreferencesMenuItemTag] submenu];
 
@@ -124,6 +133,9 @@ outputRoutingController:(BGMAppOutputRoutingController*)inOutputRoutingControlle
 
         hotkeys = inHotkeys;
         [self setupHotkeysMenu:prefsMenu];
+
+        doNotDisturb = inDoNotDisturb;
+        [self setupDoNotDisturbMenu:prefsMenu];
     }
 
     return self;
@@ -281,6 +293,119 @@ outputRoutingController:(BGMAppOutputRoutingController*)inOutputRoutingControlle
     hotkeyStepCoarseMenuItem.state = (stepSize == BGMHotkeyStepSizeCoarse) ? NSOnState : NSOffState;
 
     hotkeyBindingsDescriptionMenuItem.title = [hotkeys currentBindingsDescription];
+}
+
+#pragma mark Do Not Disturb
+
+- (void) setupDoNotDisturbMenu:(NSMenu*)prefsMenu {
+    [prefsMenu addItem:[NSMenuItem separatorItem]];
+
+    NSMenuItem* header = [[NSMenuItem alloc] initWithTitle:@"Do Not Disturb"
+                                                      action:nil
+                                               keyEquivalent:@""];
+    header.enabled = NO;
+    [prefsMenu addItem:header];
+
+    doNotDisturbEnabledMenuItem =
+        [[NSMenuItem alloc] initWithTitle:@"Enable Do Not Disturb"
+                                    action:@selector(toggleDoNotDisturbEnabled)
+                             keyEquivalent:@""];
+    doNotDisturbEnabledMenuItem.target = self;
+    doNotDisturbEnabledMenuItem.toolTip =
+        @"Mutes every other app while it's on, so only the app you pick below stays audible.";
+    [prefsMenu addItem:doNotDisturbEnabledMenuItem];
+
+    doNotDisturbPriorityAppSubmenu = [[NSMenu alloc] initWithTitle:@"Priority App"];
+    doNotDisturbPriorityAppSubmenu.delegate = self;
+
+    doNotDisturbPriorityAppMenuItem = [[NSMenuItem alloc] initWithTitle:@"Priority App"
+                                                                    action:nil
+                                                             keyEquivalent:@""];
+    doNotDisturbPriorityAppMenuItem.submenu = doNotDisturbPriorityAppSubmenu;
+    doNotDisturbPriorityAppMenuItem.indentationLevel = 1;
+    [prefsMenu addItem:doNotDisturbPriorityAppMenuItem];
+
+    [self updateDoNotDisturbMenuItemStates];
+}
+
+- (void) toggleDoNotDisturbEnabled {
+    [doNotDisturb setEnabled:!doNotDisturb.isEnabled];
+    [self updateDoNotDisturbMenuItemStates];
+}
+
+// NSMenuDelegate. Rebuilds the priority-app list from currently-running apps right before it's
+// shown -- same reasoning as BGMAppOutputRoutingController::populateMenuForButton:forBundleID:,
+// an app can launch or quit between menu opens.
+- (void) menuNeedsUpdate:(NSMenu*)menu {
+    if (menu != doNotDisturbPriorityAppSubmenu) {
+        return;
+    }
+
+    [menu removeAllItems];
+
+    NSString* __nullable currentBundleID = doNotDisturb.priorityAppBundleID;
+
+    NSMenuItem* noneItem = [[NSMenuItem alloc] initWithTitle:@"None"
+                                                        action:@selector(selectDoNotDisturbPriorityApp:)
+                                                 keyEquivalent:@""];
+    noneItem.target = self;
+    noneItem.state = currentBundleID ? NSOffState : NSOnState;
+    [menu addItem:noneItem];
+
+    [menu addItem:[NSMenuItem separatorItem]];
+
+    NSArray<NSRunningApplication*>* apps =
+        [[NSWorkspace sharedWorkspace].runningApplications
+            sortedArrayUsingComparator:^NSComparisonResult(NSRunningApplication* a, NSRunningApplication* b) {
+                NSString* nameA = a.localizedName ?: @"";
+                NSString* nameB = b.localizedName ?: @"";
+                return [nameA localizedCaseInsensitiveCompare:nameB];
+            }];
+
+    for (NSRunningApplication* app in apps) {
+        NSString* __nullable bundleID = app.bundleIdentifier;
+        NSString* __nullable name = app.localizedName;
+
+        if (!bundleID || !name || [BGMNN(bundleID) isEqualToString:@kBGMAppBundleID] ||
+            (app.activationPolicy == NSApplicationActivationPolicyProhibited)) {
+            // No bundle ID/name, Wavecraft itself, or a background-only process with no UI and
+            // (almost always) no audio of its own -- same filtering BGMAppVolumesController uses
+            // for which apps get their own volume row.
+            continue;
+        }
+
+        NSMenuItem* item = [[NSMenuItem alloc] initWithTitle:BGMNN(name)
+                                                        action:@selector(selectDoNotDisturbPriorityApp:)
+                                                 keyEquivalent:@""];
+        item.target = self;
+        item.representedObject = bundleID;
+        item.state =
+            (currentBundleID && [BGMNN(bundleID) isEqualToString:BGMNN(currentBundleID)]) ?
+                NSOnState : NSOffState;
+        [menu addItem:item];
+    }
+}
+
+- (void) selectDoNotDisturbPriorityApp:(NSMenuItem*)sender {
+    doNotDisturb.priorityAppBundleID = sender.representedObject;
+    [self updateDoNotDisturbMenuItemStates];
+}
+
+- (void) updateDoNotDisturbMenuItemStates {
+    doNotDisturbEnabledMenuItem.state = doNotDisturb.isEnabled ? NSOnState : NSOffState;
+
+    NSString* __nullable priorityAppBundleID = doNotDisturb.priorityAppBundleID;
+    NSString* __nullable priorityAppName = nil;
+
+    if (priorityAppBundleID) {
+        NSRunningApplication* __nullable app =
+            [NSRunningApplication runningApplicationsWithBundleIdentifier:BGMNN(priorityAppBundleID)]
+                .firstObject;
+        priorityAppName = app.localizedName ?: priorityAppBundleID;
+    }
+
+    doNotDisturbPriorityAppMenuItem.title =
+        [NSString stringWithFormat:@"Priority App: %@", priorityAppName ?: @"None"];
 }
 
 - (void) setXPCListener:(BGMXPCListener*)xpcListener {

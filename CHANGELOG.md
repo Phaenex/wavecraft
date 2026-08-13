@@ -64,6 +64,13 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
   the script actually does.
 - [docs/QA-PLAN.md](docs/QA-PLAN.md) — an ordered checklist for verifying a fresh install actually
   works, covering every menu control and new-feature edge case, not just "does it build."
+- **Do Not Disturb** (`BGMApp/BGMApp/BGMDoNotDisturb.{h,mm}`, **Preferences > Do Not Disturb**) —
+  mutes every running app except one chosen "priority" app, the inverse of the existing auto-pause
+  feature (which pauses one specific known music-player app; this works with any running app).
+  Forces every non-priority app to `kAppRelativeVolumeMinRawValue` via the same per-app-volume API
+  the volume sliders use, remembering each app's own volume to restore on disable. A newly-launched
+  app while it's on gets muted immediately via an `NSWorkspace.runningApplications` KVO observer.
+  Resumes automatically on next launch if left enabled.
 - A prebuilt-release install path (`package_release.sh`, `install_prebuilt.sh`) for people without
   Xcode — downloads a zip from GitHub Releases and double-clicks an installer, instead of building
   from source. Since this project has no paid Apple Developer ID, the release isn't notarized and
