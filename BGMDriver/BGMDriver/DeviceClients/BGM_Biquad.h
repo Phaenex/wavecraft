@@ -18,7 +18,7 @@
 //  BGMDriver
 //
 //  Per-app EQ. A single Direct Form I biquad peaking filter, and a fixed
-//  5-band chain of them driven by BGM_Client's per-app gain settings.
+//  10-band chain of them driven by BGM_Client's per-app gain settings.
 //
 //  Coefficients follow Robert Bristow-Johnson's "Audio EQ Cookbook" peaking
 //  EQ formula (the same reference the Web Audio API's BiquadFilterNode spec
@@ -127,7 +127,7 @@ private:
 
 };
 
-// A fixed 5-band peaking EQ chain, one instance per app. Owned by BGM_Device
+// A fixed 10-band peaking EQ chain, one instance per app. Owned by BGM_Device
 // (in mClientEQProcessors, keyed by client ID), NOT by BGM_Client -- BGM_Client
 // gets copied by value by the existing per-client access pattern (see
 // docs/LESSONS.md), which would silently reset this filter's delay-line state
@@ -137,11 +137,16 @@ class BGM_AppEQ
 {
 
 public:
-    static constexpr int kNumBands = 5;
+    static constexpr int kNumBands = 10;
 
-    // Center frequencies for the 5 bands, Hz. A standard-ish consumer EQ
-    // spread: low, low-mid, mid, high-mid, high.
-    static constexpr std::array<double, kNumBands> kBandCenterFreqs { 60.0, 250.0, 1000.0, 4000.0, 12000.0 };
+    // Center frequencies for the 10 bands, Hz -- the standard ISO octave-band graphic-EQ spread
+    // (31/62/125/250/500/1k/2k/4k/8k/16k), matching what other per-app EQ tools in this space
+    // (SoundSource, Sound Control) also use, rather than an arbitrary custom set. kNumBands and
+    // kBGMAppEQNumBands (SharedSource/BGM_Types.h) are two independent constants that have to
+    // stay equal by hand -- see the static_assert enforcing that in BGM_Device.cpp.
+    static constexpr std::array<double, kNumBands> kBandCenterFreqs {
+        31.0, 62.0, 125.0, 250.0, 500.0, 1000.0, 2000.0, 4000.0, 8000.0, 16000.0
+    };
 
     // Sets band inBandIndex's gain, in dB, clamped to [-12, 12] by
     // BGM_Biquad::SetParameters. inSampleRate should be the device's
@@ -178,7 +183,7 @@ public:
         return mCurrentGainsDB != inGainsDB;
     }
 
-    // Sets all 5 bands' gains at once, but only actually reconfigures (and
+    // Sets all bands' gains at once, but only actually reconfigures (and
     // resets the delay-line state of) bands whose target gain differs from
     // what's currently applied. Real-time safe to call every IO callback:
     // the common case (nothing changed since last call) does no filter
@@ -196,7 +201,7 @@ public:
         }
     }
 
-    // Applies all 5 bands in series to one interleaved stereo sample pair.
+    // Applies all bands in series to one interleaved stereo sample pair.
     inline void ProcessStereoSample(Float32& ioLeft, Float32& ioRight)
     {
         for (auto& band : mBands)
@@ -212,7 +217,7 @@ private:
     // Tracks what's currently applied to mBands, all zeroed (0dB, unity) to
     // match each BGM_Biquad's own default-constructed state. Compared
     // against in SetAllBandGainsDB to avoid unnecessary filter resets.
-    std::array<Float32, kNumBands> mCurrentGainsDB { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    std::array<Float32, kNumBands> mCurrentGainsDB {};
 
 };
 

@@ -81,8 +81,7 @@ public:
     // target values -- safe to copy, unlike the actual live filter state, which BGM_Device
     // owns separately (in mClientEQProcessors) precisely so it doesn't get reset by a copy
     // of this class. See docs/LESSONS.md.
-    std::array<Float32, BGM_AppEQ::kNumBands>
-                                   mEQBandGainsDB { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    std::array<Float32, BGM_AppEQ::kNumBands> mEQBandGainsDB {};
 
 };
 

@@ -314,7 +314,7 @@ std::array<Float32, BGM_AppEQ::kNumBands> BGM_Clients::GetClientEQBandGainsRT(UI
     BGM_Client theClient;
     bool didGetClient = mClientMap.GetClientRT(inClientID, &theClient);
     return (didGetClient ? theClient.mEQBandGainsDB
-                          : std::array<Float32, BGM_AppEQ::kNumBands> { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f });
+                          : std::array<Float32, BGM_AppEQ::kNumBands> {});
 }
 
 bool    BGM_Clients::SetClientsRelativeVolumes(const CACFArray inAppVolumes)

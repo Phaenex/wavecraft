@@ -171,7 +171,7 @@ static double RatioToDB(double inRatio)
     XCTAssertEqualWithAccuracy(y, 0.0f, 0.0001);
 }
 
-// BGM_AppEQ chains 5 bands correctly -- setting one band shouldn't affect
+// BGM_AppEQ chains all its bands correctly -- setting one band shouldn't affect
 // the others, and a flat (all-zero) EQ should be unity end to end.
 - (void) testAppEQAllBandsFlatIsUnity
 {
@@ -202,8 +202,10 @@ static double RatioToDB(double inRatio)
 {
     BGM_AppEQ eq;
 
-    std::array<Float32, BGM_AppEQ::kNumBands> flat { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
-    std::array<Float32, BGM_AppEQ::kNumBands> boosted { 3.0f, 0.0f, -2.0f, 0.0f, 5.0f };
+    std::array<Float32, BGM_AppEQ::kNumBands> flat {};
+    std::array<Float32, BGM_AppEQ::kNumBands> boosted {
+        3.0f, 0.0f, -2.0f, 0.0f, 5.0f, -4.0f, 0.0f, 6.0f, -1.0f, 2.0f
+    };
 
     // A freshly-constructed BGM_AppEQ starts flat, so requesting flat again needs no update...
     XCTAssertFalse(eq.NeedsGainUpdate(flat));
@@ -228,7 +230,9 @@ static double RatioToDB(double inRatio)
 // diverge.
 - (void) testSetAllBandGainsDBDoesNotResetStateWhenUnchanged
 {
-    std::array<Float32, BGM_AppEQ::kNumBands> gains { 4.0f, -6.0f, 2.0f, 0.0f, -3.0f };
+    std::array<Float32, BGM_AppEQ::kNumBands> gains {
+        4.0f, -6.0f, 2.0f, 0.0f, -3.0f, 5.0f, -2.0f, 0.0f, 7.0f, -5.0f
+    };
     const int kNumSamples = 2000;
 
     BGM_AppEQ eqCalledOnce;

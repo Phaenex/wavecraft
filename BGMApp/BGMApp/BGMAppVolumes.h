@@ -92,6 +92,15 @@
 @end
 
 @interface BGMAVM_ShowMoreControlsButton : NSButton <BGMAppVolumeMenuItemSubview>
+
+// Re-reads the pan/EQ sliders in the same menu item view and updates this button's appearance to
+// indicate whether any of them are set to a non-default value -- the row's "extra controls" start
+// out collapsed, so without this there's no way to tell they're non-default without expanding the
+// row. Safe to call before the row's own siblings have their real values yet (treated as "all
+// default" until it's called again after they do) -- see BGMAppVolumes.m for why this can't just
+// run once from setUpWithApp:.
+- (void) bgm_syncHighlightForCurrentControls;
+
 @end
 
 @interface BGMAVM_VolumeSlider : NSSlider <BGMAppVolumeMenuItemSubview>

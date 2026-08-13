@@ -1117,6 +1117,15 @@ static void ValidateAppVolumesProperty(const CACFArray& inAppVolumes)
     }
 }
 
+// kBGMAppEQNumBands (BGM_Types.h, the property-marshaling contract) and BGM_AppEQ::kNumBands
+// (BGM_Biquad.h, the real-time DSP band count) are independent constants with no other mechanism
+// keeping them in sync -- an earlier audit of this codebase found nothing enforcing they matched.
+// If they ever drift apart, ValidateAppEQProperty below would accept/reject the wrong array length
+// for what BGM_Clients::SetClientsEQ actually iterates. Catch that at compile time instead.
+static_assert(kBGMAppEQNumBands == BGM_AppEQ::kNumBands,
+              "kBGMAppEQNumBands (BGM_Types.h) and BGM_AppEQ::kNumBands (BGM_Biquad.h) must match "
+              "-- see the comment above this static_assert");
+
 // Validates inAppEQ for the kAudioDeviceCustomPropertyAppEQ property as described in
 // BGM_Types.h. Throws CAException(kAudioHardwareIllegalOperationError) if invalid.
 static void ValidateAppEQProperty(const CACFArray& inAppEQ)

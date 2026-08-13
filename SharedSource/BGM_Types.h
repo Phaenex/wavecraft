@@ -124,7 +124,7 @@ enum
     kAudioDeviceCustomPropertyEnabledOutputControls                   = 'bgct',
     // A CFBoolean. True if debug logging is enabled in BGMDriver. Settable.
     kAudioDeviceCustomPropertyDebugLoggingEnabled                     = 'dblg',
-    // A CFArray of CFDictionaries that each contain an app's pid and/or bundle ID and its 5-band EQ gains.
+    // A CFArray of CFDictionaries that each contain an app's pid and/or bundle ID and its per-band EQ gains.
     // See the dictionary keys below for more info.
     //
     // Getting this property will only return apps with EQ gains other than the default (all bands at 0dB).
@@ -174,7 +174,9 @@ enum BGMDeviceAudibleState : SInt32
 // BGM_AppEQ::kBandCenterFreqs in BGM_Biquad.h.
 #define kBGMAppEQKey_BandGains              "bands"
 
-#define kBGMAppEQNumBands       5
+// Independent of BGM_AppEQ::kNumBands (BGM_Biquad.h) -- the two have to be kept equal by hand.
+// BGM_Device.cpp has a static_assert enforcing that.
+#define kBGMAppEQNumBands       10
 #define kBGMAppEQMinGainDB      -12.0
 #define kBGMAppEQMaxGainDB      12.0
 

@@ -49,9 +49,24 @@ static NSString* const kMoreAppsMenuTitle          = @"More Apps";
 // A plain C array rather than an NSArray literal because this file is compiled as Objective-C
 // (not Objective-C++), where an @[...] literal isn't a compile-time constant and so can't
 // initialize a file-scope static.
-static const char* const kEQBandFreqLabels[] = { "60 Hz", "250 Hz", "1 kHz", "4 kHz", "12 kHz" };
+static const char* const kEQBandFreqLabels[] = {
+    "31 Hz", "62 Hz", "125 Hz", "250 Hz", "500 Hz", "1 kHz", "2 kHz", "4 kHz", "8 kHz", "16 kHz"
+};
 static const NSUInteger kEQBandFreqLabelsCount =
     sizeof(kEQBandFreqLabels) / sizeof(kEQBandFreqLabels[0]);
+
+// Shared by BGMAVM_PanSlider/BGMAVM_EQBandSlider's live-update paths and
+// BGMAppVolumes::insertMenuItemForApp:... to find the show-more-controls button so its
+// non-default-controls highlight can be kept in sync -- see
+// BGMAVM_ShowMoreControlsButton::bgm_syncHighlightForCurrentControls.
+static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(NSView* siblingContainer) {
+    for (NSView* view in siblingContainer.subviews) {
+        if ([view isKindOfClass:[BGMAVM_ShowMoreControlsButton class]]) {
+            return (BGMAVM_ShowMoreControlsButton*)view;
+        }
+    }
+    return nil;
+}
 
 @implementation BGMAppVolumes {
     BGMAppVolumesController* controller;
@@ -128,6 +143,12 @@ static const NSUInteger kEQBandFreqLabelsCount =
     if (gainsDB) {
         [self setEQBandGainsOfMenuItem:appVolItem gainsDB:BGMNN(gainsDB)];
     }
+
+    // Now that pan/EQ have their real (possibly restored, non-default) values, sync the
+    // show-more-controls button's highlight to match -- has to happen after both calls above, not
+    // from BGMAVM_ShowMoreControlsButton::setUpWithApp: itself, since siblings don't have their
+    // real values yet at that point in setup.
+    [BGM_FindShowMoreControlsButton(appVolItem.view) bgm_syncHighlightForCurrentControls];
 
     // NSMenuItem didn't implement NSAccessibility before OS X SDK 10.12.
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= 101200  // MAC_OS_X_VERSION_10_12
@@ -434,23 +455,59 @@ static const NSUInteger kEQBandFreqLabelsCount =
            controller:(BGMAppVolumesController*)ctrl
              menuItem:(NSMenuItem*)menuItem {
     #pragma unused (app, ctrl)
-    
+
     // Set up the button that show/hide the extra controls (currently only a pan slider) for the app.
     self.cell.representedObject = menuItem;
     self.target = ctx;
     self.action = @selector(showHideExtraControls:);
-    
+
     // The menu item starts out with the extra controls visible, so we hide them here.
-    //
-    // TODO: Leave them visible if any of the controls are set to non-default values. The user has no way to
-    //       tell otherwise. Maybe we should also make this button look different if the controls are hidden
-    //       when they have non-default values.
     [ctx showHideExtraControls:self];
+
+    // Not bgm_syncHighlightForCurrentControls here -- at this point in setup, sibling sliders in
+    // the same menu item view haven't had their real values written yet (that happens later, in
+    // BGMAppVolumes::insertMenuItemForApp:..., after every subview's setUpWithApp: has already
+    // run), so every check here would see "all default" regardless of what's actually restored.
+    // insertMenuItemForApp:... calls bgm_syncHighlightForCurrentControls itself once real values
+    // are in place.
 
     if ([self respondsToSelector:@selector(setAccessibilityTitle:)]) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpartial-availability"
         self.accessibilityTitle = @"More options";
+#pragma clang diagnostic pop
+    }
+}
+
+- (void) bgm_syncHighlightForCurrentControls {
+    BOOL hasNonDefaultControls = NO;
+
+    for (NSView* view in self.superview.subviews) {
+        if ([view isKindOfClass:[BGMAVM_EQBandSlider class]]) {
+            if (((NSSlider*)view).floatValue != 0.0f) {
+                hasNonDefaultControls = YES;
+                break;
+            }
+        } else if ([view isKindOfClass:[BGMAVM_PanSlider class]]) {
+            if (((NSSlider*)view).intValue != kAppPanCenterRawValue) {
+                hasNonDefaultControls = YES;
+                break;
+            }
+        }
+    }
+
+    if ([self respondsToSelector:@selector(setContentTintColor:)]) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wpartial-availability"
+        self.contentTintColor = hasNonDefaultControls ? [NSColor controlAccentColor] : nil;
+#pragma clang diagnostic pop
+    }
+
+    if ([self respondsToSelector:@selector(setAccessibilityTitle:)]) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wpartial-availability"
+        self.accessibilityTitle =
+            hasNonDefaultControls ? @"More options (pan or EQ set)" : @"More options";
 #pragma clang diagnostic pop
     }
 }
@@ -683,6 +740,8 @@ static const NSUInteger kEQBandFreqLabelsCount =
 
     // The values from our sliders are in [kAppPanLeftRawValue, kAppPanRightRawValue] already.
     [controller setPanPosition:self.intValue forAppWithProcessID:appProcessID bundleID:appBundleID];
+
+    [BGM_FindShowMoreControlsButton(self.superview) bgm_syncHighlightForCurrentControls];
 }
 
 @end
@@ -767,6 +826,8 @@ static const NSUInteger kEQBandFreqLabelsCount =
              gainsDB.description.UTF8String);
 
     [controller setEQBandGains:gainsDB forAppWithProcessID:appProcessID bundleID:appBundleID];
+
+    [BGM_FindShowMoreControlsButton(self.superview) bgm_syncHighlightForCurrentControls];
 }
 
 @end
