@@ -49,6 +49,7 @@ static NSString* const kDefaultKeyHasShownMicExplanation = @"HasShownMicrophoneP
 static NSString* const kDefaultKeyHotkeysEnabled        = @"HotkeysEnabled";
 static NSString* const kDefaultKeyHasShownHotkeysAXExplanation =
     @"HasShownHotkeysAccessibilityExplanation";
+static NSString* const kDefaultKeyHasShownSetupWindow   = @"HasShownSetupWindowOnFirstLaunch";
 static NSString* const kDefaultKeyHotkeyBindings        = @"HotkeyBindings";
 static NSString* const kDefaultKeyHotkeyStepSize        = @"HotkeyStepSize";
 
@@ -240,6 +241,14 @@ static NSString* const kKeychainLabelGPMDPAuthCode =
 
 - (void) setHasShownHotkeysAccessibilityExplanation:(BOOL)hasShown {
     [self setBool:kDefaultKeyHasShownHotkeysAXExplanation to:hasShown];
+}
+
+- (BOOL) hasShownSetupWindowOnFirstLaunch {
+    return [self getBool:kDefaultKeyHasShownSetupWindow];
+}
+
+- (void) setHasShownSetupWindowOnFirstLaunch:(BOOL)hasShown {
+    [self setBool:kDefaultKeyHasShownSetupWindow to:hasShown];
 }
 
 // The dictionary key each action's binding is stored under inside kDefaultKeyHotkeyBindings.

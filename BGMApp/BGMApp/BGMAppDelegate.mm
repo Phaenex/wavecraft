@@ -41,6 +41,7 @@
 #import "BGMOutputVolumeMenuItem.h"
 #import "BGMPreferencesMenu.h"
 #import "BGMPreferredOutputDevices.h"
+#import "BGMSetupWindow.h"
 #import "BGMStatusBarItem.h"
 #import "BGMSystemSoundsVolume.h"
 #import "BGMTermination.h"
@@ -64,6 +65,10 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
     // The panel itself -- see BGMMainPanel's header for why this app moved off NSMenu for its
     // main dropdown.
     BGMMainPanel* mainPanel;
+
+    // "What Wavecraft needs from your Mac, and why" -- shown once on a first launch, reachable
+    // afterwards from Preferences. See BGMSetupWindow's header.
+    BGMSetupWindow* setupWindow;
 
     // Only show the 'BGMXPCHelper is missing' error dialog once.
     BOOL haveShownXPCHelperErrorMessage;
@@ -121,6 +126,8 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
 
     // Stored user settings
     userDefaults = [self createUserDefaults];
+
+    setupWindow = [[BGMSetupWindow alloc] initWithUserDefaults:userDefaults];
 
     // The main dropdown's window. Created before statusBarItem so there's something for the
     // status bar button's click handler to show/hide.
@@ -296,6 +303,10 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
     // BGMXPCHelper" troubleshooter, but xpcListener doesn't exist until here -- see
     // BGMTroubleshootMenu's header for why this is a separate call instead of an initializer param.
     [prefsMenu setXPCListener:xpcListener];
+
+    // No-op after the very first launch -- see BGMSetupWindow's header and
+    // BGMUserDefaults.hasShownSetupWindowOnFirstLaunch.
+    [setupWindow showOnFirstLaunchIfNeeded];
 }
 
 // Returns NO if (and only if) BGMApp is about to terminate because of a fatal error.
@@ -384,6 +395,17 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
                                     outputRoutingController:outputRoutingController
                                                     hotkeys:hotkeys
                                                doNotDisturb:doNotDisturb];
+
+    // "Setup & Permissions…" -- reopens the same window shown automatically on first launch (see
+    // BGMSetupWindow's header). Wired directly to setupWindow itself, the same way prefsMenu wires
+    // its own "About" item directly to aboutPanel, rather than routing the action through
+    // BGMAppDelegate.
+    NSMenuItem* setupMenuItem = [[NSMenuItem alloc] initWithTitle:@"Setup & Permissions…"
+                                                             action:@selector(show)
+                                                      keyEquivalent:@""];
+    setupMenuItem.target = setupWindow;
+    [prefsMenu.menu addItem:[NSMenuItem separatorItem]];
+    [prefsMenu.menu addItem:setupMenuItem];
 
     mainPanel.mainContentView.preferencesButton.target = self;
     mainPanel.mainContentView.preferencesButton.action = @selector(showPreferencesMenu:);

@@ -8,7 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		04A9CEC3B0F64D255424D164 /* BGMMainPanelContentView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 2B367CA9DA06FDB5C0ED2039 /* BGMMainPanelContentView.mm */; };
+		05A67772426A138C78C80CF1 /* BGMSetupWindow.mm in Sources */ = {isa = PBXBuildFile; fileRef = A7124B832B467E71C01E50E4 /* BGMSetupWindow.mm */; };
 		087DC17BE4E784DE93ECBCCE /* BGMHotkeys.mm in Sources */ = {isa = PBXBuildFile; fileRef = D40863E589A0D533A16C17A3 /* BGMHotkeys.mm */; };
+		12F8CE2FCE63617103BF770E /* BGMSetupWindow.mm in Sources */ = {isa = PBXBuildFile; fileRef = A7124B832B467E71C01E50E4 /* BGMSetupWindow.mm */; };
 		19FE7071FF5280BC38F35E1D /* BGMVolumeChangeListener.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 19FE7179EBFA116F3861E79D /* BGMVolumeChangeListener.cpp */; };
 		19FE70F73D26D54450779A22 /* BGMPlayThroughRTLogger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 19FE7DE5E3BA0046ED2BC3C6 /* BGMPlayThroughRTLogger.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMApp-BGMPlayThroughRTLogger.cpp"; }; };
 		19FE715E7338035C7BCD24E7 /* BGMPlayThroughRTLogger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 19FE7DE5E3BA0046ED2BC3C6 /* BGMPlayThroughRTLogger.cpp */; };
@@ -235,6 +237,7 @@
 		3043E0DE87BDC97C8EBECB26 /* BGMTapRoute.h in Sources */ = {isa = PBXBuildFile; fileRef = BE76D7BB26DD487A9B338F66 /* BGMTapRoute.h */; };
 		3A5272A9716F8105CF47BCC2 /* BGMHotkeyRecorderButton.mm in Sources */ = {isa = PBXBuildFile; fileRef = A56DD7398E6EA2B1B9A92C54 /* BGMHotkeyRecorderButton.mm */; };
 		3F14DC51C6BA44FD50EB3D99 /* BGMTapRoute.mm in Sources */ = {isa = PBXBuildFile; fileRef = F1147BF558DE55DB68E2BFE8 /* BGMTapRoute.mm */; };
+		4368770DB7C43C2EEFB25E6C /* BGMSetupWindowContentView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 48FEDCC29226EF2A3737DCD8 /* BGMSetupWindowContentView.mm */; };
 		45DD6F95ECE8A41EF4F6EAA6 /* BGMOutputDeviceDiff.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 86D38AC989FD94C658BBDF07 /* BGMOutputDeviceDiff.cpp */; };
 		498FE213C62AC0CDC62B414C /* BGMDoNotDisturb.mm in Sources */ = {isa = PBXBuildFile; fileRef = 541CAA60C332F779D58DAC09 /* BGMDoNotDisturb.mm */; };
 		4D6AE2ADD652EC1BF4864650 /* BGMHotkeyRecorderButton.mm in Sources */ = {isa = PBXBuildFile; fileRef = A56DD7398E6EA2B1B9A92C54 /* BGMHotkeyRecorderButton.mm */; };
@@ -255,6 +258,7 @@
 		9E542C7026057FBA0016C0B5 /* BGMASApplication.m in Sources */ = {isa = PBXBuildFile; fileRef = 9E129A402602AE620005851B /* BGMASApplication.m */; };
 		A3B479F1CAD2F4BD7F95058F /* BGMTroubleshootMenu.mm in Sources */ = {isa = PBXBuildFile; fileRef = 6BA924FB8CCD660F5C926A29 /* BGMTroubleshootMenu.mm */; };
 		A7275976027BC34764480F06 /* BGMAppOutputRoutingController.h in Sources */ = {isa = PBXBuildFile; fileRef = 0A6812F6788CC089B61EB752 /* BGMAppOutputRoutingController.h */; };
+		AA87B2F330FCD4EF9402C1A5 /* BGMSetupWindowContentView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 48FEDCC29226EF2A3737DCD8 /* BGMSetupWindowContentView.mm */; };
 		AAD3C70756FC6179245AA3CE /* BGMTroubleshootMenu.mm in Sources */ = {isa = PBXBuildFile; fileRef = 6BA924FB8CCD660F5C926A29 /* BGMTroubleshootMenu.mm */; };
 		AE4ABE5362422CC9D71493DD /* BGMMainPanelContentView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 2B367CA9DA06FDB5C0ED2039 /* BGMMainPanelContentView.mm */; };
 		B3BFDC172B31A6B1E58D7EB1 /* BGMTapRoute.mm in Sources */ = {isa = PBXBuildFile; fileRef = F1147BF558DE55DB68E2BFE8 /* BGMTapRoute.mm */; };
@@ -272,6 +276,8 @@
 		EB6471FBF317684F00AAF5AE /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FC5D2B96BA1428D2EFEF2710 /* Carbon.framework */; };
 		EBB56924C66177BC7C1EE97A /* BGMHotkeys.mm in Sources */ = {isa = PBXBuildFile; fileRef = D40863E589A0D533A16C17A3 /* BGMHotkeys.mm */; };
 		F781EC55859BC42D53C788B5 /* BGMTroubleshootMenu.h in Sources */ = {isa = PBXBuildFile; fileRef = 84C7E5823B97D0B1EFCF180B /* BGMTroubleshootMenu.h */; };
+		FB2C17EDE6F1764FFBF31ED9 /* BGMSetupWindowContentView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 48FEDCC29226EF2A3737DCD8 /* BGMSetupWindowContentView.mm */; };
+		FDB71D7D72B47FA58BA13848 /* BGMSetupWindow.mm in Sources */ = {isa = PBXBuildFile; fileRef = A7124B832B467E71C01E50E4 /* BGMSetupWindow.mm */; };
 		FDC6021E8B65E096CD575A5B /* BGMHotkeys.mm in Sources */ = {isa = PBXBuildFile; fileRef = D40863E589A0D533A16C17A3 /* BGMHotkeys.mm */; };
 		FDDB736270698A91AABE937D /* BGMHotkeys.h in Sources */ = {isa = PBXBuildFile; fileRef = 799AF95ED14922923C2D5BEA /* BGMHotkeys.h */; };
 /* End PBXBuildFile section */
@@ -487,6 +493,7 @@
 		27F7D4911D2484A300821C4B /* Decibel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Decibel.h; path = "Music Players/Decibel.h"; sourceTree = "<group>"; };
 		27FB8C2E1DE468320084DB9D /* BGM_Utils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BGM_Utils.cpp; path = ../SharedSource/BGM_Utils.cpp; sourceTree = "<group>"; };
 		2B367CA9DA06FDB5C0ED2039 /* BGMMainPanelContentView.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = BGMMainPanelContentView.mm; sourceTree = "<group>"; };
+		48FEDCC29226EF2A3737DCD8 /* BGMSetupWindowContentView.mm */ = {isa = PBXFileReference; includeInIndex = 1; name = BGMSetupWindowContentView.mm; path = Preferences/BGMSetupWindowContentView.mm; sourceTree = "<group>"; };
 		4CD06E93559E7F3D31D07F1F /* BGMMainPanel.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = BGMMainPanel.mm; sourceTree = "<group>"; };
 		541CAA60C332F779D58DAC09 /* BGMDoNotDisturb.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = BGMDoNotDisturb.mm; sourceTree = "<group>"; };
 		5BCEE17D46D93500306CAD10 /* BGMTapRouteTests.mm */ = {isa = PBXFileReference; includeInIndex = 1; name = BGMTapRouteTests.mm; path = UnitTests/BGMTapRouteTests.mm; sourceTree = "<group>"; };
@@ -494,15 +501,18 @@
 		6BA924FB8CCD660F5C926A29 /* BGMTroubleshootMenu.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = Preferences/BGMTroubleshootMenu.mm; sourceTree = "<group>"; };
 		6CCB9B8BF7577EA479265897 /* BGMHotkeyRecorderButton.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = BGMHotkeyRecorderButton.h; sourceTree = "<group>"; };
 		6F161F1B992D0519E99DCE0D /* BGMMainPanel.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = BGMMainPanel.h; sourceTree = "<group>"; };
+		78ED64B7992080AFF94BF84F /* BGMSetupWindow.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = BGMSetupWindow.h; path = Preferences/BGMSetupWindow.h; sourceTree = "<group>"; };
 		799AF95ED14922923C2D5BEA /* BGMHotkeys.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = BGMHotkeys.h; sourceTree = "<group>"; };
 		7F576613B4F7116C9498D469 /* BGMAppOutputRoutingController.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = BGMAppOutputRoutingController.mm; sourceTree = "<group>"; };
 		80FA06C819CAEB8294B18E37 /* BGMUserDefaultsTests.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = UnitTests/BGMUserDefaultsTests.mm; sourceTree = "<group>"; };
 		84C7E5823B97D0B1EFCF180B /* BGMTroubleshootMenu.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = Preferences/BGMTroubleshootMenu.h; sourceTree = "<group>"; };
 		86D38AC989FD94C658BBDF07 /* BGMOutputDeviceDiff.cpp */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.cpp.cpp; path = BGMOutputDeviceDiff.cpp; sourceTree = "<group>"; };
+		9AE9F93D3153089B98E93DDB /* BGMSetupWindowContentView.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = BGMSetupWindowContentView.h; path = Preferences/BGMSetupWindowContentView.h; sourceTree = "<group>"; };
 		9E129A3F2602AE620005851B /* BGMASApplication.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BGMASApplication.h; path = Scripting/BGMASApplication.h; sourceTree = "<group>"; };
 		9E129A402602AE620005851B /* BGMASApplication.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BGMASApplication.m; path = Scripting/BGMASApplication.m; sourceTree = "<group>"; };
 		A0E0E68A7F436F8CCBC5CE47 /* BGMMainPanelContentView.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = BGMMainPanelContentView.h; sourceTree = "<group>"; };
 		A56DD7398E6EA2B1B9A92C54 /* BGMHotkeyRecorderButton.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = BGMHotkeyRecorderButton.mm; sourceTree = "<group>"; };
+		A7124B832B467E71C01E50E4 /* BGMSetupWindow.mm */ = {isa = PBXFileReference; includeInIndex = 1; name = BGMSetupWindow.mm; path = Preferences/BGMSetupWindow.mm; sourceTree = "<group>"; };
 		BE76D7BB26DD487A9B338F66 /* BGMTapRoute.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = BGMTapRoute.h; sourceTree = "<group>"; };
 		D40863E589A0D533A16C17A3 /* BGMHotkeys.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = BGMHotkeys.mm; sourceTree = "<group>"; };
 		F1147BF558DE55DB68E2BFE8 /* BGMTapRoute.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = BGMTapRoute.mm; sourceTree = "<group>"; };
@@ -589,6 +599,10 @@
 				1C0BD0A41BF1A8E6004F4CF5 /* BGMAutoPauseMusicPrefs.mm */,
 				84C7E5823B97D0B1EFCF180B /* BGMTroubleshootMenu.h */,
 				6BA924FB8CCD660F5C926A29 /* BGMTroubleshootMenu.mm */,
+				78ED64B7992080AFF94BF84F /* BGMSetupWindow.h */,
+				A7124B832B467E71C01E50E4 /* BGMSetupWindow.mm */,
+				9AE9F93D3153089B98E93DDB /* BGMSetupWindowContentView.h */,
+				48FEDCC29226EF2A3737DCD8 /* BGMSetupWindowContentView.mm */,
 			);
 			name = "Preferences Menu";
 			sourceTree = "<group>";
@@ -1289,6 +1303,8 @@
 				6F23107E1034CDCDE2029C2B /* BGMOutputDeviceDiff.cpp in Sources */,
 				E01D74099414420746829F81 /* BGMMainPanel.mm in Sources */,
 				AE4ABE5362422CC9D71493DD /* BGMMainPanelContentView.mm in Sources */,
+				05A67772426A138C78C80CF1 /* BGMSetupWindow.mm in Sources */,
+				AA87B2F330FCD4EF9402C1A5 /* BGMSetupWindowContentView.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1369,6 +1385,8 @@
 				67CEB82B664EC5FF2A61D686 /* BGMOutputDeviceDiff.cpp in Sources */,
 				B4C496D32678E7CB55323B72 /* BGMMainPanel.mm in Sources */,
 				04A9CEC3B0F64D255424D164 /* BGMMainPanelContentView.mm in Sources */,
+				12F8CE2FCE63617103BF770E /* BGMSetupWindow.mm in Sources */,
+				4368770DB7C43C2EEFB25E6C /* BGMSetupWindowContentView.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1471,6 +1489,8 @@
 				E2A0D1793E3C7231AF9DBC63 /* BGMOutputDeviceDiffTests.mm in Sources */,
 				CF90A0C784A35D41BA08900E /* BGMMainPanel.mm in Sources */,
 				2500EEA323F5D24BA3E84430 /* BGMMainPanelContentView.mm in Sources */,
+				FDB71D7D72B47FA58BA13848 /* BGMSetupWindow.mm in Sources */,
+				FB2C17EDE6F1764FFBF31ED9 /* BGMSetupWindowContentView.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
