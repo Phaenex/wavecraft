@@ -231,7 +231,9 @@
 		27FB8C311DE4758A0084DB9D /* BGM_Utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27FB8C2E1DE468320084DB9D /* BGM_Utils.cpp */; };
 		2E49E8A7501B969DFD9089DA /* BGMAppOutputRoutingController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7F576613B4F7116C9498D469 /* BGMAppOutputRoutingController.mm */; };
 		3043E0DE87BDC97C8EBECB26 /* BGMTapRoute.h in Sources */ = {isa = PBXBuildFile; fileRef = BE76D7BB26DD487A9B338F66 /* BGMTapRoute.h */; };
+		3A5272A9716F8105CF47BCC2 /* BGMHotkeyRecorderButton.mm in Sources */ = {isa = PBXBuildFile; fileRef = A56DD7398E6EA2B1B9A92C54 /* BGMHotkeyRecorderButton.mm */; };
 		3F14DC51C6BA44FD50EB3D99 /* BGMTapRoute.mm in Sources */ = {isa = PBXBuildFile; fileRef = F1147BF558DE55DB68E2BFE8 /* BGMTapRoute.mm */; };
+		4D6AE2ADD652EC1BF4864650 /* BGMHotkeyRecorderButton.mm in Sources */ = {isa = PBXBuildFile; fileRef = A56DD7398E6EA2B1B9A92C54 /* BGMHotkeyRecorderButton.mm */; };
 		594DAB8E35B0233160DBCB19 /* BGMHotkeys.h in Sources */ = {isa = PBXBuildFile; fileRef = 799AF95ED14922923C2D5BEA /* BGMHotkeys.h */; };
 		5D5FCE844C238D835B99D29B /* BGMAppOutputRoutingController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7F576613B4F7116C9498D469 /* BGMAppOutputRoutingController.mm */; };
 		5D8700DE876C53F534E5BE48 /* BGMTapRouteTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5BCEE17D46D93500306CAD10 /* BGMTapRouteTests.mm */; };
@@ -239,6 +241,7 @@
 		687376D058B8777882E6E168 /* BGMTapRoute.h in Sources */ = {isa = PBXBuildFile; fileRef = BE76D7BB26DD487A9B338F66 /* BGMTapRoute.h */; };
 		6F546BA0B3381C44E4DDA83F /* ApplicationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FDBAA2A34D4D476E1E0F99BF /* ApplicationServices.framework */; };
 		7327E17AF2124066CD125FD9 /* BGMTroubleshootMenu.h in Sources */ = {isa = PBXBuildFile; fileRef = 84C7E5823B97D0B1EFCF180B /* BGMTroubleshootMenu.h */; };
+		7D4A553C8BA9117506162257 /* BGMUserDefaultsTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = 80FA06C819CAEB8294B18E37 /* BGMUserDefaultsTests.mm */; };
 		81B1B74D715F4CB6FC7EFCAF /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1E84B50D2C7ACA794F166167 /* AVFoundation.framework */; };
 		88C5AE727EE412AE003D036C /* BGMTapRoute.mm in Sources */ = {isa = PBXBuildFile; fileRef = F1147BF558DE55DB68E2BFE8 /* BGMTapRoute.mm */; };
 		9E129A412602AE620005851B /* BGMASApplication.m in Sources */ = {isa = PBXBuildFile; fileRef = 9E129A402602AE620005851B /* BGMASApplication.m */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMApp-BGMASApplication.m"; }; };
@@ -471,11 +474,14 @@
 		27FB8C2E1DE468320084DB9D /* BGM_Utils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BGM_Utils.cpp; path = ../SharedSource/BGM_Utils.cpp; sourceTree = "<group>"; };
 		5BCEE17D46D93500306CAD10 /* BGMTapRouteTests.mm */ = {isa = PBXFileReference; includeInIndex = 1; name = BGMTapRouteTests.mm; path = UnitTests/BGMTapRouteTests.mm; sourceTree = "<group>"; };
 		6BA924FB8CCD660F5C926A29 /* BGMTroubleshootMenu.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = Preferences/BGMTroubleshootMenu.mm; sourceTree = "<group>"; };
+		6CCB9B8BF7577EA479265897 /* BGMHotkeyRecorderButton.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = BGMHotkeyRecorderButton.h; sourceTree = "<group>"; };
 		799AF95ED14922923C2D5BEA /* BGMHotkeys.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = BGMHotkeys.h; sourceTree = "<group>"; };
 		7F576613B4F7116C9498D469 /* BGMAppOutputRoutingController.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = BGMAppOutputRoutingController.mm; sourceTree = "<group>"; };
+		80FA06C819CAEB8294B18E37 /* BGMUserDefaultsTests.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = UnitTests/BGMUserDefaultsTests.mm; sourceTree = "<group>"; };
 		84C7E5823B97D0B1EFCF180B /* BGMTroubleshootMenu.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = Preferences/BGMTroubleshootMenu.h; sourceTree = "<group>"; };
 		9E129A3F2602AE620005851B /* BGMASApplication.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BGMASApplication.h; path = Scripting/BGMASApplication.h; sourceTree = "<group>"; };
 		9E129A402602AE620005851B /* BGMASApplication.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BGMASApplication.m; path = Scripting/BGMASApplication.m; sourceTree = "<group>"; };
+		A56DD7398E6EA2B1B9A92C54 /* BGMHotkeyRecorderButton.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = BGMHotkeyRecorderButton.mm; sourceTree = "<group>"; };
 		BE76D7BB26DD487A9B338F66 /* BGMTapRoute.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = BGMTapRoute.h; sourceTree = "<group>"; };
 		D40863E589A0D533A16C17A3 /* BGMHotkeys.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = BGMHotkeys.mm; sourceTree = "<group>"; };
 		F1147BF558DE55DB68E2BFE8 /* BGMTapRoute.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = BGMTapRoute.mm; sourceTree = "<group>"; };
@@ -775,6 +781,8 @@
 				7F576613B4F7116C9498D469 /* BGMAppOutputRoutingController.mm */,
 				799AF95ED14922923C2D5BEA /* BGMHotkeys.h */,
 				D40863E589A0D533A16C17A3 /* BGMHotkeys.mm */,
+				6CCB9B8BF7577EA479265897 /* BGMHotkeyRecorderButton.h */,
+				A56DD7398E6EA2B1B9A92C54 /* BGMHotkeyRecorderButton.mm */,
 			);
 			path = BGMApp;
 			sourceTree = "<group>";
@@ -842,6 +850,7 @@
 				1C687A6A23B889E000834B75 /* BGMPlayThroughRTLoggerTests.mm */,
 				1C62FE4423D3EAC500B9B68E /* Mocks */,
 				5BCEE17D46D93500306CAD10 /* BGMTapRouteTests.mm */,
+				80FA06C819CAEB8294B18E37 /* BGMUserDefaultsTests.mm */,
 			);
 			name = "Unit Tests";
 			sourceTree = "<group>";
@@ -1245,6 +1254,7 @@
 				BE1FC3FDF251B31CE1686F8D /* BGMTroubleshootMenu.mm in Sources */,
 				24A812F6181B347A759752C5 /* BGMHotkeys.h in Sources */,
 				FDC6021E8B65E096CD575A5B /* BGMHotkeys.mm in Sources */,
+				3A5272A9716F8105CF47BCC2 /* BGMHotkeyRecorderButton.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1320,6 +1330,7 @@
 				AAD3C70756FC6179245AA3CE /* BGMTroubleshootMenu.mm in Sources */,
 				594DAB8E35B0233160DBCB19 /* BGMHotkeys.h in Sources */,
 				087DC17BE4E784DE93ECBCCE /* BGMHotkeys.mm in Sources */,
+				4D6AE2ADD652EC1BF4864650 /* BGMHotkeyRecorderButton.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1417,6 +1428,7 @@
 				A3B479F1CAD2F4BD7F95058F /* BGMTroubleshootMenu.mm in Sources */,
 				FDDB736270698A91AABE937D /* BGMHotkeys.h in Sources */,
 				EBB56924C66177BC7C1EE97A /* BGMHotkeys.mm in Sources */,
+				7D4A553C8BA9117506162257 /* BGMUserDefaultsTests.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

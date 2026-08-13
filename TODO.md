@@ -35,9 +35,24 @@ Roughly ordered by effort, cheapest first:
   extension of the existing EQ code — AU plugins aren't guaranteed real-time safe themselves, so
   hosting them from `BGM_Device`'s IO thread (which has hard real-time constraints — see
   DEVELOPING.md's "Real-time Constraints" section) needs real design work, not just a hookup.
-- **AirPlay streaming** — SoundSource can stream to AirPlay receivers. Not something Background
-  Music's architecture does anywhere today; would need real investigation into whether it fits the
-  existing output-device model at all or needs its own path.
+- **AirPlay streaming** — investigated (2026-08-12): routing an app's audio to an AirPlay receiver
+  that's *already connected* (via System Settings > Sound, same as any other output device) needs
+  **no new code at all**. `BGMAudioDevice::CanBeOutputDeviceInBGMApp()`
+  (`BGMApp/BGMApp/BGMAudioDevice.cpp:57-73`) has no transport-type filter — it only checks
+  not-BGMDevice, not-hidden, has output channels, can-be-default — so an AirPlay device (transport
+  type `kAudioDeviceTransportTypeAirPlay`, the same one `BGMOutputDeviceMenuSection.mm` already
+  special-cases just to show its icon) passes the same as any physical device, and
+  `BGMAppOutputRoutingController::populateMenuForButton:` (`BGMAppOutputRoutingController.mm:154`)
+  lists every device that passes it — no AirPlay exclusion anywhere in that path or in
+  `BGMTapRoute`/`BGMPlayThrough`, both of which talk to devices through generic CoreAudio HAL APIs
+  agnostic to transport type. **Confirmed by reading the actual filter logic, not by testing real
+  hardware** — still needs a real AirPlay receiver to verify audibly (add to
+  docs/QA-PLAN.md's routing section: connect an AirPlay device via System Settings first, then
+  route an app to it from Wavecraft's per-app pop-up and confirm audio actually plays there).
+  What's still genuinely missing, and would be real new scope: **initiating** a new AirPlay
+  connection Wavecraft doesn't already have — that needs actual discovery (Bonjour/mDNS browsing
+  for `_raop._tcp`/`_airplay._tcp` services) and connection setup, which nothing in this codebase
+  does today and isn't a routing change, it's a new client protocol implementation.
 
 None of this is started. If you want to tackle one, open an issue first so effort doesn't overlap.
 
@@ -69,13 +84,21 @@ None of this is started. If you want to tackle one, open an issue first so effor
   receives audio (see docs/PROCESS-TAP-ROUTING.md's Phase 1 results — this was the one thing left
   unconfirmed after the proof-of-concept, deferred to a real listening test with two apps and two
   output devices).
+- **Verify the keyboard-shortcut recorder actually captures keys while the Preferences menu is
+  open** (added 2026-08-12, `BGMHotkeyRecorderButton`). It installs a local `NSEvent` monitor,
+  which is the documented-correct way to observe events during a menu's own tracking loop — but
+  NSMenu is also known to intercept some keys (arrows especially, plus Return/Escape/letters) for
+  its own navigation before a subview would normally see them, and there's no way to confirm from a
+  non-interactive environment which one wins. If arrow keys specifically don't get captured, that's
+  a real problem since they're the most likely keys someone wants to bind (they're the built-in
+  defaults). Test: open Preferences > Keyboard Shortcuts, click a record button, press an arrow key
+  — does the button's title actually update to show it, or does the menu's own selection move
+  instead and the button stays on "Press a key…"?
 
 ## Fairly quick
 
-- Keyboard shortcuts only offer two modifier presets (Option or Control) and three step sizes
-  (Fine/Normal/Coarse) — no arbitrary key rebinding. `BGMHotkeys` only ever listens for
-  Up/Down-arrow, so a real rebinding UI would need to record and store an actual key code, not just
-  pick from a fixed enum the way `BGMHotkeyModifierPreset`/`BGMHotkeyStepSize` do now.
+None open right now — the last item here (arbitrary keyboard-shortcut rebinding) shipped
+2026-08-12; see the "Needs a human" entry above for what's still unverified about it.
 
 ## Less quick
 

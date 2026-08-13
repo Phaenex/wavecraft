@@ -51,14 +51,24 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
 - **Global keyboard shortcuts** (`BGMApp/BGMApp/BGMHotkeys.{h,mm}`, **Preferences > Keyboard
   Shortcuts**) — adjust system volume or the frontmost app's volume without opening the menu. Off
   by default (needs Accessibility permission, requested with its own one-time explanation since
-  the permission isn't required for the app's core function). Customizable: a modifier preset
-  (Option or Control) and a step size (Fine/Normal/Coarse).
+  the permission isn't required for the app's core function). Each of the four actions (system
+  volume up/down, frontmost app volume up/down) is independently rebindable to any key + modifier
+  combination via a click-to-record button (`BGMHotkeyRecorderButton`), not limited to a fixed
+  Option/Control preset — conflicting bindings are rejected with an explanation. A step size
+  (Fine/Normal/Coarse) still applies to all four. **Untested**: whether the record button's local
+  event monitor actually captures keys — especially arrows — while it's competing with the
+  Preferences menu's own tracking loop for the same events; see docs/QA-PLAN.md.
 - An interactive first-run install flow — a welcome dialog explaining why Wavecraft needs
   "Microphone" access *before* the system permission prompt appears, an "Open Privacy Settings"
   button on denial, and a guided `build_and_install.sh` with a clearer preamble/epilogue about what
   the script actually does.
 - [docs/QA-PLAN.md](docs/QA-PLAN.md) — an ordered checklist for verifying a fresh install actually
   works, covering every menu control and new-feature edge case, not just "does it build."
+- A prebuilt-release install path (`package_release.sh`, `install_prebuilt.sh`) for people without
+  Xcode — downloads a zip from GitHub Releases and double-clicks an installer, instead of building
+  from source. Since this project has no paid Apple Developer ID, the release isn't notarized and
+  both the installer and the app it installs show a Gatekeeper warning the first time; the README's
+  "Installing a prebuilt release" section explains why and exactly what to click.
 
 ### Changed
 
@@ -67,6 +77,11 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
 - Per-app EQ grew from 5 bands (60Hz/250Hz/1kHz/4kHz/12kHz) to 10 (the standard ISO octave-band
   spread) — `BGM_AppEQ::kNumBands`/`kBandCenterFreqs` (`BGM_Biquad.h`) and `kBGMAppEQNumBands`
   (`SharedSource/BGM_Types.h`), plus 5 more slider/label pairs added to `MainMenu.xib`.
+- The 10-band EQ's layout, from one column of 10 to two columns of 5, restoring the expanded row to
+  its original height. A real install reported that clicking any slider in an expanded app row
+  closed the whole menu; the working theory (unconfirmed) is that the single-column layout's 51%
+  taller row pushed the menu into needing to scroll, which is known to break mouse tracking on
+  custom-view menu items in AppKit. See [docs/LESSONS.md](docs/LESSONS.md).
 
 ### Fixed
 

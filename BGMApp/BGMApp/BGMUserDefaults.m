@@ -27,6 +27,9 @@
 #import "BGMHotkeys.h"
 #import "BGM_Utils.h"
 
+// System Includes
+#import <Carbon/Carbon.h>  // For kVK_UpArrow/kVK_DownArrow, this feature's built-in defaults.
+
 
 #pragma clang assume_nonnull begin
 
@@ -42,8 +45,12 @@ static NSString* const kDefaultKeyHasShownMicExplanation = @"HasShownMicrophoneP
 static NSString* const kDefaultKeyHotkeysEnabled        = @"HotkeysEnabled";
 static NSString* const kDefaultKeyHasShownHotkeysAXExplanation =
     @"HasShownHotkeysAccessibilityExplanation";
-static NSString* const kDefaultKeyHotkeyModifierPreset  = @"HotkeyModifierPreset";
+static NSString* const kDefaultKeyHotkeyBindings        = @"HotkeyBindings";
 static NSString* const kDefaultKeyHotkeyStepSize        = @"HotkeyStepSize";
+
+// Sub-keys inside the per-action dictionaries kDefaultKeyHotkeyBindings stores.
+static NSString* const kHotkeyBindingKeyCode        = @"KeyCode";
+static NSString* const kHotkeyBindingModifierFlags  = @"ModifierFlags";
 
 // Labels for Keychain Data
 static NSString* const kKeychainLabelGPMDPAuthCode =
@@ -173,21 +180,75 @@ static NSString* const kKeychainLabelGPMDPAuthCode =
     [self setBool:kDefaultKeyHasShownHotkeysAXExplanation to:hasShown];
 }
 
-- (NSInteger) hotkeyModifierPreset {
-    NSInteger preset = [self getInt:kDefaultKeyHotkeyModifierPreset or:BGMHotkeyModifierPresetOption];
-
-    // Just in case we get an invalid value somehow.
-    if ((preset < kBGMHotkeyModifierPresetMinValue) || (preset > kBGMHotkeyModifierPresetMaxValue)) {
-        NSLog(@"BGMUserDefaults::hotkeyModifierPreset: Unknown BGMHotkeyModifierPreset: %ld",
-              (long)preset);
-        preset = BGMHotkeyModifierPresetOption;
+// The dictionary key each action's binding is stored under inside kDefaultKeyHotkeyBindings.
+// Stable strings, not the enum's raw NSInteger value -- so a future reordering of BGMHotkeyAction
+// doesn't silently reinterpret an already-saved binding as a different action.
+static NSString* BGMHotkeyActionStorageKey(BGMHotkeyAction action) {
+    switch (action) {
+        case BGMHotkeyActionSystemVolumeUp:   return @"SystemVolumeUp";
+        case BGMHotkeyActionSystemVolumeDown: return @"SystemVolumeDown";
+        case BGMHotkeyActionAppVolumeUp:      return @"AppVolumeUp";
+        case BGMHotkeyActionAppVolumeDown:    return @"AppVolumeDown";
     }
 
-    return preset;
+    return @"Unknown";
 }
 
-- (void) setHotkeyModifierPreset:(NSInteger)preset {
-    [self setInt:kDefaultKeyHotkeyModifierPreset to:preset];
+// Matches this feature's original behavior before per-action rebinding existed: Option+Up/Down
+// for system volume, Option+Shift+Up/Down for the frontmost app's volume.
+static BGMHotkeyBinding BGMDefaultHotkeyBinding(BGMHotkeyAction action) {
+    switch (action) {
+        case BGMHotkeyActionSystemVolumeUp:
+            return (BGMHotkeyBinding){ kVK_UpArrow, NSEventModifierFlagOption };
+        case BGMHotkeyActionSystemVolumeDown:
+            return (BGMHotkeyBinding){ kVK_DownArrow, NSEventModifierFlagOption };
+        case BGMHotkeyActionAppVolumeUp:
+            return (BGMHotkeyBinding){
+                kVK_UpArrow, NSEventModifierFlagOption | NSEventModifierFlagShift };
+        case BGMHotkeyActionAppVolumeDown:
+            return (BGMHotkeyBinding){
+                kVK_DownArrow, NSEventModifierFlagOption | NSEventModifierFlagShift };
+    }
+
+    return kBGMHotkeyBindingUnbound;
+}
+
+- (BGMHotkeyBinding) hotkeyBindingForAction:(BGMHotkeyAction)action {
+    NSDictionary<NSString*, NSDictionary*>* __nullable allBindings =
+        [self get:kDefaultKeyHotkeyBindings];
+    NSDictionary* __nullable stored = allBindings[BGMHotkeyActionStorageKey(action)];
+
+    if (!stored) {
+        return BGMDefaultHotkeyBinding(action);
+    }
+
+    NSNumber* __nullable keyCode = stored[kHotkeyBindingKeyCode];
+    NSNumber* __nullable modifierFlags = stored[kHotkeyBindingModifierFlags];
+
+    if (!keyCode || !modifierFlags) {
+        // Malformed entry (hand-edited defaults plist, or a future format change) -- fall back to
+        // the built-in default rather than propagating a half-valid binding.
+        NSLog(@"BGMUserDefaults::hotkeyBindingForAction: Malformed binding for action %ld, using "
+               "default", (long)action);
+        return BGMDefaultHotkeyBinding(action);
+    }
+
+    return (BGMHotkeyBinding){
+        (unsigned short)keyCode.unsignedIntValue,
+        (NSEventModifierFlags)modifierFlags.unsignedIntegerValue
+    };
+}
+
+- (void) setHotkeyBinding:(BGMHotkeyBinding)binding forAction:(BGMHotkeyAction)action {
+    NSMutableDictionary<NSString*, NSDictionary*>* allBindings =
+        [([self get:kDefaultKeyHotkeyBindings] ?: @{}) mutableCopy];
+
+    allBindings[BGMHotkeyActionStorageKey(action)] = @{
+        kHotkeyBindingKeyCode: @(binding.keyCode),
+        kHotkeyBindingModifierFlags: @(binding.modifierFlags)
+    };
+
+    [self set:kDefaultKeyHotkeyBindings to:allBindings];
 }
 
 - (NSInteger) hotkeyStepSize {

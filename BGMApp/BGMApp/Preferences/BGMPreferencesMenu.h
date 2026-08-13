@@ -27,6 +27,7 @@
 #import "BGMAppOutputRoutingController.h"
 #import "BGMAudioDeviceManager.h"
 #import "BGMHotkeys.h"
+#import "BGMHotkeyRecorderButton.h"
 #import "BGMMusicPlayers.h"
 #import "BGMPreferredOutputDevices.h"
 #import "BGMStatusBarItem.h"
@@ -40,7 +41,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface BGMPreferencesMenu : NSObject
+@interface BGMPreferencesMenu : NSObject <BGMHotkeyRecorderButtonDelegate>
 
 - (id) initWithBGMMenu:(NSMenu*)inBGMMenu
           audioDevices:(BGMAudioDeviceManager*)inAudioDevices

@@ -26,6 +26,7 @@
 // Local Includes
 #import "BGM_Types.h"
 #import "BGM_Utils.h"
+#import "BGMUserDefaults.h"
 
 // PublicUtility Includes
 #import "CACFArray.h"
@@ -35,9 +36,11 @@
 
 // System Includes
 #import <ApplicationServices/ApplicationServices.h>
-#import <Carbon/Carbon.h>  // For kVK_UpArrow/kVK_DownArrow only -- not deprecated, still the
-                            // standard way AppKit apps reference virtual key codes.
+#import <Carbon/Carbon.h>  // For kVK_* key codes and UCKeyTranslate/TIS* -- not deprecated,
+                            // still the standard way AppKit apps reference virtual key codes and
+                            // translate them through the current keyboard layout.
 #import <algorithm>
+#import <climits>
 
 
 #pragma clang assume_nonnull begin
@@ -47,6 +50,114 @@
 // BGMHotkeyStepSize preset -- indexed by the enum's raw value.
 static const float kSystemVolumeSteps[] = { 0.02f, 0.05f, 0.15f };
 static const SInt32 kAppVolumeSteps[] = { 2, 5, 15 };
+
+BGMHotkeyBinding const kBGMHotkeyBindingUnbound = { USHRT_MAX, 0 };
+
+BOOL BGMHotkeyBindingIsUnbound(BGMHotkeyBinding binding) {
+    return binding.keyCode == kBGMHotkeyBindingUnbound.keyCode;
+}
+
+BOOL BGMHotkeyBindingsEqual(BGMHotkeyBinding a, BGMHotkeyBinding b) {
+    return (a.keyCode == b.keyCode) && (a.modifierFlags == b.modifierFlags);
+}
+
+// kVK_* codes below cover the keys someone would plausibly bind a volume shortcut to. There's no
+// complete "key code to symbol" table in any public macOS API (the closest, UCKeyTranslate, maps
+// through the current keyboard layout and can return a different string per layout, which would
+// make a recorded binding's *description* layout-dependent even though the binding itself --
+// matched by raw keyCode in BGMHotkeys::handleKeyEvent: -- isn't), so this covers arrows, common
+// navigation/media keys, and falls back to "Key <code>" for anything else rather than guessing.
+static NSString* BGMKeyCodeSymbol(unsigned short keyCode) {
+    switch (keyCode) {
+        case kVK_UpArrow:      return @"↑";
+        case kVK_DownArrow:    return @"↓";
+        case kVK_LeftArrow:    return @"←";
+        case kVK_RightArrow:   return @"→";
+        case kVK_Space:        return @"Space";
+        case kVK_Tab:          return @"⇥";
+        case kVK_Return:       return @"⏎";
+        case kVK_Delete:       return @"⌫";
+        case kVK_Escape:       return @"⎋";
+        case kVK_PageUp:       return @"Page Up";
+        case kVK_PageDown:     return @"Page Down";
+        case kVK_Home:         return @"Home";
+        case kVK_End:          return @"End";
+        case kVK_F1:  return @"F1";  case kVK_F2:  return @"F2";  case kVK_F3:  return @"F3";
+        case kVK_F4:  return @"F4";  case kVK_F5:  return @"F5";  case kVK_F6:  return @"F6";
+        case kVK_F7:  return @"F7";  case kVK_F8:  return @"F8";  case kVK_F9:  return @"F9";
+        case kVK_F10: return @"F10"; case kVK_F11: return @"F11"; case kVK_F12: return @"F12";
+        default: {
+            // Printable ANSI keys (letters/digits/punctuation) -- translate through the current
+            // keyboard layout so, e.g., kVK_ANSI_A shows "A" rather than "Key 0". Falls through to
+            // the numeric fallback below if translation fails for any reason (non-ANSI layout,
+            // dead key, etc.) rather than showing nothing.
+            TISInputSourceRef __nullable source = TISCopyCurrentKeyboardLayoutInputSource();
+            if (source) {
+                CFDataRef __nullable layoutData =
+                    (CFDataRef __nullable)TISGetInputSourceProperty(source,
+                                                                     kTISPropertyUnicodeKeyLayoutData);
+                if (layoutData) {
+                    const UCKeyboardLayout* layout =
+                        (const UCKeyboardLayout*)CFDataGetBytePtr(layoutData);
+                    UInt32 deadKeyState = 0;
+                    UniCharCount length = 0;
+                    UniChar chars[4] = { 0 };
+
+                    OSStatus status = UCKeyTranslate(layout,
+                                                      keyCode,
+                                                      kUCKeyActionDisplay,
+                                                      0,
+                                                      LMGetKbdType(),
+                                                      kUCKeyTranslateNoDeadKeysBit,
+                                                      &deadKeyState,
+                                                      sizeof(chars) / sizeof(chars[0]),
+                                                      &length,
+                                                      chars);
+
+                    if (status == noErr && length > 0) {
+                        NSString* symbol =
+                            [[NSString stringWithCharacters:chars length:length] uppercaseString];
+                        CFRelease(source);
+                        return symbol;
+                    }
+                }
+
+                CFRelease(source);
+            }
+
+            return [NSString stringWithFormat:@"Key %u", keyCode];
+        }
+    }
+}
+
+NSString* BGMHotkeyBindingDescription(BGMHotkeyBinding binding) {
+    if (BGMHotkeyBindingIsUnbound(binding)) {
+        return @"Click to Record";
+    }
+
+    NSMutableString* description = [NSMutableString new];
+
+    // Fixed display order matches how macOS itself always orders modifier symbols.
+    if (binding.modifierFlags & NSEventModifierFlagControl) { [description appendString:@"⌃"]; }
+    if (binding.modifierFlags & NSEventModifierFlagOption)  { [description appendString:@"⌥"]; }
+    if (binding.modifierFlags & NSEventModifierFlagShift)   { [description appendString:@"⇧"]; }
+    if (binding.modifierFlags & NSEventModifierFlagCommand) { [description appendString:@"⌘"]; }
+
+    [description appendString:BGMKeyCodeSymbol(binding.keyCode)];
+
+    return description;
+}
+
+NSString* BGMHotkeyActionDisplayName(BGMHotkeyAction action) {
+    switch (action) {
+        case BGMHotkeyActionSystemVolumeUp:   return @"System Volume Up";
+        case BGMHotkeyActionSystemVolumeDown: return @"System Volume Down";
+        case BGMHotkeyActionAppVolumeUp:      return @"Frontmost App Volume Up";
+        case BGMHotkeyActionAppVolumeDown:    return @"Frontmost App Volume Down";
+    }
+
+    return @"Unknown Shortcut";
+}
 
 @implementation BGMHotkeys {
     BGMAudioDeviceManager* audioDevices;
@@ -125,7 +236,12 @@ static const SInt32 kAppVolumeSteps[] = { 2, 5, 15 };
     // trust is actually granted.
 }
 
-- (void) modifierPresetChanged {
+- (void) bindingsChanged {
+    // The global monitor below listens for every key-down system-wide and filters by binding
+    // inside handleKeyEvent:, which reads userDefaults live -- so a changed binding takes effect
+    // on its own, without needing to re-register the monitor. Restarting anyway (when hotkeys are
+    // actually running) is defensive, not load-bearing: it guards against a future change to
+    // startMonitoring that captures binding state at registration time instead of reading it live.
     if (userDefaults.hotkeysEnabled && AXIsProcessTrusted()) {
         [self stopMonitoring];
         [self startMonitoring];
@@ -159,36 +275,54 @@ static const SInt32 kAppVolumeSteps[] = { 2, 5, 15 };
 }
 
 - (void) handleKeyEvent:(NSEvent*)event {
-    NSEventModifierFlags flags =
-        event.modifierFlags & NSEventModifierFlagDeviceIndependentFlagsMask;
-
-    NSEventModifierFlags volumeModifier = [self currentVolumeModifierFlags];
-    NSEventModifierFlags appVolumeModifier = volumeModifier | NSEventModifierFlagShift;
-
-    if (event.keyCode != kVK_UpArrow && event.keyCode != kVK_DownArrow) {
+    // Never fire while Wavecraft itself is the frontmost app -- "adjust the frontmost app's
+    // volume" has no sensible meaning when that app is Wavecraft, and there's no reason to
+    // hijack a key combination from whatever's actually in front, including Wavecraft's own
+    // menu/preferences UI (e.g. an arrow key used to navigate a menu).
+    if ([NSRunningApplication currentApplication].isActive) {
         return;
     }
 
-    BOOL increase = (event.keyCode == kVK_UpArrow);
+    BGMHotkeyBinding pressed = {
+        event.keyCode,
+        event.modifierFlags & NSEventModifierFlagDeviceIndependentFlagsMask
+    };
+
+    if (BGMHotkeyBindingIsUnbound(pressed)) {
+        return;
+    }
+
+    BGMHotkeyAction action;
+    if (BGMHotkeyBindingsEqual(pressed, [userDefaults hotkeyBindingForAction:BGMHotkeyActionSystemVolumeUp])) {
+        action = BGMHotkeyActionSystemVolumeUp;
+    } else if (BGMHotkeyBindingsEqual(pressed, [userDefaults hotkeyBindingForAction:BGMHotkeyActionSystemVolumeDown])) {
+        action = BGMHotkeyActionSystemVolumeDown;
+    } else if (BGMHotkeyBindingsEqual(pressed, [userDefaults hotkeyBindingForAction:BGMHotkeyActionAppVolumeUp])) {
+        action = BGMHotkeyActionAppVolumeUp;
+    } else if (BGMHotkeyBindingsEqual(pressed, [userDefaults hotkeyBindingForAction:BGMHotkeyActionAppVolumeDown])) {
+        action = BGMHotkeyActionAppVolumeDown;
+    } else {
+        return;
+    }
 
     NSInteger stepIndex = std::min(static_cast<NSInteger>(kBGMHotkeyStepSizeMaxValue),
                                     std::max(static_cast<NSInteger>(kBGMHotkeyStepSizeMinValue),
                                              userDefaults.hotkeyStepSize));
 
-    if (flags == appVolumeModifier) {
-        // Check the more specific (Shift-inclusive) combination first -- it's a superset of the
-        // plain volume modifier's flags, so checking volumeModifier first would shadow this one.
-        SInt32 step = kAppVolumeSteps[stepIndex];
-        [self adjustFrontmostAppVolumeBy:(increase ? step : -step)];
-    } else if (flags == volumeModifier) {
-        float step = kSystemVolumeSteps[stepIndex];
-        [self adjustSystemVolumeBy:(increase ? step : -step)];
+    switch (action) {
+        case BGMHotkeyActionSystemVolumeUp:
+            [self adjustSystemVolumeBy:kSystemVolumeSteps[stepIndex]];
+            break;
+        case BGMHotkeyActionSystemVolumeDown:
+            [self adjustSystemVolumeBy:-kSystemVolumeSteps[stepIndex]];
+            break;
+        case BGMHotkeyActionAppVolumeUp:
+            [self adjustFrontmostAppVolumeBy:kAppVolumeSteps[stepIndex]];
+            break;
+        case BGMHotkeyActionAppVolumeDown:
+            [self adjustFrontmostAppVolumeBy:-kAppVolumeSteps[stepIndex]];
+            break;
     }
-}
-
-- (NSEventModifierFlags) currentVolumeModifierFlags {
-    return (userDefaults.hotkeyModifierPreset == BGMHotkeyModifierPresetControl) ?
-        NSEventModifierFlagControl : NSEventModifierFlagOption;
 }
 
 #pragma mark Actions
@@ -270,17 +404,20 @@ static const SInt32 kAppVolumeSteps[] = { 2, 5, 15 };
 #pragma mark Display
 
 - (NSString*) currentBindingsDescription {
-    NSString* modifier =
-        (userDefaults.hotkeyModifierPreset == BGMHotkeyModifierPresetControl) ? @"⌃" : @"⌥";
-
     NSArray<NSString*>* stepNames = @[ @"fine", @"normal", @"coarse" ];
     NSInteger stepIndex = std::min(static_cast<NSInteger>(kBGMHotkeyStepSizeMaxValue),
                                     std::max(static_cast<NSInteger>(kBGMHotkeyStepSizeMinValue),
                                              userDefaults.hotkeyStepSize));
 
+    NSString* systemUp = BGMHotkeyBindingDescription([userDefaults hotkeyBindingForAction:BGMHotkeyActionSystemVolumeUp]);
+    NSString* systemDown = BGMHotkeyBindingDescription([userDefaults hotkeyBindingForAction:BGMHotkeyActionSystemVolumeDown]);
+    NSString* appUp = BGMHotkeyBindingDescription([userDefaults hotkeyBindingForAction:BGMHotkeyActionAppVolumeUp]);
+    NSString* appDown = BGMHotkeyBindingDescription([userDefaults hotkeyBindingForAction:BGMHotkeyActionAppVolumeDown]);
+
     return [NSString stringWithFormat:
-                @"%@↑/↓ System Volume, %@⇧↑/↓ Frontmost App Volume (%@ steps)",
-                modifier, modifier, stepNames[static_cast<NSUInteger>(stepIndex)]];
+                @"System Volume: %@ / %@, Frontmost App: %@ / %@ (%@ steps)",
+                systemUp, systemDown, appUp, appDown,
+                stepNames[static_cast<NSUInteger>(stepIndex)]];
 }
 
 @end

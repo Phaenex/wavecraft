@@ -32,23 +32,53 @@
 
 // Local Includes
 #import "BGMAudioDeviceManager.h"
-#import "BGMUserDefaults.h"
 
 // System Includes
 #import <Cocoa/Cocoa.h>
 
+// BGMUserDefaults.h imports this header (to declare hotkeyBindingForAction:/setHotkeyBinding:
+// forAction:, which need BGMHotkeyBinding/BGMHotkeyAction's real definitions, not just a pointer
+// type), so importing it back here would be circular. This header only ever uses BGMUserDefaults
+// as a pointer type, so a forward declaration is enough -- BGMHotkeys.mm imports the real header.
+@class BGMUserDefaults;
+
 
 #pragma clang assume_nonnull begin
 
-typedef NS_ENUM(NSInteger, BGMHotkeyModifierPreset) {
-    // Volume: Option+Up/Down. Frontmost app volume: Option+Shift+Up/Down.
-    BGMHotkeyModifierPresetOption = 0,
-    // Volume: Control+Up/Down. Frontmost app volume: Control+Shift+Up/Down.
-    BGMHotkeyModifierPresetControl,
+// Which action a recorded key binding triggers. Each is independently rebindable to any key +
+// modifier-flags combination -- unlike the old fixed Option/Control preset, these aren't limited
+// to Up/Down arrow keys either.
+typedef NS_ENUM(NSInteger, BGMHotkeyAction) {
+    BGMHotkeyActionSystemVolumeUp = 0,
+    BGMHotkeyActionSystemVolumeDown,
+    BGMHotkeyActionAppVolumeUp,
+    BGMHotkeyActionAppVolumeDown,
 };
 
-static BGMHotkeyModifierPreset const kBGMHotkeyModifierPresetMinValue = BGMHotkeyModifierPresetOption;
-static BGMHotkeyModifierPreset const kBGMHotkeyModifierPresetMaxValue = BGMHotkeyModifierPresetControl;
+static BGMHotkeyAction const kBGMHotkeyActionMinValue = BGMHotkeyActionSystemVolumeUp;
+static BGMHotkeyAction const kBGMHotkeyActionMaxValue = BGMHotkeyActionAppVolumeDown;
+static NSInteger const kBGMHotkeyActionCount = 4;
+
+// A single recorded key + modifier-flags combination. keyCode is an NSEvent.keyCode value (a
+// virtual key code, e.g. kVK_UpArrow); modifierFlags is always pre-masked to
+// NSEventModifierFlagDeviceIndependentFlagsMask so comparisons don't have to mask on every use.
+// kBGMHotkeyBindingUnbound (keyCode == USHRT_MAX) means "no key recorded for this action" -- 0 is
+// a real key code (kVK_ANSI_A), so it can't double as the sentinel.
+typedef struct {
+    unsigned short keyCode;
+    NSEventModifierFlags modifierFlags;
+} BGMHotkeyBinding;
+
+extern BGMHotkeyBinding const kBGMHotkeyBindingUnbound;
+
+BOOL BGMHotkeyBindingIsUnbound(BGMHotkeyBinding binding);
+BOOL BGMHotkeyBindingsEqual(BGMHotkeyBinding a, BGMHotkeyBinding b);
+
+// e.g. "⌥↑", "⌃⇧↓", or "Click to Record" for kBGMHotkeyBindingUnbound.
+NSString* BGMHotkeyBindingDescription(BGMHotkeyBinding binding);
+
+// e.g. "System Volume Up".
+NSString* BGMHotkeyActionDisplayName(BGMHotkeyAction action);
 
 typedef NS_ENUM(NSInteger, BGMHotkeyStepSize) {
     BGMHotkeyStepSizeFine = 0,     // 2% system volume, 2 raw units of app volume per press
@@ -74,9 +104,9 @@ static BGMHotkeyStepSize const kBGMHotkeyStepSizeMaxValue = BGMHotkeyStepSizeCoa
 
 - (BOOL) isEnabled;
 
-// Re-registers the hotkeys with userDefaults.hotkeyModifierPreset's current value. No-op if
-// hotkeys aren't currently enabled.
-- (void) modifierPresetChanged;
+// Records that a binding changed in userDefaults so any cached state gets refreshed. Safe to call
+// whether or not hotkeys are currently enabled.
+- (void) bindingsChanged;
 
 // A human-readable description of the current keybindings, for display in the Preferences menu.
 - (NSString*) currentBindingsDescription;

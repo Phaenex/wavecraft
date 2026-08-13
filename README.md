@@ -72,9 +72,9 @@ what's still unverified.
   it with a microphone using an [aggregate device](https://support.apple.com/en-us/HT202000) in
   **Audio MIDI Setup**.
 - **Global keyboard shortcuts** *(new in Wavecraft)* — adjust system volume or the frontmost app's
-  volume without opening the menu. Off by default (needs Accessibility permission); turn on and
-  pick a modifier (Option or Control) and a step size (Fine/Normal/Coarse) in **Preferences >
-  Keyboard Shortcuts**.
+  volume without opening the menu. Off by default (needs Accessibility permission); turn on in
+  **Preferences > Keyboard Shortcuts**, where each of the four actions (system/app volume up/down)
+  has its own click-to-record button — any key, any modifiers, not a fixed preset.
 - **Built-in troubleshooters** *(new in Wavecraft)* — one-click fixes for the most common stuck
   states (output not switching back, a volume/pan/EQ setting stuck at an odd value, an output
   route that won't clear, the XPC helper looking disconnected, Microphone permission) in

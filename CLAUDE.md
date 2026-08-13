@@ -200,23 +200,32 @@ a real install**:
   Each does the real repair action directly (e.g. `BGMAppOutputRoutingController::
   removeAllOutputOverrides`), not just a diagnostic message.
 - **Global keyboard shortcuts** (`BGMApp/BGMApp/BGMHotkeys.{h,mm}`, **Preferences > Keyboard
-  Shortcuts**) — Up/Down for system volume, Shift+Up/Down for the frontmost app's volume, via
-  `NSEvent addGlobalMonitorForEventsMatchingMask:`. Off by default: unlike Microphone, the
-  Accessibility permission this needs isn't required for the app's core function. Accessibility
-  trust has no grant-completion callback (unlike `AVCaptureDevice`'s async microphone request), so
-  turning shortcuts on shows a one-time explanation, opens the system prompt, and leaves the user to
-  toggle the switch again after granting — there's no way to detect the grant automatically.
-- **Customizable hotkey behavior** — a modifier preset (Option or Control, in case one conflicts
-  with something else) and a step-size preset (Fine/Normal/Coarse, indexing into
-  `kSystemVolumeSteps`/`kAppVolumeSteps` arrays in `BGMHotkeys.mm`) — both persisted in
-  `BGMUserDefaults` and shown live in the Preferences menu via `currentBindingsDescription`.
+  Shortcuts**) — four independently rebindable actions (system/app volume up/down), each any key +
+  any modifiers, via `NSEvent addGlobalMonitorForEventsMatchingMask:`. Off by default: unlike
+  Microphone, the Accessibility permission this needs isn't required for the app's core function.
+  Accessibility trust has no grant-completion callback (unlike `AVCaptureDevice`'s async microphone
+  request), so turning shortcuts on shows a one-time explanation, opens the system prompt, and
+  leaves the user to toggle the switch again after granting — there's no way to detect the grant
+  automatically.
+- **Arbitrary key rebinding** (added 2026-08-12, replacing an earlier fixed Option/Control preset)
+  — `BGMHotkeyRecorderButton` (click-to-record, one per action in Preferences) plus
+  `BGMHotkeyBinding`/`BGMHotkeyAction` in `BGMHotkeys.h` and per-action storage in
+  `BGMUserDefaults::hotkeyBindingForAction:`/`setHotkeyBinding:forAction:`. Conflicting bindings are
+  rejected with an alert naming the action already using that key. A step-size preset
+  (Fine/Normal/Coarse, indexing into `kSystemVolumeSteps`/`kAppVolumeSteps` arrays in
+  `BGMHotkeys.mm`) still applies to all four actions. **Untested**: whether the recorder's local
+  `NSEvent` monitor actually wins the race against the Preferences menu's own tracking loop for
+  keys the menu itself might intercept (arrows especially) — see TODO.md's "Needs a human" section.
 
-52/52 unit tests passing after this work (28 BGMAppUnitTests + 24 BGMDriverTests — no new tests
-were added for these three features specifically; they depend on real system state
-(`AXIsProcessTrusted()`, `NSWorkspace.frontmostApplication`, live `AudioObjectSetPropertyData`,
-`AVCaptureDevice` authorization) that the mocked `BGMAppUnitTests` target can't exercise, the same
-limitation `BGMTapRouteTests.mm` documents for the EQ/routing UI). See TODO.md's "Needs a human"
-section for what real-install verification these three still need.
+62/62 unit tests passing after this work (38 BGMAppUnitTests + 24 BGMDriverTests). The 10 new
+`BGMUserDefaultsTests.mm` tests cover the hotkey-binding storage/defaults/clamping/helper-function
+logic, which is plain Foundation/plist code with no CoreAudio HAL dependency — but `BGMHotkeys`
+itself, `BGMHotkeyRecorderButton`'s actual key-capture behavior, and the troubleshooters/EQ/routing
+UI still depend on real system state (`AXIsProcessTrusted()`, `NSWorkspace.frontmostApplication`,
+live `AudioObjectSetPropertyData`, `AVCaptureDevice` authorization, a real live `NSMenu` tracking
+session) that the mocked `BGMAppUnitTests` target can't exercise, the same limitation
+`BGMTapRouteTests.mm` documents. See TODO.md's "Needs a human" section for what real-install
+verification these still need.
 
 ## Known limitations (inherited from upstream, not introduced by us)
 

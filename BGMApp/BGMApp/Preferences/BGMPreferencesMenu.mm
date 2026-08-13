@@ -65,12 +65,12 @@ static NSInteger const kAboutPanelMenuItemTag  = 4;
     // Hotkey preferences
     BGMHotkeys* hotkeys;
     NSMenuItem* hotkeysEnabledMenuItem;
-    NSMenuItem* hotkeyModifierOptionMenuItem;
-    NSMenuItem* hotkeyModifierControlMenuItem;
     NSMenuItem* hotkeyStepFineMenuItem;
     NSMenuItem* hotkeyStepNormalMenuItem;
     NSMenuItem* hotkeyStepCoarseMenuItem;
     NSMenuItem* hotkeyBindingsDescriptionMenuItem;
+    // One recorder button per BGMHotkeyAction, indexed by the enum's raw value.
+    NSMutableArray<BGMHotkeyRecorderButton*>* hotkeyRecorderButtons;
 }
 
 - (id) initWithBGMMenu:(NSMenu*)inBGMMenu
@@ -147,20 +147,34 @@ outputRoutingController:(BGMAppOutputRoutingController*)inOutputRoutingControlle
     hotkeysEnabledMenuItem.state = hotkeys.isEnabled ? NSOnState : NSOffState;
     [prefsMenu addItem:hotkeysEnabledMenuItem];
 
-    hotkeyModifierOptionMenuItem = [[NSMenuItem alloc] initWithTitle:@"Use Option (⌥) as Modifier"
-                                                               action:@selector(useOptionModifier)
-                                                        keyEquivalent:@""];
-    hotkeyModifierOptionMenuItem.target = self;
-    hotkeyModifierOptionMenuItem.indentationLevel = 1;
-    [prefsMenu addItem:hotkeyModifierOptionMenuItem];
+    hotkeyRecorderButtons = [NSMutableArray arrayWithCapacity:(NSUInteger)kBGMHotkeyActionCount];
 
-    hotkeyModifierControlMenuItem =
-        [[NSMenuItem alloc] initWithTitle:@"Use Control (⌃) as Modifier"
-                                    action:@selector(useControlModifier)
-                             keyEquivalent:@""];
-    hotkeyModifierControlMenuItem.target = self;
-    hotkeyModifierControlMenuItem.indentationLevel = 1;
-    [prefsMenu addItem:hotkeyModifierControlMenuItem];
+    for (NSInteger i = kBGMHotkeyActionMinValue; i <= kBGMHotkeyActionMaxValue; i++) {
+        BGMHotkeyAction action = (BGMHotkeyAction)i;
+
+        NSMenuItem* rowItem = [[NSMenuItem alloc] initWithTitle:@"" action:nil keyEquivalent:@""];
+        NSView* row = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 280, 22)];
+
+        NSTextField* label = [[NSTextField alloc] initWithFrame:NSMakeRect(20, 4, 165, 15)];
+        label.stringValue = BGMHotkeyActionDisplayName(action);
+        label.editable = NO;
+        label.bordered = NO;
+        label.backgroundColor = [NSColor clearColor];
+        label.font = [NSFont menuFontOfSize:12];
+        [row addSubview:label];
+
+        BGMHotkeyBinding binding = [userDefaults hotkeyBindingForAction:action];
+        BGMHotkeyRecorderButton* recorder =
+            [[BGMHotkeyRecorderButton alloc] initWithFrame:NSMakeRect(190, 0, 80, 22)
+                                                      action:action
+                                                    delegate:self];
+        [recorder refreshWithBinding:binding];
+        [row addSubview:recorder];
+        [hotkeyRecorderButtons addObject:recorder];
+
+        rowItem.view = row;
+        [prefsMenu addItem:rowItem];
+    }
 
     hotkeyStepFineMenuItem = [[NSMenuItem alloc] initWithTitle:@"Fine Steps"
                                                           action:@selector(useFineStepSize)
@@ -198,16 +212,44 @@ outputRoutingController:(BGMAppOutputRoutingController*)inOutputRoutingControlle
     [self updateHotkeyMenuItemStates];
 }
 
-- (void) useOptionModifier {
-    userDefaults.hotkeyModifierPreset = BGMHotkeyModifierPresetOption;
-    [hotkeys modifierPresetChanged];
-    [self updateHotkeyMenuItemStates];
-}
+#pragma mark BGMHotkeyRecorderButtonDelegate
 
-- (void) useControlModifier {
-    userDefaults.hotkeyModifierPreset = BGMHotkeyModifierPresetControl;
-    [hotkeys modifierPresetChanged];
+- (BOOL) hotkeyRecorderButton:(BGMHotkeyRecorderButton*)button
+          didRecordNewBinding:(BGMHotkeyBinding)binding
+                    forAction:(BGMHotkeyAction)action {
+    #pragma unused (button)
+
+    for (NSInteger i = kBGMHotkeyActionMinValue; i <= kBGMHotkeyActionMaxValue; i++) {
+        BGMHotkeyAction otherAction = (BGMHotkeyAction)i;
+
+        if (otherAction == action) {
+            continue;
+        }
+
+        BGMHotkeyBinding otherBinding = [userDefaults hotkeyBindingForAction:otherAction];
+
+        if (BGMHotkeyBindingsEqual(binding, otherBinding)) {
+            NSAlert* conflict = [NSAlert new];
+            conflict.messageText = @"That shortcut is already in use";
+            conflict.informativeText =
+                [NSString stringWithFormat:
+                    @"%@ is already bound to “%@”. Pick a different key, or record a new shortcut "
+                     "for “%@” first to free it up.",
+                    BGMHotkeyBindingDescription(binding),
+                    BGMHotkeyActionDisplayName(otherAction),
+                    BGMHotkeyActionDisplayName(otherAction)];
+            [conflict addButtonWithTitle:@"OK"];
+            [conflict runModal];
+
+            return NO;
+        }
+    }
+
+    [userDefaults setHotkeyBinding:binding forAction:action];
+    [hotkeys bindingsChanged];
     [self updateHotkeyMenuItemStates];
+
+    return YES;
 }
 
 - (void) useFineStepSize {
@@ -228,15 +270,10 @@ outputRoutingController:(BGMAppOutputRoutingController*)inOutputRoutingControlle
 - (void) updateHotkeyMenuItemStates {
     hotkeysEnabledMenuItem.state = hotkeys.isEnabled ? NSOnState : NSOffState;
 
-    // Explicit equality checks against both values, not a complement of one against the other --
-    // BGMHotkeys::currentVolumeModifierFlags checks explicitly too (falling back to Option for
-    // anything that isn't literally Control), so this has to match that exactly rather than
-    // showing Control checked for any non-Option value.
-    NSInteger modifierPreset = userDefaults.hotkeyModifierPreset;
-    hotkeyModifierOptionMenuItem.state =
-        (modifierPreset == BGMHotkeyModifierPresetOption) ? NSOnState : NSOffState;
-    hotkeyModifierControlMenuItem.state =
-        (modifierPreset == BGMHotkeyModifierPresetControl) ? NSOnState : NSOffState;
+    for (NSInteger i = kBGMHotkeyActionMinValue; i <= kBGMHotkeyActionMaxValue; i++) {
+        BGMHotkeyAction action = (BGMHotkeyAction)i;
+        [hotkeyRecorderButtons[(NSUInteger)i] refreshWithBinding:[userDefaults hotkeyBindingForAction:action]];
+    }
 
     NSInteger stepSize = userDefaults.hotkeyStepSize;
     hotkeyStepFineMenuItem.state = (stepSize == BGMHotkeyStepSizeFine) ? NSOnState : NSOffState;

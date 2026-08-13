@@ -118,6 +118,10 @@ Every control, once, confirming it does what the code says it does:
       kMacOSTooOld`), not a generic/confusing CoreAudio error code
 - [ ] Routing: route two different apps to two different non-default devices simultaneously —
       confirm neither route interferes with the other or with the default-output apps
+- [ ] Routing: connect an AirPlay receiver via System Settings > Sound first (so it's a normal
+      CoreAudio device), then route an app to it from Wavecraft's per-app pop-up — confirm it shows
+      up in the list and audio actually plays there (see TODO.md's AirPlay entry: the filter code
+      has no AirPlay exclusion, confirmed by reading it, but never tested against real hardware)
 - [ ] AppleScript: from Script Editor, get and set `volume`, `pan`, `EQ band gains`, and
       `output device` of a running app via `tell application "Background Music"` — confirm each
       round-trips correctly and that setting `output device` actually starts a route (audible, and
@@ -167,11 +171,23 @@ None of this has run against a real install either — same rule as everything e
       prompt, and that toggling the switch off and back on after granting access actually starts
       monitoring (there's no completion callback for this permission — confirm the documented
       "toggle it again" workaround is actually necessary and actually works)
-- [ ] Keyboard Shortcuts: with shortcuts enabled and Option as the modifier, confirm ⌥↑/⌥↓ change
-      system volume and ⌥⇧↑/⌥⇧↓ change the frontmost app's volume — audibly, not just that the
-      sliders move
-- [ ] Keyboard Shortcuts: switch to Control as the modifier, confirm the old Option binding stops
-      working and the new Control one works immediately (no re-enable needed)
+- [ ] **Highest-priority new item (added 2026-08-12): click a shortcut's "Click to Record" button,
+      then press an arrow key.** Does the button's title actually change to show the recorded key
+      (e.g. "⌥←"), or does nothing happen because the Preferences menu's own tracking loop consumed
+      the arrow key for its own item navigation first? This is a real, specific, unresolved risk —
+      not a formality — see TODO.md's "Needs a human" entry on this. Also try Return, Escape (should
+      cancel, not record), a letter, and Tab, since a menu might intercept those differently than
+      arrows.
+- [ ] Keyboard Shortcuts: with the default bindings (unchanged from before rebinding existed),
+      confirm ⌥↑/⌥↓ change system volume and ⌥⇧↑/⌥⇧↓ change the frontmost app's volume — audibly,
+      not just that the sliders move
+- [ ] Keyboard Shortcuts: record a new key for one action (e.g. rebind System Volume Up to ⌘⇧V),
+      confirm the old binding (⌥↑) stops working and the new one works immediately, no re-enable
+      needed
+- [ ] Keyboard Shortcuts: try recording a key that's already bound to a different action — confirm
+      the conflict alert names the right action and the binding doesn't silently change
+- [ ] Keyboard Shortcuts: press Esc while a button is in "Press a key…" mode — confirm it cancels
+      back to the previous binding rather than recording Esc itself
 - [ ] Keyboard Shortcuts: switch between Fine/Normal/Coarse step sizes and confirm each press
       changes volume by a visibly different amount, matching the description text shown in the
       menu

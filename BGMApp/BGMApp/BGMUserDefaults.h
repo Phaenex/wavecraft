@@ -26,6 +26,7 @@
 //
 
 // Local Includes
+#import "BGMHotkeys.h"
 #import "BGMStatusBarItem.h"
 
 // System Includes
@@ -86,10 +87,12 @@
 // Accessibility permission prompt hotkeys need.
 @property BOOL hasShownHotkeysAccessibilityExplanation;
 
-// Which modifier-key combination the hotkeys use, so two people with different keyboard habits
-// (or conflicting shortcuts in other apps) aren't stuck with one hard-coded choice. See
-// BGMHotkeys.BGMHotkeyModifierPreset for the values.
-@property NSInteger hotkeyModifierPreset;
+// The recorded key + modifier-flags combination bound to a hotkey action -- fully user-rebindable
+// to any key, not limited to a fixed set of modifier presets. Returns kBGMHotkeyBindingUnbound for
+// an action that's never been bound to anything (shouldn't normally happen -- every action has a
+// built-in default -- but a corrupted or hand-edited defaults plist could produce it).
+- (BGMHotkeyBinding) hotkeyBindingForAction:(BGMHotkeyAction)action;
+- (void) setHotkeyBinding:(BGMHotkeyBinding)binding forAction:(BGMHotkeyAction)action;
 
 // How much each hotkey press changes the volume by. See BGMHotkeys.BGMHotkeyStepSize for the
 // values.

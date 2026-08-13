@@ -90,12 +90,17 @@ otherwise require, so it's opt-in.
   Wavecraft in the System Settings window that opens, then come back and toggle the switch off and
   back on — macOS doesn't tell an app when this permission gets granted, so there's no way for
   Wavecraft to pick it up automatically.
-- **Use Option (⌥) / Use Control (⌃) as Modifier** picks which key combination to use, in case
-  Option or Control conflicts with something else on your system.
+- Four rows, one per action (**System Volume Up/Down**, **Frontmost App Volume Up/Down**), each
+  with a button showing its current shortcut (e.g. "⌥↑"). Click a button, then press any key —
+  with or without modifiers held — to rebind that action to it. Press Esc, or click the button
+  again, to back out without changing anything. If the key you press is already bound to a
+  different action, Wavecraft tells you which one instead of silently overwriting it — record a
+  new shortcut for that one first if you want to free it up. The defaults match this feature's
+  original Option+Up/Down (system) and Option+Shift+Up/Down (app) behavior, so nothing changes
+  until you record something yourself.
 - **Fine / Normal / Coarse Steps** controls how much each key press changes the volume by — Fine
   for small adjustments, Coarse for getting from very quiet to very loud in fewer presses.
-- With the modifier set, **Up/Down** adjusts system volume and **Shift+Up/Down** adjusts the
-  frontmost app's volume. The current bindings and step size are shown right in the menu.
+- The current bindings and step size are shown right in the menu, below the four buttons.
 
 ## Troubleshoot
 
