@@ -156,6 +156,12 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
     preferredOutputDevices =
         [[BGMPreferredOutputDevices alloc] initWithDevices:audioDevices userDefaults:userDefaults];
 
+    // Shown first, before anything below touches a system permission -- so on a genuinely new
+    // launch, the first thing the user sees is our own explanation of everything Wavecraft needs
+    // and why, with a button for each, rather than an unexplained system dialog. See
+    // BGMSetupWindow's header.
+    BOOL const showedSetupWindow = [setupWindow showOnFirstLaunchIfNeeded];
+
     // Skip this if we're compiling on a version of macOS before 10.14 as won't compile and it
     // isn't needed.
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= 101400  // MAC_OS_X_VERSION_10_14
@@ -165,7 +171,15 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
         // before making BGMDevice the default device. This way, if the user is playing audio when
         // they open Background Music, we won't interrupt it while we're waiting for them to click
         // OK.
-        [self explainMicrophonePermissionIfFirstRunThenRequestAccess];
+        if (showedSetupWindow) {
+            // The Setup window's own Microphone row already explains this and has a button that
+            // does the exact same thing -- showing the older, narrower one-time alert too would
+            // just be a second, redundant interruption stacked right on top of it.
+            userDefaults.hasShownMicrophonePermissionExplanation = YES;
+            [self requestMicrophoneAccess];
+        } else {
+            [self explainMicrophonePermissionIfFirstRunThenRequestAccess];
+        }
     }
     else
 #endif
@@ -303,10 +317,6 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
     // BGMXPCHelper" troubleshooter, but xpcListener doesn't exist until here -- see
     // BGMTroubleshootMenu's header for why this is a separate call instead of an initializer param.
     [prefsMenu setXPCListener:xpcListener];
-
-    // No-op if this exact version's already shown it -- see BGMSetupWindow's header and
-    // BGMUserDefaults.lastShownSetupWindowVersion.
-    [setupWindow showOnFirstLaunchIfNeeded];
 }
 
 // Returns NO if (and only if) BGMApp is about to terminate because of a fatal error.

@@ -89,11 +89,12 @@
                      body:@"Wavecraft uses a virtual microphone to capture your system’s audio, "
                            "so it can apply per-app volume, EQ, and output routing. It never "
                            "actually listens to anything — macOS just classifies that virtual "
-                           "device as a microphone input."
+                           "device as a microphone input. Click below and macOS will ask you to "
+                           "confirm."
                    status:BGMSetupRowStatusNotGranted
-              buttonTitle:@"Open Privacy Settings"];
+              buttonTitle:@"Grant Access"];
     [microphoneRow.button setTarget:self];
-    [microphoneRow.button setAction:@selector(openMicrophonePrivacySettings:)];
+    [microphoneRow.button setAction:@selector(microphoneButtonClicked:)];
 
     accessibilityRow = [setupContentView
         addRowWithTitle:@"Accessibility Access (optional)"
@@ -101,9 +102,9 @@
                            "control, in Preferences. macOS requires this for any app that "
                            "listens for keyboard shortcuts while it isn’t the active app."
                    status:BGMSetupRowStatusNotGranted
-              buttonTitle:@"Open Privacy Settings"];
+              buttonTitle:@"Grant Access"];
     [accessibilityRow.button setTarget:self];
-    [accessibilityRow.button setAction:@selector(openAccessibilityPrivacySettings:)];
+    [accessibilityRow.button setAction:@selector(accessibilityButtonClicked:)];
 
     [setupContentView
         addRowWithTitle:@"Don’t see the menu bar icon?"
@@ -138,17 +139,19 @@
     [NSApp activateIgnoringOtherApps:YES];
 }
 
-- (void) showOnFirstLaunchIfNeeded {
+- (BOOL) showOnFirstLaunchIfNeeded {
     NSString* __nullable currentVersion =
         NSBundle.mainBundle.infoDictionary[@"CFBundleShortVersionString"];
 
     if (!currentVersion || [userDefaults.lastShownSetupWindowVersion isEqualToString:BGMNN(currentVersion)]) {
-        return;
+        return NO;
     }
 
     userDefaults.lastShownSetupWindowVersion = currentVersion;
 
     [self show];
+
+    return YES;
 }
 
 #pragma mark Live status
@@ -165,37 +168,117 @@
 }
 
 - (void) refreshPermissionStatuses {
-    [BGMSetupWindowContentView setStatus:[self microphoneStatus] onRow:microphoneRow];
-    [BGMSetupWindowContentView setStatus:[self accessibilityStatus] onRow:accessibilityRow];
+    [self updateMicrophoneRow];
+    [self updateAccessibilityRow];
 }
 
-- (BGMSetupRowStatus) microphoneStatus {
+// Unlike Accessibility (a plain trusted/not-trusted bool), Microphone access has a real third
+// state: once the system dialog's been answered with "Don't Allow", calling
+// requestAccessForMediaType: again doesn't re-show it -- it just calls back immediately with
+// granted=NO, silently. So the button has to do a different thing depending on which of the two
+// not-granted states it's actually in, or a second click after a denial would look like it did
+// nothing at all.
+- (void) updateMicrophoneRow {
+    // @available's flow analysis doesn't cross a method-call boundary -- a separate
+    // "is this available" helper called first wouldn't satisfy the compiler here, every actual
+    // AVFoundation call site needs its own guard directly (same trap noted in
+    // BGMAppDelegate::requestMicrophoneAccess's header comment).
     if (@available(macOS 10.14, *)) {
         AVAuthorizationStatus status =
             [AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeAudio];
 
-        return (status == AVAuthorizationStatusAuthorized) ? BGMSetupRowStatusGranted
-                                                             : BGMSetupRowStatusNotGranted;
-    }
+        switch (status) {
+            case AVAuthorizationStatusAuthorized:
+                [BGMSetupWindowContentView setStatus:BGMSetupRowStatusGranted onRow:microphoneRow];
+                microphoneRow.button.hidden = YES;
+                break;
 
-    // Not required before 10.14.
-    return BGMSetupRowStatusGranted;
+            case AVAuthorizationStatusNotDetermined:
+                [BGMSetupWindowContentView setStatus:BGMSetupRowStatusNotGranted
+                                                onRow:microphoneRow];
+                microphoneRow.button.hidden = NO;
+                microphoneRow.button.title = @"Grant Access";
+                break;
+
+            case AVAuthorizationStatusDenied:
+            case AVAuthorizationStatusRestricted:
+            default:
+                [BGMSetupWindowContentView setStatus:BGMSetupRowStatusNotGranted
+                                                onRow:microphoneRow];
+                microphoneRow.button.hidden = NO;
+                microphoneRow.button.title = @"Open Privacy Settings";
+                break;
+        }
+    } else {
+        // Not required before 10.14 -- nothing to grant, nothing to click.
+        [BGMSetupWindowContentView setStatus:BGMSetupRowStatusGranted onRow:microphoneRow];
+        microphoneRow.button.hidden = YES;
+    }
 }
 
-- (BGMSetupRowStatus) accessibilityStatus {
-    return AXIsProcessTrusted() ? BGMSetupRowStatusGranted : BGMSetupRowStatusNotGranted;
+- (void) updateAccessibilityRow {
+    BOOL trusted = AXIsProcessTrusted();
+
+    [BGMSetupWindowContentView setStatus:(trusted ? BGMSetupRowStatusGranted
+                                                    : BGMSetupRowStatusNotGranted)
+                                    onRow:accessibilityRow];
+    accessibilityRow.button.hidden = trusted;
+    accessibilityRow.button.title = @"Grant Access";
 }
 
 #pragma mark Actions
 
-- (void) openMicrophonePrivacySettings:(id)sender {
+// Requests access directly (macOS's own system dialog) when it's never been asked, or deep-links
+// to Settings when it has and was declined -- see updateMicrophoneRow for why those need to be
+// different actions, not just different button titles. Only ever reachable via a click on a
+// button that updateMicrophoneRow itself only shows/enables on 10.14+, but the compiler's
+// availability analysis doesn't see across that method boundary, so this needs its own guard too
+// -- see BGMAppDelegate::requestMicrophoneAccess's header comment for the same trap.
+- (void) microphoneButtonClicked:(id)sender {
     #pragma unused (sender)
+
+    if (@available(macOS 10.14, *)) {
+        AVAuthorizationStatus status =
+            [AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeAudio];
+
+        if (status == AVAuthorizationStatusNotDetermined) {
+            BGMSetupWindow* __weak weakSelf = self;
+
+            [AVCaptureDevice requestAccessForMediaType:AVMediaTypeAudio
+                                     completionHandler:^(BOOL granted) {
+                #pragma unused (granted)
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [weakSelf refreshPermissionStatuses];
+                });
+            }];
+
+            return;
+        }
+    }
+
     [self openSystemSettingsPane:@"Privacy_Microphone"];
 }
 
-- (void) openAccessibilityPrivacySettings:(id)sender {
+// AXIsProcessTrustedWithOptions (with the prompt option) is the single call that handles both
+// "never asked" (adds Wavecraft to the list and shows the system prompt) and "already asked"
+// (just re-opens System Settings to the same place) -- no separate deep-link path needed, unlike
+// Microphone. Same call BGMHotkeys::setEnabled: already uses for the same permission.
+- (void) accessibilityButtonClicked:(id)sender {
     #pragma unused (sender)
-    [self openSystemSettingsPane:@"Privacy_Accessibility"];
+
+    NSDictionary* options = @{(__bridge id)kAXTrustedCheckOptionPrompt: @YES};
+    AXIsProcessTrustedWithOptions((__bridge CFDictionaryRef)options);
+
+    // AXIsProcessTrustedWithOptions returns immediately, before the user's actually granted
+    // anything in the window it just opened -- give it a moment before re-checking.
+    // applicationDidBecomeActive: below also catches it whenever they actually switch back here.
+    BGMSetupWindow* __weak weakSelf = self;
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)),
+                   dispatch_get_main_queue(),
+                   ^{
+        [weakSelf refreshPermissionStatuses];
+    });
 }
 
 // Same x-apple.systempreferences: scheme BGMAppDelegate/BGMTroubleshootMenu already use to deep-

@@ -53,10 +53,13 @@
 
 // Shows the window if it hasn't already been auto-shown for this exact build (see
 // BGMUserDefaults.lastShownSetupWindowVersion), and records that it has. Meant to be called once,
-// right after the rest of the app finishes launching -- not just on a first-ever launch, but on
-// the first launch of *any* new version, since a version bump is exactly when new permission
-// requirements are most likely to appear.
-- (void) showOnFirstLaunchIfNeeded;
+// right at the start of launch -- before anything else touches a system permission -- not just on
+// a first-ever launch, but on the first launch of *any* new version, since a version bump is
+// exactly when new permission requirements are most likely to appear. Returns whether it actually
+// showed, so a caller that would otherwise separately explain a permission (see
+// BGMAppDelegate::explainMicrophonePermissionIfFirstRunThenRequestAccess) can skip that redundant
+// explanation when this window, which already covers it, just showed instead.
+- (BOOL) showOnFirstLaunchIfNeeded;
 
 @end
 
