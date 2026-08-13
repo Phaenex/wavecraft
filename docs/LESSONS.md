@@ -632,3 +632,50 @@ controls, both flagged in `TODO.md` as a follow-up, not yet moved) has this same
 ceiling. Don't chase a reported "the menu closes/doesn't respond right" bug against one of those as
 if it were a bug in that specific control -- it isn't fixable there, only by moving the control out
 of `NSMenu` entirely.
+
+## A sandboxed shell blocked `xcodebuild`'s own writes, and looked like a compile error
+
+**The trap:** running `./package.sh` (which shells out to `xcodebuild ... archive` for all three
+targets) failed on the very first `clean` step, with `xcodebuild: error: "Background Music Device"
+couldn't be removed because you don't have permission to access it` and a top-level message that
+just said "A build command failed. Probably a compilation error." Nothing in the diff had changed
+anything build-related.
+
+**What was actually true:** the shell this ran in was sandboxed, and `xcodebuild` needs to write
+outside the project directory for reasons that have nothing to do with the actual build -- `~/Library/
+Developer/Xcode/DerivedData/.../Logs/Build/*.xcactivitylog`, `~/Library/Logs/CoreSimulator/...`, and
+a `.xcresult` bundle under `$TMPDIR`. Every one of those writes came back `Operation not permitted`,
+and losing the DerivedData log write was enough to make the `clean` action itself report failure,
+which cascaded into "the build failed" even though not one line of project code had been touched.
+The `pgrep`/`ps` calls `build_and_install.sh` uses for its cosmetic progress-spinner also failed
+under the same restriction (`pgrep: Cannot get process list`, `/bin/ps: Operation not permitted`),
+but those are non-fatal by design (guarded by `disable_error_handling`) -- they're noise, not the
+actual failure, and would have been a red herring if chased first.
+
+**Fix:** re-ran with the sandbox disabled for that one command. Build succeeded immediately, same
+source tree, zero code changes.
+
+**How to apply:** any `xcodebuild` invocation -- not just this project's, any Xcode project -- needs
+write access outside its own directory (DerivedData, CoreSimulator logs, `$TMPDIR` result bundles)
+purely to run at all, independent of whether the build itself would succeed. When an `xcodebuild`
+failure's actual error text is `Operation not permitted` on a path under `~/Library/...` or
+`$TMPDIR`, that's the sandbox, not the code -- don't start bisecting recent commits for a
+compile-error root cause before checking whether the failure is even about compilation.
+
+## `command | tee logfile` in the background hides the command's real exit status
+
+**The trap:** the first packaging attempt was launched as `./package.sh 2>&1 | tee run.log` in the
+background. The task-completion notification reported "completed (exit code 0)" -- which, read on
+its own, looks like a clean pass and was almost taken as one without opening the log.
+
+**What was actually true:** the exit code surfaced from a `cmd | tee file` pipeline (in a shell
+without `set -o pipefail`, which the calling context here didn't have) is `tee`'s exit status, not
+`package.sh`'s. `tee` itself always exits 0 as long as it can write its log file, regardless of
+whether the command feeding it failed. The build had actually failed (see the entry above) --
+"exit code 0" was true of `tee`, not of the build.
+
+**How to apply:** never read a background command's reported exit code as the final word when the
+command was piped through `tee` (or anything else) without `pipefail`. Either add `set -o pipefail`
+before piping, capture the real exit code explicitly (`cmd; ec=$?; ... | tee log; exit $ec` or
+`${PIPESTATUS[0]}` in bash), or -- simplest, and what actually caught this -- read the log's tail
+for the tool's own pass/fail banner instead of trusting the wrapper's exit code alone.
