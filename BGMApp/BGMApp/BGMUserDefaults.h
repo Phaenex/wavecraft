@@ -106,11 +106,14 @@
 // Accessibility permission prompt hotkeys need.
 @property BOOL hasShownHotkeysAccessibilityExplanation;
 
-// True once BGMSetupWindow (the "what Wavecraft needs from your Mac, and why" screen) has been
-// auto-shown on a first launch. Same trigger-once-then-leave-it pattern as the two properties
-// above -- after this, the window's only shown again if the user opens it themselves from
-// Preferences.
-@property BOOL hasShownSetupWindowOnFirstLaunch;
+// The CFBundleShortVersionString BGMSetupWindow (the "what Wavecraft needs from your Mac, and
+// why" screen) was last auto-shown for -- nil if never. Deliberately keyed by version rather than
+// a one-time BOOL flag: a fresh install of a *different* build (which, for this project's
+// SNAPSHOT versioning, is any build off a different commit -- see set-version.sh) should show it
+// again, since a version bump is exactly when new permission requirements are most likely to have
+// been added. Compared against the running app's own version in BGMSetupWindow; not meant to be
+// read/written directly outside that comparison.
+@property NSString* __nullable lastShownSetupWindowVersion;
 
 // The recorded key + modifier-flags combination bound to a hotkey action -- fully user-rebindable
 // to any key, not limited to a fixed set of modifier presets. Returns kBGMHotkeyBindingUnbound for

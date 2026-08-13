@@ -51,8 +51,11 @@
 // permission row's live status. Safe to call any number of times.
 - (void) show;
 
-// Shows the window if (and only if) it's never been auto-shown before, and records that it has.
-// Meant to be called once, right after the rest of the app finishes launching.
+// Shows the window if it hasn't already been auto-shown for this exact build (see
+// BGMUserDefaults.lastShownSetupWindowVersion), and records that it has. Meant to be called once,
+// right after the rest of the app finishes launching -- not just on a first-ever launch, but on
+// the first launch of *any* new version, since a version bump is exactly when new permission
+// requirements are most likely to appear.
 - (void) showOnFirstLaunchIfNeeded;
 
 @end

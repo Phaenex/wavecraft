@@ -49,7 +49,7 @@ static NSString* const kDefaultKeyHasShownMicExplanation = @"HasShownMicrophoneP
 static NSString* const kDefaultKeyHotkeysEnabled        = @"HotkeysEnabled";
 static NSString* const kDefaultKeyHasShownHotkeysAXExplanation =
     @"HasShownHotkeysAccessibilityExplanation";
-static NSString* const kDefaultKeyHasShownSetupWindow   = @"HasShownSetupWindowOnFirstLaunch";
+static NSString* const kDefaultKeyLastShownSetupWindowVersion = @"LastShownSetupWindowVersion";
 static NSString* const kDefaultKeyHotkeyBindings        = @"HotkeyBindings";
 static NSString* const kDefaultKeyHotkeyStepSize        = @"HotkeyStepSize";
 
@@ -243,12 +243,12 @@ static NSString* const kKeychainLabelGPMDPAuthCode =
     [self setBool:kDefaultKeyHasShownHotkeysAXExplanation to:hasShown];
 }
 
-- (BOOL) hasShownSetupWindowOnFirstLaunch {
-    return [self getBool:kDefaultKeyHasShownSetupWindow];
+- (NSString* __nullable) lastShownSetupWindowVersion {
+    return [self get:kDefaultKeyLastShownSetupWindowVersion];
 }
 
-- (void) setHasShownSetupWindowOnFirstLaunch:(BOOL)hasShown {
-    [self setBool:kDefaultKeyHasShownSetupWindow to:hasShown];
+- (void) setLastShownSetupWindowVersion:(NSString* __nullable)version {
+    [self set:kDefaultKeyLastShownSetupWindowVersion to:version];
 }
 
 // The dictionary key each action's binding is stored under inside kDefaultKeyHotkeyBindings.

@@ -66,8 +66,8 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
     // main dropdown.
     BGMMainPanel* mainPanel;
 
-    // "What Wavecraft needs from your Mac, and why" -- shown once on a first launch, reachable
-    // afterwards from Preferences. See BGMSetupWindow's header.
+    // "What Wavecraft needs from your Mac, and why" -- auto-shown once per version, reachable
+    // anytime afterwards from Preferences. See BGMSetupWindow's header.
     BGMSetupWindow* setupWindow;
 
     // Only show the 'BGMXPCHelper is missing' error dialog once.
@@ -304,8 +304,8 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
     // BGMTroubleshootMenu's header for why this is a separate call instead of an initializer param.
     [prefsMenu setXPCListener:xpcListener];
 
-    // No-op after the very first launch -- see BGMSetupWindow's header and
-    // BGMUserDefaults.hasShownSetupWindowOnFirstLaunch.
+    // No-op if this exact version's already shown it -- see BGMSetupWindow's header and
+    // BGMUserDefaults.lastShownSetupWindowVersion.
     [setupWindow showOnFirstLaunchIfNeeded];
 }
 

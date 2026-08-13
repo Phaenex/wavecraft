@@ -139,11 +139,14 @@
 }
 
 - (void) showOnFirstLaunchIfNeeded {
-    if (userDefaults.hasShownSetupWindowOnFirstLaunch) {
+    NSString* __nullable currentVersion =
+        NSBundle.mainBundle.infoDictionary[@"CFBundleShortVersionString"];
+
+    if (!currentVersion || [userDefaults.lastShownSetupWindowVersion isEqualToString:BGMNN(currentVersion)]) {
         return;
     }
 
-    userDefaults.hasShownSetupWindowOnFirstLaunch = YES;
+    userDefaults.lastShownSetupWindowVersion = currentVersion;
 
     [self show];
 }
