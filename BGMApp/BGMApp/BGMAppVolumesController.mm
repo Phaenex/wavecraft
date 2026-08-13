@@ -152,6 +152,11 @@ outputRoutingController:(BGMAppOutputRoutingController*)outputRoutingController 
     return volumeAndPan;
 }
 
+- (NSArray<NSNumber*>* __nullable) getEQBandGainsForApp:(NSRunningApplication*)app {
+    CACFArray eqFromBGMDevice([audioDevices bgmDevice].GetAppEQ(), false);
+    return [self getEQBandGainsForApp:app fromEQ:eqFromBGMDevice];
+}
+
 // Returns nil if the device doesn't have EQ gains stored for this app (i.e. it's still flat/0dB
 // on every band, the driver's default -- see BGM_AppEQ's default-constructed gains).
 - (NSArray<NSNumber*>* __nullable) getEQBandGainsForApp:(NSRunningApplication*)app

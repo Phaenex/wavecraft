@@ -71,6 +71,22 @@
                       description="The pan setting of the application">
                 <cocoa key="pan"/>
             </property>
+
+            <property name="EQ band gains"
+                      code="pEQg"
+                      access="rw"
+                      description="The application's per-band EQ gains in dB, lowest frequency first (empty list if flat/unset).">
+                <type type="integer" list="yes"/>
+                <cocoa key="eqBandGains"/>
+            </property>
+
+            <property name="output device"
+                      code="pRte"
+                      type="output device"
+                      access="rw"
+                      description="The output device this application's audio is routed to, or missing value if it's using the default output. Requires macOS 26 or later.">
+                <cocoa key="outputDevice"/>
+            </property>
         </class>
 
         <class name="application"

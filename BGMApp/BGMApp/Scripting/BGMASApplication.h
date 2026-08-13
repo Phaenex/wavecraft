@@ -25,7 +25,10 @@
 
 
 // Local Includes
+#import "BGMAppOutputRoutingController.h"
 #import "BGMAppVolumesController.h"
+#import "BGMAudioDeviceManager.h"
+#import "BGMASOutputDevice.h"
 
 // System Includes
 #import <Foundation/Foundation.h>
@@ -38,6 +41,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype) initWithApplication:(NSRunningApplication*)app
                           volumeController:(BGMAppVolumesController*)volumeController
+                  outputRoutingController:(BGMAppOutputRoutingController*)outputRoutingController
+                              audioDevices:(BGMAudioDeviceManager*)audioDevices
                      parentSpecifier:(NSScriptObjectSpecifier* __nullable)parentSpecifier
                                index:(int)i;
 
@@ -45,6 +50,16 @@ NS_ASSUME_NONNULL_BEGIN
 @property (readonly) NSString* bundleID;
 @property int volume;
 @property int pan;
+
+// nil means flat (0dB on every band, the default) when read. Must have exactly kBGMAppEQNumBands
+// elements when set -- see BGMAppVolumesController's getEQBandGainsForApp:/
+// setEQBandGains:forAppWithProcessID:bundleID:, which this wraps directly.
+@property (nullable, copy) NSArray<NSNumber*>* eqBandGains;
+
+// The output device this app's audio is currently routed to, or nil if it's using the default
+// output (no override). Setting nil clears any existing override.
+@property (nullable, strong) BGMASOutputDevice* outputDevice;
+
 @end
 
 NS_ASSUME_NONNULL_END

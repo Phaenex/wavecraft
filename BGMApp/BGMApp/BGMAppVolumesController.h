@@ -61,6 +61,11 @@ forAppWithProcessID:(pid_t)processID
     forAppWithProcessID:(pid_t)processID
                bundleID:(NSString* __nullable)bundleID;
 
+// Returns nil if the device doesn't have EQ gains stored for app (i.e. it's still flat/0dB on
+// every band). Reads a fresh snapshot from the driver on every call -- unlike setEQBandGains:...,
+// not meant to be called from a hot path (e.g. don't poll this from a UI update loop).
+- (NSArray<NSNumber*>* __nullable) getEQBandGainsForApp:(NSRunningApplication*)app;
+
 - (BGMAppVolumeAndPan) getVolumeAndPanForApp:(NSRunningApplication *)app;
 - (void) setVolumeAndPan:(BGMAppVolumeAndPan)volumeAndPan forApp:(NSRunningApplication*)app;
 

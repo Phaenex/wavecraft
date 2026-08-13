@@ -101,7 +101,13 @@ const AudioObjectPropertyScope kScope                   = kAudioDevicePropertySc
     NSMutableArray<BGMASApplication*>* applications = [NSMutableArray arrayWithCapacity:[apps count]];
 
     for (UInt32 i = 0; i < [apps count]; i++) {
-        BGMASApplication *app = [[BGMASApplication alloc] initWithApplication:apps[i] volumeController:self.appVolumes parentSpecifier:[self objectSpecifier] index:i];
+        BGMASApplication *app =
+            [[BGMASApplication alloc] initWithApplication:apps[i]
+                                          volumeController:self.appVolumes
+                                  outputRoutingController:self.outputRoutingController
+                                              audioDevices:self.audioDevices
+                                           parentSpecifier:[self objectSpecifier]
+                                                     index:i];
 
         [applications addObject:app];
     }

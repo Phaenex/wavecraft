@@ -26,22 +26,29 @@
 
 // Local Includes
 #import "BGM_Types.h"
+#import "BGM_Utils.h"
 
 @implementation BGMASApplication {
     NSScriptObjectSpecifier* parentSpecifier;
     NSRunningApplication *application;
     BGMAppVolumesController* appVolumesController;
+    BGMAppOutputRoutingController* outputRoutingController;
+    BGMAudioDeviceManager* audioDevices;
     int index;
 }
 
 - (instancetype) initWithApplication:(NSRunningApplication*)app
                           volumeController:(BGMAppVolumesController*)volumeController
+                  outputRoutingController:(BGMAppOutputRoutingController*)routingController
+                              audioDevices:(BGMAudioDeviceManager*)devices
                      parentSpecifier:(NSScriptObjectSpecifier* __nullable)parent
                                index:(int)i {
     if ((self = [super init])) {
         parentSpecifier = parent;
         application = app;
         appVolumesController = volumeController;
+        outputRoutingController = routingController;
+        audioDevices = devices;
         index = i;
     }
 
@@ -78,6 +85,51 @@
         .pan = pan
     };
     [appVolumesController setVolumeAndPan:thePan forApp:application];
+}
+
+- (NSArray<NSNumber*>* __nullable) eqBandGains {
+    return [appVolumesController getEQBandGainsForApp:application];
+}
+
+- (void) setEqBandGains:(NSArray<NSNumber*>*)eqBandGains {
+    [appVolumesController setEQBandGains:eqBandGains
+                      forAppWithProcessID:application.processIdentifier
+                                 bundleID:application.bundleIdentifier];
+}
+
+- (BGMASOutputDevice* __nullable) outputDevice {
+    NSString* __nullable bundleID = application.bundleIdentifier;
+    NSString* __nullable uid =
+        bundleID ?
+            [outputRoutingController outputOverrideDeviceUIDForBundleID:BGMNN(bundleID)] : nil;
+
+    if (!uid) {
+        return nil;
+    }
+
+    AudioObjectID deviceID = [outputRoutingController findConnectedDeviceIDForUID:BGMNN(uid)];
+
+    if (deviceID == kAudioObjectUnknown) {
+        // The route's target device isn't currently connected -- same "not there right now"
+        // meaning as no override, from a script's point of view.
+        return nil;
+    }
+
+    return [[BGMASOutputDevice alloc] initWithAudioObjectID:deviceID
+                                                audioDevices:audioDevices
+                                             parentSpecifier:parentSpecifier];
+}
+
+- (void) setOutputDevice:(BGMASOutputDevice* __nullable)outputDevice {
+    NSString* __nullable bundleID = application.bundleIdentifier;
+
+    if (!bundleID) {
+        return;
+    }
+
+    [outputRoutingController userSelectedDeviceUID:outputDevice.uid
+                                 forAppWithBundleID:BGMNN(bundleID)
+                                            appName:application.localizedName];
 }
 
 - (NSScriptObjectSpecifier* __nullable) objectSpecifier {

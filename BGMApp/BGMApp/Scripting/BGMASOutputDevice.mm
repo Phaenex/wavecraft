@@ -54,6 +54,10 @@
     return (NSString*)CFBridgingRelease(device.CopyName());
 }
 
+- (NSString* __nullable) uid {
+    return (NSString* __nullable)CFBridgingRelease(device.CopyDeviceUID());
+}
+
 - (BOOL) selected {
     return [audioDevices isOutputDevice:device];
 }

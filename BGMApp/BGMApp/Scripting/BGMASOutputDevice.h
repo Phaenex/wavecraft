@@ -40,6 +40,11 @@
 @property (readonly) NSString* name;
 @property BOOL selected;  // is this the device to be used for audio output?
 
+// The device's UID -- not exposed to scripts via the sdef (there's no property for it), but
+// needed internally by BGMASApplication's output-device property to resolve this object back to
+// the UID BGMAppOutputRoutingController's API is keyed on.
+@property (readonly) NSString* __nullable uid;
+
 @end
 
 #pragma clang assume_nonnull end
