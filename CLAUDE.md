@@ -42,7 +42,7 @@ xcodebuild -workspace BGM.xcworkspace -scheme "Background Music Device" -configu
 python3 tools/verify-icons.py
 ```
 
-All three targets build clean (Debug and Release). 63/63 unit tests passing (39 BGMAppUnitTests +
+All three targets build clean (Debug and Release). 71/71 unit tests passing (47 BGMAppUnitTests +
 24 BGMDriverTests, 0 failures — re-run directly via the commands above, not carried over from an
 older count). Two driver tests are regression tests for real bugs found in this fork, not ordinary
 feature tests:
@@ -242,14 +242,21 @@ a real install**:
   real-audio checks it still needs (does the muted app actually go silent, does the restored volume
   match what it was before, not a default).
 
-63/63 unit tests passing after this work (39 BGMAppUnitTests + 24 BGMDriverTests). The 10
+71/71 unit tests passing after this work (47 BGMAppUnitTests + 24 BGMDriverTests). The 10
 `BGMUserDefaultsTests.mm` tests cover the hotkey-binding storage/defaults/clamping/helper-function
 logic, which is plain Foundation/plist code with no CoreAudio HAL dependency; the 1 new
 `BGMTapRouteTests.mm` test (`testHasOutputDeviceIsFalseForAnyDeviceBeforeAddOutputDeviceIsCalled`)
 only covers construction-time state, matching that file's existing "construction/validation only"
-scope — but `BGMHotkeys` itself, `BGMHotkeyRecorderButton`'s actual key-capture behavior,
-`BGMDoNotDisturb`, and the troubleshooters/EQ/routing UI (including the new multi-output diffing
-logic in `BGMAppOutputRoutingController`) still depend on real system state
+scope; the 8 new `BGMOutputDeviceDiffTests.mm` tests fully cover `BGMComputeOutputDeviceDiff`
+(`BGMOutputDeviceDiff.{h,cpp}`), the multi-output device-set reconciliation logic extracted out of
+`BGMAppOutputRoutingController` specifically because it's pure `std::vector<AudioObjectID>` set
+math with no HAL dependency, unlike the *action* of actually adding/removing an output on a real
+`BGMTapRoute`. Confirmed by directly reading `Mock_CAHALAudioObject.cpp`'s `GetPropertyData`/
+`SetPropertyData` (2026-08-12, not assumed): they implement a small fixed set of selectors and
+abort via `Mock_Unimplemented()` for anything else, including every app-volume/main-volume-control
+property — so `BGMHotkeys` itself, `BGMHotkeyRecorderButton`'s actual key-capture behavior,
+`BGMDoNotDisturb`, and the rest of the troubleshooters/EQ/routing UI genuinely can't get automated
+coverage this way, not just "haven't gotten around to it." They still depend on real system state
 (`AXIsProcessTrusted()`, `NSWorkspace.frontmostApplication`, live `AudioObjectSetPropertyData`,
 `AVCaptureDevice` authorization, a real live `NSMenu` tracking session, real CoreAudio tap/aggregate
 devices) that the mocked `BGMAppUnitTests` target can't exercise, the same limitation

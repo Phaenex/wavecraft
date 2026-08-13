@@ -32,7 +32,10 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
   - `BGMAppOutputRoutingController` — owns routing assignments (now per bundle ID an array of
     device UIDs, not a single one), persists them, restores them for running apps, and watches for
     a routed device disconnecting mid-route (drops just that device from the route, keeping any
-    others playing and the persisted assignment so it reapplies if the device reconnects).
+    others playing and the persisted assignment so it reapplies if the device reconnects). The
+    multi-output device-set reconciliation logic is extracted into `BGMComputeOutputDeviceDiff`
+    (`BGMOutputDeviceDiff.{h,cpp}`) and covered by 8 unit tests — it's pure set-difference math with
+    no HAL dependency, unlike the rest of this class.
   - `BGMAVM_OutputRouteButton` — the per-app output-device pop-up in the menu. Clicking a device
     toggles it into/out of the app's target set instead of replacing it, so routing to more than
     one device is a few individual clicks.

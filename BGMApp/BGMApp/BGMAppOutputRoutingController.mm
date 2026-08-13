@@ -26,6 +26,7 @@
 // Local Includes
 #import "BGM_Utils.h"
 #import "BGMAudioDevice.h"
+#import "BGMOutputDeviceDiff.h"
 #import "BGMTapRoute.h"
 
 // PublicUtility Includes
@@ -428,26 +429,24 @@
     }
 
     // Reconcile this route's actual output devices with the desired set -- remove ones no longer
-    // wanted, add ones that are new. Deliberately leaves an output alone if it's already correct,
+    // wanted, add ones that are new. BGMComputeOutputDeviceDiff (pure decision logic, unit tested
+    // in BGMOutputDeviceDiffTests.mm) deliberately leaves an output alone if it's already correct,
     // so e.g. switching the target set from {A, B} to {A, C} doesn't glitch A's audio by tearing
     // its BGMPlayThrough down and immediately back up for no reason.
+    std::vector<AudioObjectID> currentDeviceIDs;
     for (const BGMAudioDevice& current : route->GetOutputDevices()) {
-        bool stillWanted = std::find(desiredDeviceIDs.begin(), desiredDeviceIDs.end(),
-                                      current.GetObjectID()) != desiredDeviceIDs.end();
-        if (!stillWanted) {
-            route->RemoveOutputDevice(current);
-        }
+        currentDeviceIDs.push_back(current.GetObjectID());
     }
 
-    for (AudioObjectID desiredID : desiredDeviceIDs) {
-        BGMAudioDevice desiredDevice(desiredID);
+    BGMOutputDeviceDiff diff = BGMComputeOutputDeviceDiff(currentDeviceIDs, desiredDeviceIDs);
 
-        if (route->HasOutputDevice(desiredDevice)) {
-            continue;
-        }
+    for (AudioObjectID deviceID : diff.toRemove) {
+        route->RemoveOutputDevice(BGMAudioDevice(deviceID));
+    }
 
+    for (AudioObjectID deviceID : diff.toAdd) {
         try {
-            route->AddOutputDevice(desiredDevice);
+            route->AddOutputDevice(BGMAudioDevice(deviceID));
         } catch (const CAException& e) {
             [self showRoutingErrorForAppName:appName reason:[self reasonForTapRouteException:e]];
         } catch (...) {

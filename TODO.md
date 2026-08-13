@@ -116,12 +116,26 @@ None open right now — the last item here (arbitrary keyboard-shortcut rebindin
   automatically even though it's still saved. Fixing this properly would mean either watching for
   *any* app launch indefinitely (not just ones with menu rows) or moving routing state into the
   driver somehow, which conflicts with the reason routing runs in user space in the first place.
-- No automated tests exist for `BGMAppOutputRoutingController` or the new UI classes
-  (`BGMAVM_EQBandSlider`, `BGMAVM_OutputRouteButton`) beyond what's structurally possible — see
-  `BGMTapRouteTests.mm`'s own comment for why the `BGMAppUnitTests` target can't exercise anything
-  that touches a real `CAHALAudioDevice`. This matches upstream's own testing gap for
+- No automated tests exist for `BGMAppOutputRoutingController`, `BGMDoNotDisturb`, or the newer UI
+  classes (`BGMAVM_EQBandSlider`, `BGMAVM_OutputRouteButton`, `BGMHotkeyRecorderButton`) beyond what
+  BGMTapRouteTests.mm's own comment says is structurally possible — checked directly (2026-08-12) by
+  reading `Mock_CAHALAudioObject.cpp`'s `GetPropertyData`/`SetPropertyData` switch statements rather
+  than assuming: they implement a small fixed set of selectors (music-player bundle ID, a couple of
+  device properties) and hit `Mock_Unimplemented()` (which aborts the test process) for anything
+  else, including every app-volume/main-volume-control property `BGMHotkeys`, `BGMDoNotDisturb`, and
+  `BGMTroubleshootMenu` actually call. So this genuinely can't be worked around by writing a test
+  the usual way — confirmed, not just assumed. This matches upstream's own testing gap for
   `BGMAppVolumesController`/`BGMOutputDeviceMenuSection`/`BGMPreferredOutputDevices`, none of which
   have unit tests either, but it's worth flagging rather than assuming coverage exists.
+  - **One piece of this did get extracted and covered**: `BGMAppOutputRoutingController`'s
+    multi-output device-set reconciliation (added 2026-08-12, alongside multi-output routing) was
+    pulled out into `BGMComputeOutputDeviceDiff` (`BGMOutputDeviceDiff.{h,cpp}`) specifically
+    because it's pure `std::vector<AudioObjectID>` set-difference logic with no HAL dependency at
+    all — unlike the *action* of actually adding/removing a `BGMTapRoute` output, which still needs
+    real hardware. 8 tests in `BGMOutputDeviceDiffTests.mm` cover it fully. Same technique (find the
+    pure-logic slice of an otherwise-untestable class, extract it, test that) is worth trying again
+    if a similar seam turns up in `BGMTroubleshootMenu` or elsewhere — most of what those classes do
+    is genuinely HAL-bound, but not necessarily all of it.
 - Same testing gap applies to `BGMHotkeys` and `BGMTroubleshootMenu` — both depend on real system
   state (`AXIsProcessTrusted()`, `NSWorkspace.frontmostApplication`, `AudioObjectSetPropertyData`
   against a real `BGMDevice`, `AVCaptureDevice` authorization status) that the mocked
