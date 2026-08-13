@@ -103,9 +103,21 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
   (`SharedSource/BGM_Types.h`), plus 5 more slider/label pairs added to `MainMenu.xib`.
 - The 10-band EQ's layout, from one column of 10 to two columns of 5, restoring the expanded row to
   its original height. A real install reported that clicking any slider in an expanded app row
-  closed the whole menu; the working theory (unconfirmed) is that the single-column layout's 51%
-  taller row pushed the menu into needing to scroll, which is known to break mouse tracking on
-  custom-view menu items in AppKit. See [docs/LESSONS.md](docs/LESSONS.md).
+  closed the whole menu; the working theory at the time (unconfirmed) was that the single-column
+  layout's 51% taller row pushed the menu into needing to scroll. That turned out not to be the
+  real cause — see the main dropdown rearchitecture below, which found and fixed the actual
+  underlying issue (an `NSMenu` limitation, not a row-height/scrolling one). The two-column layout
+  itself is still worth keeping on its own merits.
+- **The main status-bar dropdown is now a custom window (`BGMMainPanel`), not an `NSMenu`.** Built
+  to fix a real, confirmed bug (see Fixed, below) and to add actual structure to the per-app list:
+  a "Your Apps" section (regular apps, always visible) and a collapsed "System & Other Apps"
+  section (System Sounds + accessory/background apps), instead of one flat undifferentiated list.
+  All the existing per-app controls (mute, volume, pan, EQ, output routing), the master volume/
+  System Sounds sliders, and the Output Device list moved into it essentially unchanged. Preferences
+  stays exactly as it was — a real `NSMenu`, now popped up from a button in the new panel instead of
+  being a native submenu of the retired dropdown — since none of its content shares the interaction
+  risk that motivated replacing the *main* dropdown specifically (two exceptions noted in
+  `TODO.md`). See [docs/LESSONS.md](docs/LESSONS.md).
 
 ### Fixed
 
@@ -118,6 +130,24 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
   called `ApplyClientEQ`/`ApplyClientRelativeVolume` after the mutex guarding
   `mClientEQProcessors` had already gone out of scope, racing unsynchronized against
   `AddClient`/`RemoveClient` on another thread. See [docs/LESSONS.md](docs/LESSONS.md).
+- An uncaught-exception crash confirmed on a real install: `BGMDeviceControlSync`'s property
+  listener (`BGMDeviceListenerProc`, invoked on a CoreAudio-owned thread) called
+  `CopyVolumeFrom`/`CopyMuteFrom` with no exception handling, unlike every other CoreAudio call
+  site in the same class. Reachable whenever a previous install's app process survives a driver
+  reload (see the next entry) and its cached device object goes stale — now wrapped in
+  `BGMLogAndSwallowExceptions`, matching its siblings.
+- `build_and_install.sh`/`pkg/postinstall` didn't quit an already-running copy of the app before
+  restarting `coreaudiod` and swapping in the new driver. The old process survived the swap, kept a
+  now-stale CoreAudio object reference from before the reload, and crashed (see the entry above)
+  the next time something touched it — confirmed via a real reinstall cycle. Both scripts now quit
+  the running app first.
+- The bug the main dropdown rearchitecture (above) exists to fix: dragging the per-app volume
+  slider closed the whole menu. Confirmed via direct `NSLog` instrumentation on a real install that
+  this wasn't a lost-tracking race (an earlier custom `mouseDown:` workaround ran to completion
+  correctly every time) — `NSMenu` closes itself on any interaction's mouse-up regardless of what a
+  custom view does with that event, a real AppKit ceiling with no per-control fix, independently
+  confirmed by an unrelated app (MonitorControl) hitting the identical failure mode in production.
+  See [docs/LESSONS.md](docs/LESSONS.md).
 - A full-project pass over the main menu, Preferences, both installers, and the troubleshooting
   tooling, prompted by "what does someone actually see the moment they click this" rather than
   feature-by-feature testing:

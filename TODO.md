@@ -110,6 +110,24 @@ None of this is started. If you want to tackle one, open an issue first so effor
   already running, or whether the full wizard flow (password prompt timing, auto-launch at the
   end) matches what `pkg/postinstall`'s logic assumes.
 
+- **Verify the new `BGMMainPanel`-based main dropdown, top to bottom.** The status-bar dropdown
+  was rebuilt from scratch (2026-08-13) as a custom `NSPanel` instead of `NSMenu`, specifically to
+  fix a real, confirmed bug (dragging a per-app volume slider closed the whole menu — see
+  `docs/LESSONS.md`'s "NSMenu custom-view controls cannot prevent the menu closing on interaction"
+  entry) and to add real structure to the per-app list ("Your Apps" vs. a collapsed
+  "System & Other Apps" section). Confirmed only by clean local builds (all targets, Release
+  analyzer pass, 47/47 `BGMAppUnitTests`) and code review — **none of the following has been
+  clicked on a real running instance**: the panel actually opening/closing/positioning correctly
+  below the status item; click-outside-to-dismiss, Esc-to-close, and losing-focus-closes-it all
+  actually firing; dragging every slider type (master volume, per-app volume, pan, EQ band) no
+  longer closing the panel (the specific bug this rewrite exists to fix); arrow-key nudging on a
+  focused slider (newly possible, never tested); the "Your Apps"/"System & Other Apps" split and
+  its disclosure toggle; the Preferences button correctly popping the (unchanged) Preferences
+  `NSMenu` from inside the new panel; the panel's behavior across Space switches and full-screen
+  apps; Option-clicking the status icon still revealing the Debug Logging row; and a full regression
+  sweep of every other item already listed in this section, to confirm none of it silently broke
+  from this structural change.
+
 ## Fairly quick
 
 None open right now — the last item here (arbitrary keyboard-shortcut rebinding) shipped
@@ -158,3 +176,13 @@ None open right now — the last item here (arbitrary keyboard-shortcut rebindin
   automatically on a tag push would be a reasonable follow-up, but wasn't built now: it can't be
   verified without an actual GitHub Actions run, and getting a broken workflow file merged silently
   (only failing the next time someone tags a release) is worse than not having the automation yet.
+- **Preferences still has two controls in the same interaction-risk class** the main dropdown's
+  rewrite (2026-08-13, see `docs/LESSONS.md`) fixed everywhere else: the two Auto-pause Delay
+  sliders and the four `BGMHotkeyRecorderButton` keyboard-recording buttons, both still hosted as
+  custom `NSMenuItem` views in the (unchanged, still-`NSMenu`-based) Preferences submenu. Neither
+  has ever been confirmed to actually exhibit the closing-on-interaction bug — this isn't a known
+  regression, just an unclosed risk — but given the main dropdown's identical symptom turned out to
+  be a real, unfixable-at-the-control-level `NSMenu` ceiling, both should be treated as suspect
+  until verified on a real install. If confirmed, the fix is the same one already proven out for the
+  main dropdown: move them into a small `NSPanel`-based panel of their own (or into `BGMMainPanel`
+  itself, behind the Preferences button) rather than attempting another per-control workaround.

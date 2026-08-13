@@ -46,11 +46,14 @@ This is the minimum bar before claiming any of this session's work "works," not 
       else playing simultaneously. Drag +12dB on 4kHz — audible presence boost. Confirm all 10
       bands are visible and correctly labeled, laid out as two clean columns (31/62/125/250/500Hz
       on the left, 1/2/4/8/16kHz on the right), not clipped or overlapping. **Also confirm clicking
-      or dragging any slider — main volume, pan, or any EQ band — never closes the menu or
-      collapses the row** (a real bug reported against the original single-column 10-band layout,
-      most likely caused by the taller row pushing the menu into needing to scroll; the two-column
-      redesign keeps the row at its original height specifically to avoid this, but needs a real
-      check with several apps' rows expanded at once, not just one). Return all 10 bands to 0 —
+      or dragging any slider — main volume, pan, or any EQ band — never closes the panel or
+      collapses the row.** This was a real, confirmed bug (dragging a slider closed the whole
+      dropdown) — root-caused via direct `NSLog` instrumentation to a genuine `NSMenu` limitation,
+      not a row-height/scrolling issue as originally guessed, and fixed by replacing the entire main
+      dropdown with a custom window (`BGMMainPanel`) instead of `NSMenu`. This is the single most
+      important thing in this whole file to actually verify, since it's the reason the rewrite
+      happened — check with several apps' rows expanded at once, not just one, and specifically try
+      dragging (not just clicking) each slider type. Return all 10 bands to 0 —
       audio returns to how it sounded before touching EQ (this is the actual claim from
       `BGM_BiquadTests::testZeroGainIsExactUnity`; verify it holds for real audio, not just the
       unit test's synthetic signal).
@@ -75,9 +78,19 @@ Every control, once, confirming it does what the code says it does:
 - [ ] Output Device list shows every connected device, correctly checkmarks the current one, and
       switching updates system audio with no dropout beyond the expected brief glitch
 - [ ] AirPlay device (if available) shows its icon in the device list
-- [ ] "More Apps" submenu correctly bins background/accessory apps separately from regular ones
+- [ ] "System & Other Apps" section (replaced the old "More Apps" submenu, 2026-08-13) correctly
+      bins background/accessory apps and System Sounds separately from regular ("Your Apps") apps,
+      starts collapsed, and its disclosure toggle expands/collapses it and is disabled (not just
+      inert-looking) when there's nothing in it
 - [ ] Preferences → Status Bar Icon: switching to the volume-meter icon changes the menu bar glyph
       and reflects actual volume level; switching back restores the four-bar icon
+- [ ] The main panel itself: opens/closes/positions correctly below the status item on a real
+      screen; clicking anywhere outside it closes it; Esc closes it; it stays open and usable while
+      you interact with its own controls; Cmd-Tabbing away or clicking one of Wavecraft's other
+      windows (e.g. the About panel) closes it same as a click outside would
+- [ ] Preferences button (in the panel) pops open the Preferences menu positioned sensibly relative
+      to the button, and everything in it still works exactly as before (this content didn't change,
+      only how it's triggered)
 - [ ] Preferences → auto-pause: selecting each supported music player
       (Music/Spotify/VLC/VOX/Decibel/Hermes/Swinsian/GPMDP that's actually installed) and
       confirming play/pause actually triggers auto-pause when other audio starts/stops

@@ -553,3 +553,82 @@ already gone.
 command as a plain (non-negated) statement first, capture `$?` into a variable on the very next
 line, then branch on that variable: `out="$(cmd)"; status=$?; if [[ $status -ne 0 ]]; then ...`.
 Never combine `!`-negation with a later `$?` read in the same construct.
+
+## A property listener on a CoreAudio-owned thread crashed because it was the one call site that didn't swallow exceptions
+
+**The trap:** `BGMDeviceControlSync::BGMDeviceListenerProc` -- a property-change callback CoreAudio
+invokes on its own thread, not one of this app's -- called `mOutputDevice.CopyVolumeFrom`/
+`CopyMuteFrom` directly, no try/catch, no `BGMLogAndSwallowExceptions`. Every *other* CoreAudio call
+in the same class already had that protection. This one didn't, and nothing caught it until a real
+install crashed with an uncaught `CAException` (confirmed via a real crash report, `terminating due
+to uncaught exception of type CAException`, not inferred from reading the code).
+
+**What was actually true:** the crash was reachable in an entirely ordinary way -- a previous
+install's app process survived a driver reload (see the next entry) and kept a stale device object
+reference from before it. The first CoreAudio call against that stale reference threw, and because
+it happened on a thread CoreAudio owns rather than one this app controls, there was no outer
+handler anywhere in the call stack to catch it before it reached `std::terminate`.
+
+**How to apply:** a call site being "just like the other five in this file" isn't itself protection
+-- check each one actually has the same guard, don't assume consistency from proximity. This is
+also a second, independent argument for why swallowing exceptions on any thread CoreAudio invokes
+directly (a property listener, an IO callback) isn't optional the way it might look "safer to be
+strict" on an app's own thread: there's no caller further up able to do anything about it.
+
+## An already-running app process survived a coreaudiod restart and crashed on stale state
+
+**The trap:** re-running `build_and_install.sh`/the `.pkg` installer while a previous install's app
+was still running left that old process alive straight through the driver swap and `coreaudiod`
+restart -- the scripts copied the new driver into place and restarted the daemon, but never quit
+the already-running app first.
+
+**What was actually true, confirmed on a real reinstall cycle:** the surviving old process kept
+CoreAudio object references (a device ID, in this case) from *before* the reload. Those references
+went stale the moment the driver actually reloaded, and the first attempt to use one (dragging the
+master volume slider) crashed the app via the uncaught-exception bug in the previous entry. The
+fresh, newly-installed binary never even got a chance to run -- `open`/`launchctl asuser open` on
+an already-running app just refocuses the existing (old, stale) process instead of starting a new
+one, so the crash looked at first like "nothing happened" rather than "the wrong process crashed."
+
+**How to apply:** both scripts now quit any already-running copy of the app (via AppleScript
+`tell application ... to quit`, reached through `launchctl asuser` in `pkg/postinstall` since that
+script runs as root) before restarting `coreaudiod`, guaranteeing the process that comes back up
+afterward is running the just-installed binary against the just-reloaded driver, not a stale
+survivor of the previous one. Any future install/reinstall script that swaps out a driver or daemon
+the app holds live references to needs the same "quit first" step, not just "copy the new files and
+restart the service."
+
+## `NSMenu` custom-view controls cannot prevent the menu closing on interaction
+
+**The trap:** the per-app volume slider closed the whole menu the instant the user dragged it.
+The first fix attempted was a custom `mouseDown:` override (`BGMTrackSliderWithoutLosingMenuFocus`)
+that bypassed `NSSlider`'s own tracking loop and pumped `-nextEventMatchingMask:` directly, on the
+theory that `NSMenu`'s own tracking was racing against the slider's and sometimes winning mid-drag.
+
+**What was actually true, confirmed via direct `NSLog` instrumentation on a real install, not
+theorized:** the custom tracking loop worked *correctly* -- it ran to completion, all iterations,
+ending on a real `mouseUp`. The menu still closed anyway, about 13ms after that `mouseUp`
+returned. The close wasn't a race the slider's own code could win or lose; it happens at `NSMenu`'s
+level, triggered by the same physical mouse-up event the slider's tracking loop also observed, and
+nothing a custom view does with that event changes whether `NSMenu` treats it as "an interaction
+finished here, so close." Apple's own "Views in Menu Items" documentation confirms the ceiling
+directly: a custom `NSMenuItem` view receives mouse events, but has no supported way to prevent
+menu dismissal on mouse-up, and receives no keyboard events at all. An unrelated, similarly-scoped
+app (MonitorControl, brightness/volume sliders in an `NSMenu` dropdown) has filed, still-open
+GitHub issues describing the identical failure mode in production (#1724, #1611).
+
+**The fix:** there wasn't a control-level one. The `NSMenu`-based main dropdown was replaced
+entirely with a custom `NSPanel` (`BGMMainPanel`) -- borderless, `.nonactivatingPanel`,
+`canBecomeKeyWindow` overridden `YES`, dismissed via a global mouse-down monitor instead of
+`NSMenu`'s automatic behavior. Once hosted in a real window, the `BGMTrackSliderWithoutLosingMenuFocus`
+workaround was itself removed -- plain `[super mouseDown:]` behaves correctly there, and, as a
+side effect neither the old `NSMenu` design nor the workaround ever provided, arrow-key nudging on
+a focused slider now works too. Reference recipe: `jordanbaird/Ice`'s `IceBarPanel`/
+`MenuBarSearchPanel` (a real, shipping open-source menu-bar app solving the identical problem).
+
+**How to apply:** any future interactive custom view hosted in an `NSMenuItem.view` in this
+codebase (Preferences still has two: the Auto-pause Delay sliders and the `BGMHotkeyRecorderButton`
+controls, both flagged in `TODO.md` as a follow-up, not yet moved) has this same architectural
+ceiling. Don't chase a reported "the menu closes/doesn't respond right" bug against one of those as
+if it were a bug in that specific control -- it isn't fixable there, only by moving the control out
+of `NSMenu` entirely.
