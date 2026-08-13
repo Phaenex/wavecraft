@@ -80,11 +80,19 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
   the volume sliders use, remembering each app's own volume to restore on disable. A newly-launched
   app while it's on gets muted immediately via an `NSWorkspace.runningApplications` KVO observer.
   Resumes automatically on next launch if left enabled.
-- A prebuilt-release install path (`package_release.sh`, `install_prebuilt.sh`) for people without
-  Xcode — downloads a zip from GitHub Releases and double-clicks an installer, instead of building
-  from source. Since this project has no paid Apple Developer ID, the release isn't notarized and
-  both the installer and the app it installs show a Gatekeeper warning the first time; the README's
-  "Installing a prebuilt release" section explains why and exactly what to click.
+- Two prebuilt-release install paths for people without Xcode, instead of building from source:
+  - **`package.sh`** (revived and rebranded from upstream's own release pipeline, which this fork
+    had left un-rebranded and unused) builds a real `.pkg` installer via `pkgbuild`/`productbuild`
+    — the normal Introduction/License/Install/Summary flow any other Mac software uses, driven by
+    `pkg/Distribution.xml.template` (title, background image) and `pkg/preinstall`/`pkg/postinstall`
+    (installs the driver and `BGMXPCHelper`, restarts `coreaudiod`, waits for the device to actually
+    appear before declaring success, then opens Wavecraft). This is the recommended path.
+  - **`package_release.sh`**/`install_prebuilt.sh` build a zip containing a double-clickable
+    `.command` script instead, for anyone who'd rather see exactly what's happening in a terminal
+    window than click through an installer wizard.
+  - Neither is signed or notarized (no paid Apple Developer ID configured for this project yet), so
+    both the installer and the app it installs show a Gatekeeper warning the first time; the
+    README's "Installing a prebuilt release" section explains why and exactly what to click.
 
 ### Changed
 

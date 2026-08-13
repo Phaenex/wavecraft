@@ -101,6 +101,14 @@ None of this is started. If you want to tackle one, open an issue first so effor
   silent (not just that its slider visually moves), launch a third app while it's still on and
   confirm it's muted immediately, then turn Do Not Disturb off and confirm all volumes return to
   what they were before, not to a default.
+- **Verify the `.pkg` installer actually walks through cleanly** (added 2026-08-12, `package.sh` +
+  `pkg/`). Confirmed by direct inspection: `pkgutil --expand`/`--payload-files`/`--check-signature`
+  show the right files (driver, app, XPC helper, all the install scripts), the right
+  `Distribution.xml` content (title, background image, bundle-version checks), and correctly "no
+  signature." Never actually opened in Installer.app — no way to confirm from here whether the
+  background image renders correctly, whether the "quit Wavecraft first" check works if it's
+  already running, or whether the full wizard flow (password prompt timing, auto-launch at the
+  end) matches what `pkg/postinstall`'s logic assumes.
 
 ## Fairly quick
 
@@ -140,7 +148,13 @@ None open right now — the last item here (arbitrary keyboard-shortcut rebindin
   state (`AXIsProcessTrusted()`, `NSWorkspace.frontmostApplication`, `AudioObjectSetPropertyData`
   against a real `BGMDevice`, `AVCaptureDevice` authorization status) that the mocked
   `BGMAppUnitTests` target can't exercise, for the same reason `BGMTapRouteTests.mm` explains.
-- Upstream's `release` job (building a signed `.pkg`) was already removed from
+- Upstream's `release` job (building a *signed* `.pkg` in CI) was already removed from
   `.github/workflows/build-test.yml` (see that file's own top comment and CHANGELOG.md's
   "Removed" section) — it needs an Apple Developer ID and notarization credentials this fork
-  doesn't have configured. Source-build is the only distribution method right now; see the README.
+  doesn't have configured. `package.sh` (revived and rebranded 2026-08-12, see CHANGELOG.md) builds
+  the same *unsigned* `.pkg` locally, run by hand rather than in CI — attaching one to a GitHub
+  Release today means running `./package.sh` locally and uploading the resulting
+  `Wavecraft-<version>/Wavecraft-<version>.unsigned.pkg` by hand. Re-adding a CI job that does this
+  automatically on a tag push would be a reasonable follow-up, but wasn't built now: it can't be
+  verified without an actual GitHub Actions run, and getting a broken workflow file merged silently
+  (only failing the next time someone tags a release) is worse than not having the automation yet.

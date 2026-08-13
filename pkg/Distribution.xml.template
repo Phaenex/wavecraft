@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <installer-gui-script minSpecVersion="1">
-    <title>Background Music {{VERSION}}</title>
+    <title>Wavecraft {{VERSION}}</title>
 
     <volume-check>
         <allowed-os-versions>
@@ -39,7 +39,7 @@
         </must-close>
     </pkg-ref>
 
-    <background file="FermataIcon.pdf" alignment="bottomleft" mime-type="application/pdf" />
+    <background file="WavecraftIcon.png" alignment="bottomleft" mime-type="image/png" />
 </installer-gui-script>
 
 

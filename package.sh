@@ -22,9 +22,18 @@
 # Copyright © 2017-2022 Kyle Neideck
 # Copyright © 2016, 2017 Takayama Fumihiko
 # Copyright © 2023 modue sp. z o.o.
+# Copyright © 2026 Wavecraft contributors
 #
-# Builds Background Music and packages it into a .pkg file. Call this script with -d to use the
-# debug build configuration.
+# Builds Wavecraft (still "Background Music" internally -- see CLAUDE.md's Icons section) and
+# packages it into a real .pkg installer, with the normal Installer.app GUI (Introduction, license,
+# progress, and a background image) rather than a Terminal script. This is the primary way to
+# distribute a prebuilt release; package_release.sh's zip is the lighter, no-GUI-installer
+# alternative for people who'd rather see exactly what's happening. Call this script with -d to use
+# the debug build configuration.
+#
+# Unsigned by default (see the TODO on code signing below) -- this project doesn't have a paid
+# Apple Developer ID yet, so both the .pkg and the app it installs will show a Gatekeeper warning
+# the first time. See README.md's "Installing a prebuilt release" section for what that looks like.
 #
 # Call it with -r expanded_package_dir to repackage a package expanded using
 #     pkgutil --expand-full original_package.pkg expanded_package_dir
@@ -126,7 +135,7 @@ version="$(/usr/libexec/PlistBuddy \
     "${bgmapp_path}/Contents/Info.plist")"
 
 # Everything in out_dir at the end of this script will be released in the CI builds.
-out_dir="Background-Music-$version"
+out_dir="Wavecraft-$version"
 rm -rf "$out_dir"
 mkdir "$out_dir"
 
@@ -134,7 +143,7 @@ if [[ $packaging_operation == "make_release_package" ]]; then
     # Put the archives in a zip file. This file is mainly useful because the debug symbols (dSYMs)
     # are in it.
     echo "Making archives zip"
-    zip -r --quiet "$out_dir/background-music-xcarchives-$version.zip" "archives"
+    zip -r --quiet "$out_dir/wavecraft-xcarchives-$version.zip" "archives"
 fi
 
 # --------------------------------------------------
@@ -209,10 +218,15 @@ rm -rf "pkgres"
 mkdir -p "pkgres"
 
 if [[ $packaging_operation == "repackage" ]]; then
-    cp "${repackage_dir}/Resources/FermataIcon.pdf" "pkgres"
+    cp "${repackage_dir}/Resources/WavecraftIcon.png" "pkgres"
     cp "${repackage_dir}/Distribution" "pkg/Distribution.xml"
 else
-    cp "Images/FermataIcon.pdf" "pkgres"
+    # The installer background image -- the real, colorful app icon, not the small monochrome
+    # menu-bar glyph at BGMApp/BGMApp/Images.xcassets/WavecraftIcon.imageset/WavecraftIcon.pdf
+    # (that one's sized and styled for a menu bar, not a Finder-sized installer window). 512px is
+    # plenty for how small Installer.app actually renders this, and keeps the .pkg's size down
+    # versus the 1024px master.
+    cp "BGMApp/BGMApp/Images.xcassets/AppIcon.appiconset/appicon_512.png" "pkgres/WavecraftIcon.png"
     # Populate the Distribution.xml template and copy it. It only has one template variable so far.
     sed "s/{{VERSION}}/$version/g" "pkg/Distribution.xml.template" > "pkg/Distribution.xml"
 fi
@@ -221,13 +235,13 @@ fi
 
 if [[ $packaging_operation == "repackage" ]]; then
     # Include "repackaged" in the filename just to make it clear.
-    pkg="$out_dir/BackgroundMusic-$version.repackaged.pkg"
+    pkg="$out_dir/Wavecraft-$version.repackaged.pkg"
 else
     # As a security check for releases, we manually build the same package locally, compare it to
     # the release built in CI and then code sign it. (And then remove the code signature on a
     # different computer and check that it still matches the one from CI.) So we include "unsigned"
     # in the name to differentiate the two versions.
-    pkg="$out_dir/BackgroundMusic-$version.unsigned.pkg"
+    pkg="$out_dir/Wavecraft-$version.unsigned.pkg"
 fi
 
 pkg_identifier="com.bearisdriving.BGM"
@@ -267,8 +281,8 @@ shasum -a 256 "$pkg"
 
 if [[ $packaging_operation == "make_release_package" ]]; then
     # Print the checksums of the archives zip.
-    md5 "$out_dir/background-music-xcarchives-$version.zip"
+    md5 "$out_dir/wavecraft-xcarchives-$version.zip"
     echo -n "SHA256 "
-    shasum -a 256 "$out_dir/background-music-xcarchives-$version.zip"
+    shasum -a 256 "$out_dir/wavecraft-xcarchives-$version.zip"
 fi
 

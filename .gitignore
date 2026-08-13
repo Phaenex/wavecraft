@@ -5,13 +5,15 @@
 .idea/
 tags
 cmake-build-debug/
-/Background-Music-*/
 BGM.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
 Images/*.aux
 Images/*.log
 /archives/
 /release-staging/
+# package_release.sh's output (a zip) and package.sh's (a dir containing a .pkg, plus a
+# dSYM-bearing xcarchives zip inside it).
 /Wavecraft-*.zip
+/Wavecraft-*/
 
 # Everything below is from https://github.com/github/gitignore/blob/master/Objective-C.gitignore
 

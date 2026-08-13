@@ -33,7 +33,7 @@ if [ "$(bash safe_install_dir.sh "$xpc_helper_path")" != "1" ]; then
     msg+="be secure to do so.\n\n"
     msg+="${xpc_helper_path} and all of its parent directories should be owned by 'root', with the "
     msg+="group 'wheel', and have permissions 755 (rwxr-xr-x).\n\n"
-    msg+="Background Music will still work if you decide to continue."
+    msg+="Wavecraft will still work if you decide to continue."
 
     if [ "$COMMAND_LINE_INSTALL" == "1" ]; then
         # As far as I can tell, we can't print anything the user is likely to see.

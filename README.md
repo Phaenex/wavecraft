@@ -102,23 +102,39 @@ Per-app EQ has no extra requirement beyond the base app.
 
 There's no *signed* release — no Apple Developer ID is configured for this project (that's a
 $99/year enrollment; see [Why a fork instead of a paid app](#why-a-fork-instead-of-a-paid-app) for
-what that would take). Two ways to install anyway, depending on whether you have Xcode:
+what that would take). Three ways to install anyway, depending on what you'd rather deal with:
 
-## Option A — prebuilt release (no Xcode needed)
+## Option A — prebuilt .pkg installer (no Xcode needed, recommended)
 
-1. Download the latest zip from [Releases](https://github.com/Phaenex/wavecraft/releases).
+1. Download the latest `Wavecraft-*.pkg` from [Releases](https://github.com/Phaenex/wavecraft/releases).
+2. Double-click it. **You'll likely see a macOS security warning right away** — since it was
+   downloaded rather than built on your Mac. This is expected, not a sign anything is broken; see
+   [Installing a prebuilt release](#installing-a-prebuilt-release-what-the-warning-means) below for
+   exactly what it looks like and how to get past it (a one-time thing, not on every launch).
+3. Once it's past that, macOS's own Installer app opens — the same Introduction / License /
+   Install / Summary flow any other Mac software uses. It asks for your Mac password partway
+   through, needed to install the audio driver.
+4. Wavecraft opens automatically once installation finishes.
+
+Built with `package.sh` — see that file and `pkg/` for exactly how (based on upstream's own
+release-packaging pipeline, rebranded).
+
+## Option B — prebuilt zip + script (no Xcode needed, no GUI installer)
+
+For anyone who'd rather see exactly what's happening in a terminal window than click through an
+installer wizard, or if the `.pkg` doesn't work for some reason:
+
+1. Download the latest `Wavecraft-*-macOS.zip` from
+   [Releases](https://github.com/Phaenex/wavecraft/releases).
 2. Unzip it, and inside the unzipped folder, double-click **Install Wavecraft.command**.
-3. **You'll likely see a macOS security warning right away**, before Terminal even opens — since
-   this file was downloaded rather than built on your Mac. This is expected, not a sign anything is
-   broken; see [Installing a prebuilt
-   release](#installing-a-prebuilt-release-what-the-warning-means) below for exactly what it looks
-   like and how to get past it (a one-time thing per file, not on every launch).
+3. **You'll likely see a macOS security warning right away**, before Terminal even opens — same
+   reason and same fix as Option A above.
 4. Once it's past that, it opens Terminal, explains exactly what it's about to do, and asks for
    your Mac password partway through — that's needed to install the audio driver, not optional.
 5. You'll likely need to get past the same kind of warning **one more time**, for the Wavecraft app
    itself, the first time the installer tries to open it at the end.
 
-## Option B — build from source (needs Xcode)
+## Option C — build from source (needs Xcode)
 
 Building it yourself avoids the warning above entirely — a locally-built app is trusted
 automatically, since it was never downloaded. It's also the *only* way to get a build newer than
@@ -175,9 +191,12 @@ one yet, so the prebuilt release isn't notarized — which means you'll see a re
 you'll need to manually tell macOS you trust it. That's the actual cost of skipping the $99/year
 fee, not a bug in the build.
 
-**What you'll likely see**, on both the installer script and the app it installs: something like
-*"Apple could not verify 'Wavecraft' is free of malware that may harm your Mac or compromise your
-privacy"* — no direct "Open" button, just "Done" or "Move to Trash."
+**What you'll likely see**, on the `.pkg`/installer script and the app it installs alike: something
+like *"Apple could not verify 'Wavecraft' is free of malware that may harm your Mac or compromise
+your privacy"* — no direct "Open" button, just "Done" or "Move to Trash." For the `.pkg`
+specifically, macOS may instead just refuse to open it at all with no dialog the first time,
+sending you straight to System Settings — same underlying cause, same fix below; the exact wording
+depends on your macOS version and isn't something that's been confirmed against every one.
 
 **Getting past it** (once per file, never again after):
 - **Try first:** right-click (or Control-click) the file in Finder and choose **Open**. On older
@@ -188,7 +207,7 @@ privacy"* — no direct "Open" button, just "Done" or "Move to Trash."
 
 This is standard macOS behavior for any unsigned software, not specific to Wavecraft — the same
 thing happens with plenty of legitimate open-source Mac software that hasn't paid for
-notarization. If you'd rather avoid it entirely, build from source instead (Option B above); a
+notarization. If you'd rather avoid it entirely, build from source instead (Option C above); a
 locally-built copy is trusted from the start.
 
 # Run / Configure
