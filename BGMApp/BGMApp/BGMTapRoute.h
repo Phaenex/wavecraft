@@ -70,9 +70,21 @@ public:
 
      @throws CAException If creating the tap or aggregate device fails, or if BGMPlayThrough fails
                          to activate/start. Safe to call Stop() (or just destroy this object) after
-                         a failed Start() -- cleans up whatever was actually created.
+                         a failed Start() -- cleans up whatever was actually created. The exception's
+                         GetError() is kMacOSTooOld if this system doesn't support
+                         CATapDescription.processRestoreEnabled, kOutputDeviceVanished if the output
+                         device given to the constructor is no longer alive by the time this throws
+                         (checked directly, not inferred from whichever ambiguous CoreAudio error
+                         happened to come back -- see BGMTapRoute.mm), or the raw OSStatus CoreAudio
+                         itself returned for any other failure.
      */
     void                Start();
+
+    // Distinguishable causes for a Start() failure -- see its doc comment above. Picked as
+    // arbitrary values outside the OSStatus range CoreAudio itself uses for FourCharCode-style
+    // error constants, the same way BGMPlayThrough::kDeviceNotStarting is.
+    static const OSStatus kMacOSTooOld = 200;
+    static const OSStatus kOutputDeviceVanished = 201;
 
     /*!
      Stops routing, unmutes the app's normal output, and destroys the tap and aggregate device.
@@ -91,6 +103,7 @@ public:
 private:
     void                CreateTapAndAggregateDevice();
     void                DestroyTapAndAggregateDevice() noexcept;
+    bool                OutputDeviceIsAlive() const noexcept;
 
     CACFString                          mAppBundleID;
     BGMAudioDevice                      mOutputDevice;

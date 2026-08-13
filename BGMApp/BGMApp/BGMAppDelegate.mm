@@ -85,6 +85,7 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
 
 @synthesize audioDevices = audioDevices;
 @synthesize appVolumes = appVolumes;
+@synthesize outputRoutingController = outputRoutingController;
 
 - (void) awakeFromNib {
     [super awakeFromNib];
@@ -377,16 +378,60 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
                 if (appIconTitleOffset == 0) {
                     appIconTitleOffset = appTitle.frame.origin.x - appIcon.frame.origin.x;
                 }
-                
+
                 CGRect newAppIcon = appIcon.frame;
                 newAppIcon.origin.x = menuOffset;
                 appIcon.frame = newAppIcon;
                 CGRect newAppTitle = appTitle.frame;
                 newAppTitle.origin.x = menuOffset + appIconTitleOffset;
                 appTitle.frame = newAppTitle;
+
+                // Show which apps have an active output-route override without opening their row
+                // -- hasOutputOverrideForBundleID: already existed with no callers (a per-app
+                // output-routing feature with no way to tell it's active without expanding every
+                // row individually). This runs every time the menu opens, which naturally picks up
+                // routes added/removed since the last time it was open.
+                if (menuItem.view.subviews.count == 7 && appTitle) {
+                    NSRunningApplication* app = menuItem.representedObject;
+                    NSString* bundleID = app.bundleIdentifier;
+                    BOOL isRouted = bundleID && [outputRoutingController hasOutputOverrideForBundleID:bundleID];
+                    [self bgm_setAppNameLabel:appTitle
+                                       toName:(app.localizedName ? (NSString*)app.localizedName : @"")
+                                    isRouted:isRouted];
+                }
             }
         }
     }
+}
+
+// Sets appTitle's text to name, appending a small icon indicating an active output-route override
+// when isRouted is true -- see the routing-indicator comment in menuWillOpen: above.
+- (void) bgm_setAppNameLabel:(NSTextField*)appTitle toName:(NSString*)name isRouted:(BOOL)isRouted {
+    if (!isRouted) {
+        appTitle.stringValue = name;
+        return;
+    }
+
+    NSMutableAttributedString* title =
+        [[NSMutableAttributedString alloc] initWithString:[name stringByAppendingString:@"  "]];
+
+    if ([NSImage respondsToSelector:@selector(imageWithSystemSymbolName:accessibilityDescription:)]) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wpartial-availability"
+        NSImage* routedIcon = [NSImage imageWithSystemSymbolName:@"airplayaudio"
+                                          accessibilityDescription:@"Output routed to another device"];
+#pragma clang diagnostic pop
+        NSTextAttachment* attachment = [NSTextAttachment new];
+        attachment.image = routedIcon;
+        // Sized and nudged to sit on the text baseline instead of towering over lowercase letters
+        // the way an unscaled 17pt SF Symbol glyph does next to a system-size menu font.
+        attachment.bounds = NSMakeRect(0, -2, 12, 10);
+        [title appendAttributedString:[NSAttributedString attributedStringWithAttachment:attachment]];
+    } else {
+        [title appendAttributedString:[[NSAttributedString alloc] initWithString:@"↦"]];
+    }
+
+    appTitle.attributedStringValue = title;
 }
 
 - (void) setUpMainMenu {

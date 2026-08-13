@@ -72,13 +72,55 @@ void    BGMTapRoute::Start()
 
         mRunning = true;
     }
-    catch(...)
+    catch(const CAException& e)
     {
         // Clean up whatever actually got created before rethrowing, so a caller that catches
         // this and gives up doesn't leak the tap/aggregate device or leave the app muted.
         mPlayThrough = nullptr;
         DestroyTapAndAggregateDevice();
+
+        // kMacOSTooOld is already unambiguous -- it's thrown before any CoreAudio call is even
+        // attempted, so mOutputDevice's actual state has nothing to do with it. For everything
+        // else, check mOutputDevice directly rather than trusting the OSStatus we happened to get
+        // back: kAudioHardwareBadDeviceError/kAudioHardwareIllegalOperationError are both reused
+        // for unrelated reasons elsewhere in BGMPlayThrough, so they aren't a reliable signal on
+        // their own that the device actually vanished -- see the comment on Start() in the header.
+        if (e.GetError() != kMacOSTooOld && !OutputDeviceIsAlive())
+        {
+            throw CAException(kOutputDeviceVanished);
+        }
+
         throw;
+    }
+    catch(...)
+    {
+        mPlayThrough = nullptr;
+        DestroyTapAndAggregateDevice();
+        throw;
+    }
+}
+
+bool    BGMTapRoute::OutputDeviceIsAlive() const noexcept
+{
+    // CAHALAudioObject::ObjectExists is safe to call on an ID that's already gone -- it just
+    // returns false. CAHALAudioDevice::IsAlive() isn't: it does a real HAL property fetch, which
+    // throws if the object doesn't exist at all, so it's only safe to call once ObjectExists has
+    // already confirmed the object is there to ask.
+    if (!CAHALAudioObject::ObjectExists(mOutputDevice.GetObjectID()))
+    {
+        return false;
+    }
+
+    try
+    {
+        return mOutputDevice.IsAlive();
+    }
+    catch (...)
+    {
+        // Treat "couldn't even ask" as "not alive" -- this method exists specifically to decide
+        // whether a failure looks like a vanished device, and a device that can't answer a basic
+        // liveness query already looks exactly like one that vanished.
+        return false;
     }
 }
 
@@ -166,7 +208,7 @@ void    BGMTapRoute::CreateTapAndAggregateDevice()
     }
     else
     {
-        Throw(CAException(kAudioHardwareUnsupportedOperationError));
+        Throw(CAException(kMacOSTooOld));
     }
 }
 

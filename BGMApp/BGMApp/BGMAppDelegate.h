@@ -28,6 +28,7 @@
 
 @class BGMAudioDeviceManager;
 @class BGMAppVolumesController;
+@class BGMAppOutputRoutingController;
 
 // Tags for UI elements in MainMenu.xib
 static NSInteger const kVolumesHeadingMenuItemTag = 3;
@@ -54,6 +55,9 @@ static NSInteger const kSeparatorBelowVolumesMenuItemTag = 4;
 
 @property (readonly) BGMAudioDeviceManager* audioDevices;
 @property BGMAppVolumesController* appVolumes;
+// Exposed publicly (mirroring appVolumes) so AppleScript support can reach it -- see
+// BGMAppDelegate+AppleScript.mm.
+@property (readonly) BGMAppOutputRoutingController* outputRoutingController;
 
 @end
 

@@ -53,6 +53,11 @@
     std::map<std::string, std::unique_ptr<BGMTapRoute>> routes;
 
     dispatch_queue_t routingQueue;
+
+    // Notifies removeRoutesForDisconnectedDevices when any device connects/disconnects -- not
+    // specific to routed devices, since kAudioHardwarePropertyDevices fires for any device, not
+    // just ones this class cares about. See listenForDevicesAddedOrRemoved.
+    AudioObjectPropertyListenerBlock deviceListListener;
 }
 
 - (instancetype) initWithUserDefaults:(BGMUserDefaults*)inUserDefaults {
@@ -68,6 +73,13 @@
                                         forKeyPath:@"runningApplications"
                                            options:NSKeyValueObservingOptionNew
                                            context:nil];
+
+        // Watch for a routed device disconnecting mid-route -- without this, BGMTapRoute's own
+        // IsAlive()/ObjectExists() checks are purely reactive (only consulted the next time
+        // something else calls Start()/Stop()/Activate()), so a route to a device that's already
+        // unplugged would otherwise just keep reporting IsRunning() == true indefinitely. See
+        // docs/PROCESS-TAP-ROUTING.md and TODO.md's note on this gap.
+        [self listenForDevicesAddedOrRemoved];
     }
 
     return self;
@@ -78,6 +90,11 @@
                                        forKeyPath:@"runningApplications"
                                           context:nil];
 
+    CAHALAudioSystemObject().RemovePropertyListenerBlock(
+        CAPropertyAddress(kAudioHardwarePropertyDevices),
+        dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0),
+        deviceListListener);
+
     // routes is "only ever touched on routingQueue" (see its declaration above), but ARC would
     // otherwise destruct it here on whatever thread drops this object's last reference, which
     // isn't guaranteed to be routingQueue. dispatch_sync so routes.clear() -- which runs each
@@ -85,6 +102,50 @@
     // the right queue before this object (and its ivars) finish being destroyed.
     dispatch_sync(routingQueue, ^{
         routes.clear();
+    });
+}
+
+#pragma mark Handling Disconnected Devices
+
+- (void) listenForDevicesAddedOrRemoved {
+    BGMAppOutputRoutingController* __weak weakSelf = self;
+
+    deviceListListener = ^(UInt32 inNumberAddresses, const AudioObjectPropertyAddress* inAddresses) {
+        #pragma unused (inNumberAddresses, inAddresses)
+
+        BGM_Utils::LogAndSwallowExceptions(BGMDbgArgs, [&] {
+            [weakSelf removeRoutesForDisconnectedDevices];
+        });
+    };
+
+    CAHALAudioSystemObject().AddPropertyListenerBlock(
+        CAPropertyAddress(kAudioHardwarePropertyDevices),
+        dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0),
+        deviceListListener);
+}
+
+// Tears down (but doesn't un-persist) any route whose target device is no longer connected. The
+// persisted assignment in userDefaults survives, so it's reapplied automatically if the device
+// reconnects later -- the same restoration path restoreRoutesForApps: already uses for apps that
+// weren't running yet, applied here to a device that wasn't connected yet instead.
+- (void) removeRoutesForDisconnectedDevices {
+    // outputRouteDeviceUIDsByBundleID is documented main-thread-only (see its call sites elsewhere
+    // in this class); the property listener block runs on a background queue, so hop to the main
+    // thread before reading it.
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSDictionary<NSString*, NSString*>* assignments = self->userDefaults.outputRouteDeviceUIDsByBundleID;
+
+        for (NSString* bundleID in assignments) {
+            NSString* deviceUID = assignments[bundleID];
+
+            if ([self findConnectedDeviceIDForUID:deviceUID] == kAudioObjectUnknown) {
+                DebugMsg("BGMAppOutputRoutingController::removeRoutesForDisconnectedDevices: "
+                         "Device %s for %s is no longer connected -- clearing its route",
+                         deviceUID.UTF8String,
+                         bundleID.UTF8String);
+                [self applyRouteAsyncForBundleID:bundleID deviceUID:nil appName:nil];
+            }
+        }
     });
 }
 
@@ -176,6 +237,10 @@
 
 - (BOOL) hasOutputOverrideForBundleID:(NSString*)bundleID {
     return userDefaults.outputRouteDeviceUIDsByBundleID[bundleID] != nil;
+}
+
+- (NSString* __nullable) outputOverrideDeviceUIDForBundleID:(NSString*)bundleID {
+    return userDefaults.outputRouteDeviceUIDsByBundleID[bundleID];
 }
 
 - (void) removeAllOutputOverrides {
@@ -289,11 +354,21 @@
     } catch (const CAException& e) {
         LogError("BGMAppOutputRoutingController::applyRouteForBundleID: CAException %d",
                  static_cast<int>(e.GetError()));
-        [self showRoutingErrorForAppName:appName
-                                   reason:[NSString stringWithFormat:
-                                               @"CoreAudio error %d. Per-app output routing needs "
-                                                "macOS 26 or later.",
-                                               static_cast<int>(e.GetError())]];
+
+        // BGMTapRoute::Start() distinguishes these two specific causes from a generic CoreAudio
+        // failure -- see its header comment. Only the fallback case is actually about a raw
+        // OSStatus; the other two have a real, specific explanation to show instead of a code.
+        NSString* reason;
+        if (e.GetError() == BGMTapRoute::kMacOSTooOld) {
+            reason = @"Per-app output routing needs macOS 26 or later.";
+        } else if (e.GetError() == BGMTapRoute::kOutputDeviceVanished) {
+            reason = @"That output device disconnected before routing could start.";
+        } else {
+            reason = [NSString stringWithFormat:@"CoreAudio error %d.",
+                                                  static_cast<int>(e.GetError())];
+        }
+
+        [self showRoutingErrorForAppName:appName reason:reason];
     } catch (...) {
         LogError("BGMAppOutputRoutingController::applyRouteForBundleID: Unknown exception");
         [self showRoutingErrorForAppName:appName reason:@"An unknown error occurred."];

@@ -68,10 +68,22 @@
 // to catch up to it.
 - (BOOL) hasOutputOverrideForBundleID:(NSString*)bundleID;
 
+// The UID of the device bundleID's audio is currently routed to, or nil if it has no override
+// (i.e. it's using the default output). Same underlying value hasOutputOverrideForBundleID: checks
+// for nil-ness -- exposed as its own accessor for callers (AppleScript support) that need the
+// actual UID, not just whether one exists.
+- (NSString* __nullable) outputOverrideDeviceUIDForBundleID:(NSString*)bundleID;
+
 // Removes every current output-device override, returning all routed apps to Wavecraft's normal
 // default-output path. For the "Remove All Output Routing Overrides" troubleshooter -- a panic
 // button for the newest, least-tested feature in the app, in case a route gets stuck.
 - (void) removeAllOutputOverrides;
+
+// The AudioObjectID of the currently-connected device with the given UID, or kAudioObjectUnknown
+// if no connected device has it. Exposed publicly (this class already needs to resolve UIDs to
+// live devices for its own popup) so AppleScript support can resolve a UID to a real device object
+// without duplicating this lookup.
+- (AudioObjectID) findConnectedDeviceIDForUID:(NSString*)uid;
 
 @end
 
