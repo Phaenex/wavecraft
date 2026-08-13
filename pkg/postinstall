@@ -63,15 +63,27 @@ log "Removing com.apple.quarantine attribute from BGMXPCHelper."
 sudo xattr -dr com.apple.quarantine "${xpc_helper_install_path}/BGMXPCHelper.xpc" 2>&1 | log_output
 ls -lah@ "${xpc_helper_install_path}/BGMXPCHelper.xpc" 2>&1 | log_output
 
-# TODO: Fail the install and show an error message if this fails.
-bash "post_install.sh" "$xpc_helper_install_path" "BGMXPCHelper.xpc/Contents/MacOS/BGMXPCHelper" "."
+if ! bash "post_install.sh" "$xpc_helper_install_path" "BGMXPCHelper.xpc/Contents/MacOS/BGMXPCHelper" "."; then
+    log "post_install.sh failed -- BGMXPCHelper (which relaunches Wavecraft after a crash and" \
+        "restores your chosen output device if it terminates abnormally) was not installed."
+    if [ "$COMMAND_LINE_INSTALL" != "1" ]; then
+        osascript <<EOT || true
+            tell application id "com.apple.systemuiserver"
+                display alert "Wavecraft installation failed" \
+                    message "The audio driver installed, but the BGMXPCHelper background service did not. Check Console.app for \"post_install.sh\" for details, or try installing again." \
+                    as critical
+            end tell
+EOT
+    fi
+    exit 1
+fi
 
 # TODO: Verify the installed files, their permissions, the _BGMXPCHelper user/group, etc.
 
 # The extra or-clauses are fallback versions of the command that restarts coreaudiod. Apparently
 # some of these commands don't work with older versions of launchctl, so I figure there's no
 # harm in trying a bunch of different ways (which should all work).
-(sudo launchctl kickstart -k system/com.apple.audio.coreaudiod &>/dev/null || \
+if (sudo launchctl kickstart -k system/com.apple.audio.coreaudiod &>/dev/null || \
     sudo launchctl kill SIGTERM system/com.apple.audio.coreaudiod &>/dev/null || \
     sudo launchctl kill TERM system/com.apple.audio.coreaudiod &>/dev/null || \
     sudo launchctl kill 15 system/com.apple.audio.coreaudiod &>/dev/null || \
@@ -79,8 +91,15 @@ bash "post_install.sh" "$xpc_helper_install_path" "BGMXPCHelper.xpc/Contents/Mac
     sudo killall coreaudiod &>/dev/null || \
     (sudo launchctl unload "$coreaudiod_plist" &>/dev/null && \
         sudo launchctl load "$coreaudiod_plist" &>/dev/null)
-    ) && \
+    ); then
     sleep 2
+else
+    # Distinct from "Background Music device not found" below -- that message covers both "the
+    # restart itself failed" and "the restart worked but the driver still isn't loading" as if
+    # they were the same problem, which makes debugging a real report harder than it needs to be.
+    log "Every method of restarting coreaudiod failed. Continuing anyway, but the audio device" \
+        "check below will very likely also fail."
+fi
 
 # Wait until coreaudiod has restarted and BGMDevice is ready to use.
 retries=5
@@ -89,8 +108,16 @@ while [[ $retries -gt 0 ]]; do
 
     # The system_profiler command above doesn't work on GitHub Actions, so also try this
     # alternative, which does. I haven't looked into the root cause, so this may be necessary for
-    # other systems as well.
-    input_device_list="$(./ListInputDevices)"
+    # other systems as well. Only a fallback for system_profiler, so a failure here isn't fatal on
+    # its own -- but note it distinctly rather than letting a crashed/missing binary look identical
+    # to "ran fine, found nothing."
+    input_device_list="$(./ListInputDevices 2>&1)"
+    list_input_devices_status=$?
+    if [[ ${list_input_devices_status} -ne 0 ]]; then
+        log "ListInputDevices itself failed to run (exit ${list_input_devices_status}) --" \
+            "falling back to system_profiler alone for this check."
+        input_device_list=""
+    fi
 
     # "BGMDevice" is the UID, which is a stable identifier. device_list doesn't include the UIDs, so
     # we have to check for BGMDevice's name.
@@ -166,9 +193,20 @@ while [[ $did_open_bgmapp != "true" ]] && [[ $retries -gt 0 ]]; do
 done
 
 # If we couldn't open BGMApp, it probably didn't install properly, but it's not certain, so don't
-# fail the install.
+# fail the install -- but do make sure the user actually finds out, rather than seeing Installer's
+# normal "installation was successful" screen with no menu bar icon and no explanation why.
 if [[ $did_open_bgmapp != "true" ]]; then
     log "Failed to open Background Music.app. Giving up."
+
+    if [ "$COMMAND_LINE_INSTALL" != "1" ]; then
+        osascript <<EOT || true
+            tell application id "com.apple.systemuiserver"
+                display alert "Wavecraft installed, but didn't open automatically" \
+                    message "Everything installed correctly, but Wavecraft couldn't be launched automatically. Open it yourself from the Applications folder -- look for \"Background Music\" (Wavecraft's internal name hasn't changed)." \
+                    as warning
+            end tell
+EOT
+    fi
 fi
 
 # The installer plays a sound when it finishes, so give BGMApp a second to launch.

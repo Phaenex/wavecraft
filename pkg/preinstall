@@ -28,15 +28,20 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin; export PATH
 xpc_helper_path="$(bash safe_install_dir.sh -y)"
 
 if [ "$(bash safe_install_dir.sh "$xpc_helper_path")" != "1" ]; then
-    # TODO: This message could be more user friendly.
-    msg="We need to install a helper app called BGMXPCHelper to ${xpc_helper_path}, but it may not "
+    msg="We need to install a background helper service to ${xpc_helper_path}, but it may not "
     msg+="be secure to do so.\n\n"
     msg+="${xpc_helper_path} and all of its parent directories should be owned by 'root', with the "
-    msg+="group 'wheel', and have permissions 755 (rwxr-xr-x).\n\n"
+    msg+="group 'wheel', and have permissions 755 (rwxr-xr-x). To fix it yourself first, run:\n"
+    msg+="  sudo chown -R root:wheel \"${xpc_helper_path}\"\n"
+    msg+="  sudo chmod -R 755 \"${xpc_helper_path}\"\n"
+    msg+="then try installing again.\n\n"
     msg+="Wavecraft will still work if you decide to continue."
 
     if [ "$COMMAND_LINE_INSTALL" == "1" ]; then
-        # As far as I can tell, we can't print anything the user is likely to see.
+        # logger alone lands in the system log, not anywhere a person running
+        # `sudo installer -pkg ... -target /` from a terminal would actually see it -- echo it to
+        # stderr too, so the message the GUI path shows in a dialog isn't silently dropped here.
+        echo "WARNING: $msg" >&2
         logger "WARNING: $msg"
         exit 1
     else

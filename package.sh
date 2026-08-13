@@ -152,8 +152,12 @@ echo "Compiling ListInputDevices"
 
 if ! [[ $packaging_operation == "repackage" ]]; then
     echo "Compiling ListInputDevices"
-    swiftc pkg/ListInputDevices.swift -o pkg/ListInputDevices-x86_64 -target x86_64-apple-macos13.0
-    swiftc pkg/ListInputDevices.swift -o pkg/ListInputDevices-arm64 -target arm64-apple-macos13.0
+    # Match the rest of the product's deployment target (10.13) rather than an arbitrary higher
+    # one -- verified this still compiles clean and runs correctly at 10.13 (the code already
+    # branches on #available(macOS 10.15, *) internally, so there's no API here that actually
+    # needs a higher minimum).
+    swiftc pkg/ListInputDevices.swift -o pkg/ListInputDevices-x86_64 -target x86_64-apple-macos10.13
+    swiftc pkg/ListInputDevices.swift -o pkg/ListInputDevices-arm64 -target arm64-apple-macos10.13
     # Combine the x86_64 and arm64 binaries into a universal binary.
     lipo -create pkg/ListInputDevices-x86_64 pkg/ListInputDevices-arm64 -output pkg/ListInputDevices
     rm pkg/ListInputDevices-x86_64 pkg/ListInputDevices-arm64
@@ -219,6 +223,7 @@ mkdir -p "pkgres"
 
 if [[ $packaging_operation == "repackage" ]]; then
     cp "${repackage_dir}/Resources/WavecraftIcon.png" "pkgres"
+    cp "${repackage_dir}/Resources/LICENSE" "pkgres"
     cp "${repackage_dir}/Distribution" "pkg/Distribution.xml"
 else
     # The installer background image -- the real, colorful app icon, not the small monochrome
@@ -227,6 +232,10 @@ else
     # plenty for how small Installer.app actually renders this, and keeps the .pkg's size down
     # versus the 1024px master.
     cp "BGMApp/BGMApp/Images.xcassets/AppIcon.appiconset/appicon_512.png" "pkgres/WavecraftIcon.png"
+    # The license Distribution.xml.template's <license> element shows before the user can proceed
+    # -- this is a GPL-2.0 project, so an installer that skips this step entirely isn't okay to
+    # ship even though productbuild doesn't require it.
+    cp "LICENSE" "pkgres/LICENSE"
     # Populate the Distribution.xml template and copy it. It only has one template variable so far.
     sed "s/{{VERSION}}/$version/g" "pkg/Distribution.xml.template" > "pkg/Distribution.xml"
 fi
