@@ -31,7 +31,10 @@ can send audio to — pick one the same way you'd use the native macOS sound men
 
 ## Per-app controls
 
-Every running app with audio (that isn't hidden or a background helper) gets its own row:
+Every running regular or accessory-type app (that isn't hidden or a background helper) gets its
+own row — including apps that haven't played anything yet, not only ones currently making sound,
+so you can set up an app's volume/EQ/routing ahead of time. There's no separate list for "apps with
+audio"; use the Mute button on a row you don't need right now instead of hunting for one.
 
 - **Icon and name** — self-explanatory.
 - **Mute button** — click to mute/unmute. Un-muting restores the volume you had before you muted.
@@ -127,13 +130,15 @@ making you dig through docs/TROUBLESHOOTING.md or restart things by hand:
 - **Reapply Default Output Device** — re-sets your system output to Wavecraft's device, for when
   audio routing gets stuck pointing somewhere else.
 - **Reset All App Volumes, Pan & EQ** — returns every app's per-app volume, pan, and EQ bands to
-  their defaults. Asks for confirmation first, since it affects every app at once.
+  their defaults. Asks for confirmation first, since it affects every app at once. Skips any app
+  Do Not Disturb is currently muting, so it won't un-mute something DND is actively suppressing.
 - **Remove All Output Routing Overrides** — clears every per-app output-routing assignment, sending
   everything back through your normal default output. Also confirms first.
 - **Reconnect to BGMXPCHelper** — re-establishes the connection to `BGMXPCHelper` if the app seems to
   have lost it (a symptom of the helper looking "disconnected" without a full app restart).
-- **Check Microphone Permission** — jumps straight to the System Settings pane for Wavecraft's
-  Microphone permission, for when the virtual input device isn't showing up correctly.
+- **Check Microphone Permission** — reports whether Wavecraft currently has microphone access; if
+  it doesn't, offers a one-click link to the right System Settings pane rather than opening it
+  immediately.
 
 ## Status bar icon
 
