@@ -73,6 +73,7 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
 
     NSMenu* bgmMenu;
     NSMenu* moreAppsMenu;
+    NSMenuItem* moreAppsMenuItem;
 
     NSView* appVolumeView;
     CGFloat appVolumeViewFullHeight;
@@ -97,9 +98,12 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
         outputRoutingController = inOutputRoutingController;
 
         // Add the More Apps menu to the main menu.
-        NSMenuItem* moreAppsMenuItem =
+        moreAppsMenuItem =
             [[NSMenuItem alloc] initWithTitle:kMoreAppsMenuTitle action:nil keyEquivalent:@""];
         moreAppsMenuItem.submenu = moreAppsMenu;
+        // Starts with nothing in it -- see updateMoreAppsMenuItemEnabled, called every time an app
+        // is added to or removed from moreAppsMenu, for why this isn't just hardcoded to NO here.
+        moreAppsMenuItem.enabled = NO;
 
         [bgmMenu insertItem:moreAppsMenuItem atIndex:([self lastMenuItemIndex] + 1)];
         numMenuItems++;
@@ -167,7 +171,16 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
         numMenuItems++;
     } else if (app.activationPolicy == NSApplicationActivationPolicyAccessory) {
         [moreAppsMenu insertItem:appVolItem atIndex:0];
+        [self updateMoreAppsMenuItemEnabled];
     }
+}
+
+// "More Apps" only makes sense to click when it actually has something in it -- otherwise it's a
+// hoverable/clickable item that opens onto a visibly empty submenu, which happens whenever no
+// NSApplicationActivationPolicyAccessory app is currently running (uncommon, but not rare: e.g.
+// shortly after boot, or on a system with few background/menu-bar-only apps).
+- (void) updateMoreAppsMenuItemEnabled {
+    moreAppsMenuItem.enabled = (moreAppsMenu.numberOfItems > 0);
 }
 
 - (NSMenuItem*) getMenuItemForApp:(NSRunningApplication*)app {
@@ -314,6 +327,7 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
 
         if ([itemApp isEqual:app]) {
             [moreAppsMenu removeItem:item];
+            [self updateMoreAppsMenuItemEnabled];
             return;
         }
     }
@@ -403,6 +417,7 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
 
     // The More Apps menu only contains app volume menu items, so we can just remove everything.
     [moreAppsMenu removeAllItems];
+    [self updateMoreAppsMenuItemEnabled];
 }
 
 @end
@@ -471,6 +486,11 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
     // insertMenuItemForApp:... calls bgm_syncHighlightForCurrentControls itself once real values
     // are in place.
 
+    // toolTip, not just accessibilityTitle -- this caret is the only way to discover the Pan/EQ/
+    // Output Routing controls exist at all, and accessibilityTitle alone only reaches VoiceOver
+    // users. A sighted person hovering it should get the same explanation.
+    self.toolTip = @"More controls (Pan, EQ, Output Routing)";
+
     if ([self respondsToSelector:@selector(setAccessibilityTitle:)]) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpartial-availability"
@@ -502,6 +522,10 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
         self.contentTintColor = hasNonDefaultControls ? [NSColor controlAccentColor] : nil;
 #pragma clang diagnostic pop
     }
+
+    self.toolTip = hasNonDefaultControls ?
+        @"More controls (Pan, EQ, Output Routing) -- Pan or EQ is set on this app" :
+        @"More controls (Pan, EQ, Output Routing)";
 
     if ([self respondsToSelector:@selector(setAccessibilityTitle:)]) {
 #pragma clang diagnostic push
@@ -853,10 +877,23 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
     self.menu.delegate = self;
     self.pullsDown = NO;
 
-    NSString* toolTip =
-        [NSString stringWithFormat:@"Route %@'s audio to a different output device -- click "
-                                     "more than one to play through all of them at once",
-                                    appName ? appName : @"this app"];
+    NSString* toolTip;
+
+    // Per-app output routing needs macOS 26+ (BGMTapRoute.mm gates on
+    // CATapDescription.processRestoreEnabled) -- without this check, the pop-up looked identical
+    // and fully usable on any older system, and only failed with an alert *after* the user had
+    // already picked a device, with no earlier hint it was never going to work on their Mac.
+    if (@available(macOS 26.0, *)) {
+        self.enabled = YES;
+        toolTip = [NSString stringWithFormat:@"Route %@'s audio to a different output device -- "
+                                               "click more than one to play through all of them "
+                                               "at once",
+                                              appName ? appName : @"this app"];
+    } else {
+        self.enabled = NO;
+        toolTip = @"Per-app output routing needs macOS 26 or later.";
+    }
+
     self.toolTip = toolTip;
 
     if ([self respondsToSelector:@selector(setAccessibilityTitle:)]) {

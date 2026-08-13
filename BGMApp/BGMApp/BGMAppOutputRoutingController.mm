@@ -397,6 +397,7 @@
     if (desiredDeviceIDs.empty()) {
         // Every requested device failed to resolve -- nothing left to route to.
         routes.erase(key);
+        [self reconcilePersistedAssignmentForBundleID:bundleID key:key];
         return;
     }
 
@@ -416,12 +417,14 @@
             routes[key] = std::move(newRoute);
         } catch (const CAException& e) {
             [self showRoutingErrorForAppName:appName reason:[self reasonForTapRouteException:e]];
+            [self reconcilePersistedAssignmentForBundleID:bundleID key:key];
             return;
         } catch (...) {
             LogError("BGMAppOutputRoutingController::applyRouteForBundleID: "
                      "Unknown exception starting tap for %s",
                      bundleID.UTF8String);
             [self showRoutingErrorForAppName:appName reason:@"An unknown error occurred."];
+            [self reconcilePersistedAssignmentForBundleID:bundleID key:key];
             return;
         }
     } else {
@@ -463,6 +466,53 @@
     if (route->GetOutputDevices().empty()) {
         routes.erase(key);
     }
+
+    [self reconcilePersistedAssignmentForBundleID:bundleID key:key];
+}
+
+// Writes the route's actual, real device set back to userDefaults.outputRouteDeviceUIDsByBundleID
+// -- the request written there when the user made their selection (see
+// setOutputOverrideDeviceUIDs:forAppWithBundleID:appName:) is optimistic, and any failure above
+// (a device that disconnected, a CoreAudio error) can leave it disagreeing with what's actually
+// routed. Without this, the per-app pop-up would keep showing a device checked as routed even
+// though its BGMTapRoute output never actually started, with no way to notice short of "Remove
+// All Output Routing Overrides" -- which also clears every other app's legitimate routes.
+- (void) reconcilePersistedAssignmentForBundleID:(NSString*)bundleID key:(const std::string&)key {
+    NSMutableArray<NSString*>* actualDeviceUIDs = [NSMutableArray new];
+
+    auto it = routes.find(key);
+    if (it != routes.end()) {
+        for (const BGMAudioDevice& device : it->second->GetOutputDevices()) {
+            NSString* __nullable uid = nil;
+
+            BGM_Utils::LogAndSwallowExceptions(BGMDbgArgs, [&] {
+                uid = (__bridge_transfer NSString* __nullable)device.CopyDeviceUID();
+            });
+
+            if (uid) {
+                [actualDeviceUIDs addObject:BGMNN(uid)];
+            }
+        }
+    }
+
+    BGMAppOutputRoutingController* __weak weakSelf = self;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        BGMAppOutputRoutingController* __strong strongSelf = weakSelf;
+        if (!strongSelf) {
+            return;
+        }
+
+        NSMutableDictionary<NSString*, NSArray<NSString*>*>* assignments =
+            [strongSelf->userDefaults.outputRouteDeviceUIDsByBundleID mutableCopy];
+
+        if (actualDeviceUIDs.count > 0) {
+            assignments[bundleID] = actualDeviceUIDs;
+        } else {
+            [assignments removeObjectForKey:bundleID];
+        }
+
+        strongSelf->userDefaults.outputRouteDeviceUIDsByBundleID = assignments;
+    });
 }
 
 // BGMTapRoute::Start()/AddOutputDevice() distinguish these two specific causes from a generic
