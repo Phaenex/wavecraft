@@ -93,6 +93,17 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
   - Neither is signed or notarized (no paid Apple Developer ID configured for this project yet), so
     both the installer and the app it installs show a Gatekeeper warning the first time; the
     README's "Installing a prebuilt release" section explains why and exactly what to click.
+- **A "Setup & Permissions" window** (`BGMSetupWindow`) listing everything Wavecraft needs from the
+  system in one place — Microphone access (required, for the virtual audio device), Accessibility
+  access (optional, only for global keyboard shortcuts), and a tip about menu bar organizer apps
+  (Bartender, Ice, Hidden Bar, etc.) potentially hiding a newly-installed icon in a collapsed
+  section, which looks identical to "didn't launch" but isn't. Each permission row shows live
+  granted/not-granted status (refreshed on open and again when Wavecraft regains focus, e.g. after
+  returning from System Settings) and a button straight to the right Privacy & Security pane.
+  Previously these were only ever explained reactively — a one-time alert right before the system
+  prompt, or an error dialog on denial — with nowhere to go back and see the whole picture, and
+  nothing anywhere addressed the menu-bar-visibility confusion at all. Shown automatically once, on
+  a first launch; reachable afterwards from Preferences → "Setup & Permissions…".
 
 ### Changed
 

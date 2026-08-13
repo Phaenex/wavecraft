@@ -127,11 +127,40 @@ None of this is started. If you want to tackle one, open an issue first so effor
   apps; Option-clicking the status icon still revealing the Debug Logging row; and a full regression
   sweep of every other item already listed in this section, to confirm none of it silently broke
   from this structural change.
+- **Verify `BGMSetupWindow` (added 2026-08-13, "Setup & Permissions" — see CHANGELOG.md).**
+  Confirmed only by clean Debug+Release builds and 47/47 `BGMAppUnitTests` — **none of the
+  following has been seen on a real screen**: the window actually auto-shows on a genuinely fresh
+  install (not a reinstall over an existing one, which already has
+  `hasShownSetupWindowOnFirstLaunch` set from a previous run and will correctly skip it — needs a
+  full uninstall first to test the auto-show path honestly); the three rows' wrapped body text
+  doesn't clip or overflow at the window's actual fitted size; both status badges reflect real
+  permission state (not just the hardcoded `BGMSetupRowStatusNotGranted` they're constructed with
+  before the first `refreshPermissionStatuses` call); clicking a row's button actually opens the
+  right System Settings pane and the badge updates to "Granted" after returning to Wavecraft;
+  `frameAutosaveName`'s remembered position survives a quit/relaunch; and reopening via Preferences
+  → "Setup & Permissions…" shows live, not stale, status. Built specifically in response to real
+  confusion this session ("installed no app is running" — the app and its status item were both
+  actually running; a menu bar organizer, `Ice`, had the icon parked in a collapsed section) — the
+  third row's copy is a hypothesis about what would have prevented that confusion, not something
+  confirmed to actually help a confused user in the moment.
 
 ## Fairly quick
 
 None open right now — the last item here (arbitrary keyboard-shortcut rebinding) shipped
 2026-08-12; see the "Needs a human" entry above for what's still unverified about it.
+
+- A **Debug**-configuration build (`xcodebuild ... -configuration Debug build`, 2026-08-13) surfaced
+  3 static analyzer findings that a Release build doesn't run into (this project's
+  `RUN_CLANG_STATIC_ANALYZER` setting differs per configuration, so Debug is the only config that's
+  actually exercised this): `BGMStatusBarItem.mm:307`, `BGMDoNotDisturb.mm:172`, and
+  `BGMASApplication.m:136`, all `NullPassedToNonnull`/`NilArg`. All three are the analyzer failing
+  to trace nullability through `BGM_Utils.h`'s `BGMNN()` macro (assert-and-cast, used pervasively
+  across this codebase precisely because Clang's flow-sensitive nullability checks don't work
+  reliably in this project's build configuration — see docs/LESSONS.md and this session's earlier
+  `-Wnullable-to-nonnull-conversion` fixes) — not real bugs, and none are in code touched this
+  session. Left as-is rather than "fixed" by adding redundant nil-checks the macro already
+  guarantees are unreachable; flagged here so a future Debug-config analyzer run doesn't
+  re-investigate the same 3 findings from scratch.
 
 ## Less quick
 

@@ -33,6 +33,22 @@ not a browser) — not eyeballing the code and assuming it's fine.
       again, and access should be requested (and already granted) silently
 - [ ] `tools/verify-icons.py` passes (checks pixel dimensions of `AppIcon.appiconset` against
       `Contents.json`)
+- [ ] The new "Setup & Permissions" window (`BGMSetupWindow`) appears automatically on this same
+      first launch — title, intro text, and all three rows (Microphone, Accessibility, menu bar
+      visibility tip) actually readable and not clipped
+- [ ] Its Microphone row shows "Granted" immediately if access was just given above (not stale from
+      before the request); the Accessibility row shows "Not Granted" until shortcuts are turned on
+      in Preferences
+- [ ] Clicking either row's "Open Privacy Settings" button actually opens System Settings to the
+      right pane (Privacy & Security → Microphone / Accessibility, not just Privacy & Security's
+      top level)
+- [ ] Quit and relaunch a second time — the Setup window should **not** auto-show again
+- [ ] Preferences → "Setup & Permissions…" reopens the same window on demand, with live (not
+      stale) status for both permissions
+- [ ] If the status bar icon isn't visible after install, check whether a menu bar organizer
+      (Bartender, Ice, Hidden Bar, etc.) is running and has it parked in a collapsed section — this
+      is exactly the confusion the Setup window's third row exists to preempt; confirm that row's
+      wording actually helps someone in that situation figure it out unprompted
 
 ## 1. Critical path — the three headline features actually work
 
