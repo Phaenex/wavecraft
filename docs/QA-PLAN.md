@@ -108,14 +108,22 @@ Every control, once, confirming it does what the code says it does:
       route clears automatically (audio falls back to the default output, not silence) within a few
       seconds, the persisted assignment is still there (not lost), and reconnecting the device and
       reselecting it from the pop-up restores the route
+- [ ] Routing: if a route ever fails outright (e.g. picking a device that disappears in the moment
+      between clicking it and `BGMTapRoute::Start()` actually running) — confirm the pop-up's
+      checkmarks end up matching what's *actually* routed, not still showing the device that failed
+      to apply. This is hard to force deliberately; keep an eye out for it happening incidentally
+      during the rest of this routing pass rather than skipping it for being hard to reproduce on
+      purpose
 - [ ] Routing: quit and relaunch the *routed app* (not Wavecraft) — audio should still be routed
       correctly afterward, unattended (this is the actual point of `processRestoreEnabled`)
 - [ ] Routing: quit and relaunch *Wavecraft itself* — the assignment should be gone from the
       running state (by design, see TODO.md's known limitation) but still show as persisted next
       time that app's row exists — confirm the UI doesn't lie about which one is true
-- [ ] Routing: on a system below macOS 26 (if one's available to test on), confirm the pop-up
-      shows the specific "Per-app output routing needs macOS 26 or later" message (`BGMTapRoute::
-      kMacOSTooOld`), not a generic/confusing CoreAudio error code
+- [ ] Routing: on a system below macOS 26 (if one's available to test on), confirm the per-app
+      output-routing pop-up is disabled (not just non-functional) with a tooltip explaining it
+      needs macOS 26 or later — it should never be possible to actually click through to
+      `BGMTapRoute::kMacOSTooOld`'s error alert on an unsupported system, since the control itself
+      is gated off before that path is reachable
 - [ ] Routing: route two different apps to two different non-default devices simultaneously —
       confirm neither route interferes with the other or with the default-output apps
 - [ ] Routing: connect an AirPlay receiver via System Settings > Sound first (so it's a normal
@@ -171,19 +179,32 @@ None of this has run against a real install either — same rule as everything e
 - [ ] Preferences → Troubleshoot → **Reset All App Volumes, Pan & EQ**: set a non-default
       volume/pan/EQ on at least one app, run this (confirm the alert), confirm every app's controls
       visibly return to their defaults and the audio matches
+- [ ] Same, with Do Not Disturb enabled and muting a second app: run the reset, confirm the
+      DND-muted app stays muted (doesn't get un-muted or counted in the "reset N settings" total)
+      while every other app's non-default controls still reset normally
+- [ ] Trigger a reset failure path (if one can be forced) and confirm the result alert actually
+      looks different from a success alert, not just different text — it should show as a critical/
+      caution-styled alert, not the same look as "Reset"/"Nothing to Reset"
 - [ ] Preferences → Troubleshoot → **Remove All Output Routing Overrides**: route at least one app to a
       non-default device, run this (confirm the alert), confirm the app's audio returns to the
       default output and its pop-up shows "Default" again
 - [ ] Preferences → Troubleshoot → **Reconnect to BGMXPCHelper**: kill `BGMXPCHelper` manually, run
       this, confirm the app recovers connection without requiring a full relaunch
-- [ ] Preferences → Troubleshoot → **Check Microphone Permission**: with permission denied, confirm
-      this jumps to the correct System Settings pane (`x-apple.systempreferences:` URL scheme
-      actually resolves on this macOS version, not just in theory)
+- [ ] Preferences → Troubleshoot → **Check Microphone Permission** with permission already granted:
+      confirm it reports access is already granted, without jumping anywhere
+- [ ] Same, with permission denied: confirm the alert's **Open Privacy Settings** button actually
+      opens the correct System Settings pane (`x-apple.systempreferences:` URL scheme actually
+      resolves on this macOS version, not just in theory)
 - [ ] Preferences → Keyboard Shortcuts → **Enable Keyboard Shortcuts** with Accessibility not yet
       granted: confirm the one-time explanation dialog appears before the system Accessibility
       prompt, and that toggling the switch off and back on after granting access actually starts
       monitoring (there's no completion callback for this permission — confirm the documented
       "toggle it again" workaround is actually necessary and actually works)
+- [ ] With **Enable Keyboard Shortcuts** off, confirm the four recorder buttons and the three
+      Fine/Normal/Coarse step-size rows actually reject clicks (greyed out and unresponsive), not
+      just visually dimmed while still clickable — this needed a fix this session since a custom
+      menu-item view's own control doesn't automatically inherit its wrapping `NSMenuItem`'s
+      disabled state
 - [ ] **Highest-priority new item (added 2026-08-12): click a shortcut's "Click to Record" button,
       then press an arrow key.** Does the button's title actually change to show the recorded key
       (e.g. "⌥←"), or does nothing happen because the Preferences menu's own tracking loop consumed
