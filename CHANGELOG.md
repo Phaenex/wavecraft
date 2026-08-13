@@ -118,6 +118,36 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
   called `ApplyClientEQ`/`ApplyClientRelativeVolume` after the mutex guarding
   `mClientEQProcessors` had already gone out of scope, racing unsynchronized against
   `AddClient`/`RemoveClient` on another thread. See [docs/LESSONS.md](docs/LESSONS.md).
+- A full-project pass over the main menu, Preferences, both installers, and the troubleshooting
+  tooling, prompted by "what does someone actually see the moment they click this" rather than
+  feature-by-feature testing:
+  - `install_prebuilt.sh` called `post_install.sh` in a way that made every prebuilt install fail
+    100% of the time — the script's third positional arg (where it finds the resources to copy)
+    was never actually passed, only set as an env var `post_install.sh` doesn't read. Also
+    Gatekeeper-unblocks the installed XPC helper (daemons are silently blocked on macOS 14+, no
+    click-through dialog like GUI apps get) and replaces a flat `sleep 5` after the `coreaudiod`
+    restart with a real poll for the device reappearing.
+  - `pkg/postinstall` had a bare `# TODO: Fail the install and show an error message if this
+    fails` with no actual check on the main install step — it now fails loudly (GUI alert +
+    non-zero exit) instead of silently continuing.
+  - The main menu's routed-app indicator (an icon next to a routed app's name) and a related
+    alignment tweak were dead code — `menuWillOpen:` told rows apart by subview count, which no
+    longer matched either row type after earlier layout changes. Replaced with a real identity
+    check (`NSRunningApplication` in `representedObject`).
+  - Do Not Disturb's muted-apps set didn't survive an app relaunch, and Troubleshoot's "Reset All
+    App Volumes, Pan & EQ" would silently un-mute anything Do Not Disturb was actively muting —
+    persisted the mute set and taught the reset to skip DND-owned apps.
+  - The per-app output-routing pop-up rendered as normal, clickable UI on macOS < 26 even though
+    the underlying engine requires 26+ (it just silently didn't work) — now gated with the same
+    `@available` check `BGMTapRoute` itself uses, disabled with an explanatory tooltip below 26.
+    Also: a route that failed left the UI still showing the requested device instead of
+    reconciling back to what's actually running.
+  - The Preferences hotkey-recorder buttons and step-size rows didn't actually disable when
+    hotkeys were turned off — `NSMenuItem.enabled` doesn't propagate to a custom-view menu item's
+    own control, so they stayed clickable while looking disabled. See
+    [docs/LESSONS.md](docs/LESSONS.md).
+  - Leftover "Background Music" branding in a few accessibility labels/menu items, a dead
+    permanently-disabled button on the System Sounds row, and a couple of XIB layout overlaps.
 
 ### Removed
 

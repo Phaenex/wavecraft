@@ -490,3 +490,66 @@ changes view hierarchy depth) is the actual cause before assuming the most recen
 interactions between built-in scrolling and custom-view mouse tracking. When a live target can't be
 interacted with directly to confirm a theory, say so explicitly rather than presenting a plausible
 mitigation as a verified fix.
+
+## A row-type check based on subview count silently rotted into 100% dead code
+
+**The trap:** `BGMAppDelegate.mm`'s `menuWillOpen:` told an app-volume row apart from the System
+Sounds row by counting `menuItem.view.subviews.count` (7 vs. 3) and branching on it to drive a
+routed-app indicator and an alignment tweak. It compiled clean, every test suite passed, and
+nothing about running the app would obviously break -- the branch just silently never matched
+either count anymore, after earlier layout changes added/removed subviews, so both code paths it
+guarded were dead. No warning, no test failure, no crash: the feature just quietly did nothing.
+
+**What was actually true:** a `.count == N` check against a view hierarchy is not an identity
+check, it's a coincidence that happens to hold on the day it's written and breaks the moment
+*anything* changes that view's subview count for an unrelated reason (new label, new button, a
+XIB edit made for cosmetic reasons). Nothing enforces the invariant, and nothing detects when it
+silently stops holding.
+
+**How to apply:** never identify "which kind of row is this" (or any similar case-detection) by
+counting or measuring incidental structure (subview count, view frame, tag ordering by position).
+Use an actual identity marker set deliberately for that purpose -- here,
+`NSMenuItem.representedObject` holding the real `NSRunningApplication`, and a direct object
+comparison (`menuItem.view == self.systemSoundsView`) for the one-off row. When reviewing older
+code for this project's audits, grep for `.count ==`/`.count >` comparisons feeding a branch and
+check whether the count is actually guaranteed by something, or just happened to be true when
+written.
+
+## `NSMenuItem.enabled` does not disable a custom-view menu item's own controls
+
+**The trap:** `BGMPreferencesMenu.mm`'s `updateHotkeyMenuItemStates` set `.enabled = NO` on the
+wrapping `NSMenuItem` for the four hotkey-recorder rows and three step-size rows when hotkeys were
+turned off, expecting AppKit to grey them out and block clicks the way it does for plain
+text-title menu items.
+
+**What was actually true:** for a custom-view `NSMenuItem` (`.view` set to something like
+`BGMHotkeyRecorderButton`, an `NSButton` subclass), `NSMenuItem.enabled` only affects the item's
+own highlight/selection behavior in the menu -- it does **nothing** to the custom view's own
+interactivity. The subview is a real, independently-enabled control; it stayed fully clickable
+(and looked normal, not greyed out) regardless of the wrapping item's `.enabled` state. This is
+undocumented behavior a reader has to already know rather than something the API surface warns
+about.
+
+**How to apply:** for any custom-view `NSMenuItem`, disabling it means setting `.enabled` (or the
+equivalent) directly on the custom view/control itself, not on the wrapping `NSMenuItem` -- treat
+`NSMenuItem.enabled` as a no-op for interactivity whenever `.view` is set, and grep this project's
+other custom-view menu items (`BGMAVM_VolumeSlider`, `BGMAVM_EQBandSlider`,
+`BGMAVM_OutputRouteButton`, etc.) for the same assumption before trusting any of their disabled
+states.
+
+## `$?` after a negated `if !` condition reads the wrong exit code
+
+**The trap:** `pkg/postinstall`'s first draft of the `ListInputDevices` failure path was
+`if ! input_device_list="$(./ListInputDevices 2>&1)"; then log "...(exit $?)..."`. Inside that
+`then` branch, `$?` was always `0` -- looked plausible, ran without an obvious crash, and would
+have silently logged the wrong exit code for every real failure.
+
+**What was actually true:** `$?` reflects the exit status of the *last command executed*, which
+inside an `if ! cmd; then` branch is the negated test of `cmd` succeeding as evaluated by `if`
+itself -- not `cmd`'s own exit code. By the time the `then` block runs, the original status is
+already gone.
+
+**How to apply:** to both branch on a command's failure and report its real exit code, run the
+command as a plain (non-negated) statement first, capture `$?` into a variable on the very next
+line, then branch on that variable: `out="$(cmd)"; status=$?; if [[ $status -ne 0 ]]; then ...`.
+Never combine `!`-negation with a later `$?` read in the same construct.
