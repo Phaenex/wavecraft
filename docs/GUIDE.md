@@ -47,10 +47,10 @@ A slider that shifts the app's audio left/right in the stereo field.
 
 ### EQ
 
-Ten vertical-stacked sliders, one per band — the standard ISO octave-band spread: **31Hz, 62Hz,
-125Hz, 250Hz, 500Hz, 1kHz, 2kHz, 4kHz, 8kHz, 16kHz**, each adjustable from −12dB to +12dB. These
-apply in the driver, in real time, independently per app — turning down an app's 31Hz band doesn't
-affect any other app's bass.
+Ten sliders arranged as two columns of five — the standard ISO octave-band spread, low band on the
+left (**31Hz, 62Hz, 125Hz, 250Hz, 500Hz**) and high band on the right (**1kHz, 2kHz, 4kHz, 8kHz,
+16kHz**), each adjustable from −12dB to +12dB. These apply in the driver, in real time,
+independently per app — turning down an app's 31Hz band doesn't affect any other app's bass.
 
 ### Output routing
 

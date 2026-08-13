@@ -134,8 +134,18 @@ always needs a human, above) followed by actually moving the new sliders/pop-up 
   spread (31/62/125/250/500/1k/2k/4k/8k/16k Hz, ±12dB each) — `BGM_AppEQ::kNumBands`
   (`BGM_Biquad.h`) and `kBGMAppEQNumBands` (`SharedSource/BGM_Types.h`) are two independent
   constants that have to be edited together; a `static_assert` in `BGM_Device.cpp` catches them
-  drifting apart. **UI**: each app's menu item has 10 band sliders (in the "extra controls" area
-  alongside Pan) — `BGMAVM_EQBandSlider` in `BGMApp/BGMApp/BGMAppVolumes.{h,m}`, wired straight to
+  drifting apart. **UI**: each app's menu item has 10 band sliders arranged as two columns of 5
+  (low bands left, high bands right — MainMenu.xib's `appVolumeView` custom view, 390x147),
+  alongside Pan in the "extra controls" area. First shipped as one column of 10, which grew that
+  row 51% taller than it had ever been (147pt -> 222pt); a real-install report of the whole menu
+  closing on any slider click/drag led to reverting to two columns of 5 (same 147pt height as the
+  original 5-band layout, just wider) instead — the working theory is that a taller-than-ever
+  custom-view menu row pushed the overall dropdown into needing to scroll with multiple apps'
+  rows expanded, and NSMenu's built-in scrolling is known to interact badly with custom-view menu
+  items' mouse tracking. Unconfirmed which exact mechanism was at fault (never reproduced
+  directly, no way to interact with a live running menu from this environment) — if this comes up
+  again, that's the first thing to check. `BGMAVM_EQBandSlider` in
+  `BGMApp/BGMApp/BGMAppVolumes.{h,m}`, wired straight to
   the existing `BGMAppVolumesController::setEQBandGains:forAppWithProcessID:bundleID:`. Initial
   gains are read back from `BGMBackgroundMusicDevice::GetAppEQ()` the same way Volume/Pan already
   are, via the now-public `BGMAppVolumesController::getEQBandGainsForApp:` (wraps the original

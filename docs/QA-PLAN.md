@@ -44,10 +44,16 @@ This is the minimum bar before claiming any of this session's work "works," not 
 - [ ] **Per-app EQ**: pick a playing app with sustained tone content (music, not silence), expand
       its row, drag the 31Hz band to -12dB — audible bass cut on *that app only*, not on anything
       else playing simultaneously. Drag +12dB on 4kHz — audible presence boost. Confirm all 10
-      bands are visible and correctly labeled (31/62/125/250/500Hz, 1/2/4/8/16kHz), not clipped by
-      the new taller menu row. Return all 10 bands to 0 — audio returns to how it sounded before
-      touching EQ (this is the actual claim from `BGM_BiquadTests::testZeroGainIsExactUnity`;
-      verify it holds for real audio, not just the unit test's synthetic signal).
+      bands are visible and correctly labeled, laid out as two clean columns (31/62/125/250/500Hz
+      on the left, 1/2/4/8/16kHz on the right), not clipped or overlapping. **Also confirm clicking
+      or dragging any slider — main volume, pan, or any EQ band — never closes the menu or
+      collapses the row** (a real bug reported against the original single-column 10-band layout,
+      most likely caused by the taller row pushing the menu into needing to scroll; the two-column
+      redesign keeps the row at its original height specifically to avoid this, but needs a real
+      check with several apps' rows expanded at once, not just one). Return all 10 bands to 0 —
+      audio returns to how it sounded before touching EQ (this is the actual claim from
+      `BGM_BiquadTests::testZeroGainIsExactUnity`; verify it holds for real audio, not just the
+      unit test's synthetic signal).
 - [ ] **Per-app output routing**: with two output devices connected (e.g. built-in speakers +
       headphones/AirPods), route one playing app to the non-default device via its pop-up. Confirm:
       - Audio from the routed app comes out the *new* device
