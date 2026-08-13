@@ -35,11 +35,13 @@
 #import <CoreAudio/CATapDescription.h>
 #import <Foundation/Foundation.h>
 
+// STL Includes
+#import <algorithm>
 
-BGMTapRoute::BGMTapRoute(CACFString inAppBundleID, BGMAudioDevice inOutputDevice)
+
+BGMTapRoute::BGMTapRoute(CACFString inAppBundleID)
 :
-    mAppBundleID(inAppBundleID),
-    mOutputDevice(inOutputDevice)
+    mAppBundleID(inAppBundleID)
 {
     ThrowIf(!mAppBundleID.IsValid(),
             CAException(kAudioHardwareIllegalOperationError),
@@ -60,60 +62,102 @@ void    BGMTapRoute::Start()
         return;
     }
 
+    CreateTapAndAggregateDevice();
+    mRunning = true;
+}
+
+void    BGMTapRoute::AddOutputDevice(BGMAudioDevice inOutputDevice)
+{
+    if(!mRunning)
+    {
+        Throw(CAException(kAudioHardwareIllegalOperationError));
+    }
+
+    if(HasOutputDevice(inOutputDevice))
+    {
+        return;
+    }
+
+    Output output { inOutputDevice, nullptr };
+
     try
     {
-        CreateTapAndAggregateDevice();
+        output.playThrough = std::unique_ptr<BGMPlayThrough>(
+                new BGMPlayThrough(BGMAudioDevice(mAggregateDeviceID), inOutputDevice));
+        output.playThrough->SetRequireBGMDeviceInput(false);
+        output.playThrough->Activate();
+        output.playThrough->Start();
 
-        mPlayThrough = std::unique_ptr<BGMPlayThrough>(
-                new BGMPlayThrough(BGMAudioDevice(mAggregateDeviceID), mOutputDevice));
-        mPlayThrough->SetRequireBGMDeviceInput(false);
-        mPlayThrough->Activate();
-        mPlayThrough->Start();
-
-        mRunning = true;
+        mOutputs.push_back(std::move(output));
     }
     catch(const CAException& e)
     {
-        // Clean up whatever actually got created before rethrowing, so a caller that catches
-        // this and gives up doesn't leak the tap/aggregate device or leave the app muted.
-        mPlayThrough = nullptr;
-        DestroyTapAndAggregateDevice();
-
-        // kMacOSTooOld is already unambiguous -- it's thrown before any CoreAudio call is even
-        // attempted, so mOutputDevice's actual state has nothing to do with it. For everything
-        // else, check mOutputDevice directly rather than trusting the OSStatus we happened to get
-        // back: kAudioHardwareBadDeviceError/kAudioHardwareIllegalOperationError are both reused
-        // for unrelated reasons elsewhere in BGMPlayThrough, so they aren't a reliable signal on
-        // their own that the device actually vanished -- see the comment on Start() in the header.
-        if (e.GetError() != kMacOSTooOld && !OutputDeviceIsAlive())
+        // Only this one device's BGMPlayThrough is affected -- mOutputs isn't touched until the
+        // push_back above, which never runs if we get here, so any other already-running outputs
+        // are untouched and keep playing.
+        //
+        // Check inOutputDevice directly rather than trusting the OSStatus we happened to get back:
+        // kAudioHardwareBadDeviceError/kAudioHardwareIllegalOperationError are both reused for
+        // unrelated reasons elsewhere in BGMPlayThrough, so they aren't a reliable signal on their
+        // own that the device actually vanished -- see the comment on AddOutputDevice() in the
+        // header.
+        if (!OutputDeviceIsAlive(inOutputDevice))
         {
             throw CAException(kOutputDeviceVanished);
         }
 
         throw;
     }
-    catch(...)
+}
+
+void    BGMTapRoute::RemoveOutputDevice(BGMAudioDevice inOutputDevice) noexcept
+{
+    auto it = std::find_if(mOutputs.begin(), mOutputs.end(), [&](const Output& output) {
+        return output.device.GetObjectID() == inOutputDevice.GetObjectID();
+    });
+
+    if(it != mOutputs.end())
     {
-        mPlayThrough = nullptr;
-        DestroyTapAndAggregateDevice();
-        throw;
+        // ~BGMPlayThrough calls Deactivate(), which stops it -- destroying the unique_ptr (via
+        // erase) is enough to stop that one output without touching any others.
+        mOutputs.erase(it);
     }
 }
 
-bool    BGMTapRoute::OutputDeviceIsAlive() const noexcept
+bool    BGMTapRoute::HasOutputDevice(BGMAudioDevice inOutputDevice) const noexcept
+{
+    return std::any_of(mOutputs.begin(), mOutputs.end(), [&](const Output& output) {
+        return output.device.GetObjectID() == inOutputDevice.GetObjectID();
+    });
+}
+
+std::vector<BGMAudioDevice>    BGMTapRoute::GetOutputDevices() const
+{
+    std::vector<BGMAudioDevice> devices;
+    devices.reserve(mOutputs.size());
+
+    for(const Output& output : mOutputs)
+    {
+        devices.push_back(output.device);
+    }
+
+    return devices;
+}
+
+bool    BGMTapRoute::OutputDeviceIsAlive(const BGMAudioDevice& inDevice) noexcept
 {
     // CAHALAudioObject::ObjectExists is safe to call on an ID that's already gone -- it just
     // returns false. CAHALAudioDevice::IsAlive() isn't: it does a real HAL property fetch, which
     // throws if the object doesn't exist at all, so it's only safe to call once ObjectExists has
     // already confirmed the object is there to ask.
-    if (!CAHALAudioObject::ObjectExists(mOutputDevice.GetObjectID()))
+    if (!CAHALAudioObject::ObjectExists(inDevice.GetObjectID()))
     {
         return false;
     }
 
     try
     {
-        return mOutputDevice.IsAlive();
+        return inDevice.IsAlive();
     }
     catch (...)
     {
@@ -126,9 +170,9 @@ bool    BGMTapRoute::OutputDeviceIsAlive() const noexcept
 
 void    BGMTapRoute::Stop()
 {
-    // BGMPlayThrough's own destructor calls Deactivate(), which stops it -- see
-    // BGMPlayThrough::~BGMPlayThrough. Resetting here is enough to stop the audio bridge.
-    mPlayThrough = nullptr;
+    // Each BGMPlayThrough's own destructor calls Deactivate(), which stops it -- clearing here is
+    // enough to stop every output's audio bridge.
+    mOutputs.clear();
 
     DestroyTapAndAggregateDevice();
 

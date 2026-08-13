@@ -38,14 +38,22 @@
 - (void) testConstructorThrowsForInvalidBundleID {
     CACFString invalidBundleID;  // Default-constructed, no CFStringRef -- !IsValid().
 
-    // Need a real (or at least constructible) BGMAudioDevice for the other constructor param --
-    // kAudioObjectUnknown is a valid AudioObjectID to wrap even though it's not a real device.
-    BGMAudioDevice placeholderOutputDevice(kAudioObjectUnknown);
-
     BGMShouldThrow<CAException>(self, [=]() {
-        BGMTapRoute route(invalidBundleID, placeholderOutputDevice);
+        BGMTapRoute route(invalidBundleID);
         (void)route;
     });
+}
+
+- (void) testHasOutputDeviceIsFalseForAnyDeviceBeforeAddOutputDeviceIsCalled {
+    // Construction alone (no Start(), no AddOutputDevice()) shouldn't claim any device is one of
+    // this route's outputs -- kAudioObjectUnknown is a valid AudioObjectID to wrap even though
+    // it's not a real device, which is fine here since this never actually starts the route.
+    CACFString bundleID((__bridge_retained CFStringRef)@"com.example.placeholder");
+    BGMTapRoute route(bundleID);
+    BGMAudioDevice placeholderDevice(kAudioObjectUnknown);
+
+    XCTAssertFalse(route.HasOutputDevice(placeholderDevice));
+    XCTAssertTrue(route.GetOutputDevices().empty());
 }
 
 // NOTE: There's deliberately no real-device functional test here (there was one; it crashed and

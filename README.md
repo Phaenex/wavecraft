@@ -60,10 +60,12 @@ what's still unverified.
   (31Hz / 62Hz / 125Hz / 250Hz / 500Hz / 1kHz / 2kHz / 4kHz / 8kHz / 16kHz, ±12dB each), applied in
   real time in the driver. The row highlights when an app has non-default EQ or pan set, so it's
   visible without expanding every app's controls.
-- **Per-app output routing** *(new in Wavecraft)* — pick a different physical output device for an
-  individual app's audio, independent of your system's default output. Routed apps are marked in
-  the main menu so you can see which ones are routed without opening each row, and a route
-  automatically clears (without losing the saved assignment) if its target device disconnects.
+- **Per-app output routing** *(new in Wavecraft)* — pick one or more physical output devices for an
+  individual app's audio, independent of your system's default output; picking more than one plays
+  the same audio through all of them at once. Routed apps are marked in the main menu so you can
+  see which ones are routed without opening each row, and a device that disconnects drops out of
+  the route automatically (without losing the saved assignment, or touching any other device still
+  in the route).
 - **Auto-pause music** — pauses your music player when another app starts playing audio, and
   unpauses it when that audio stops. Supports iTunes/Music, Spotify, VLC, VOX, Decibel, Hermes,
   Swinsian, and GPMDP.

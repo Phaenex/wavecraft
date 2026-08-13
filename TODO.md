@@ -15,10 +15,6 @@ The goal is to eventually match or beat what the paid alternatives do — see
 [Images/README/comparison.png](Images/README/comparison.png) for where things stand today.
 Roughly ordered by effort, cheapest first:
 
-- **Device grouping / multi-output** — send audio to more than one physical device at once. Doesn't
-  fit the current per-app output routing design as-is (`BGMTapRoute` assumes one output device per
-  route); would need either multiple simultaneous `BGMPlayThrough` instances per tap or an aggregate
-  device on the *output* side too.
 - **AutoEQ headphone calibration** — apply a pre-measured correction curve for specific headphone
   models. Needs integrating (or writing) a headphone measurement database and mapping it onto the
   existing per-band gain API; the DSP side is already there once the target curve is known.
@@ -80,6 +76,14 @@ None of this is started. If you want to tackle one, open an issue first so effor
   receives audio (see docs/PROCESS-TAP-ROUTING.md's Phase 1 results — this was the one thing left
   unconfirmed after the proof-of-concept, deferred to a real listening test with two apps and two
   output devices).
+- **Verify multi-device output routing** (added 2026-08-12, see docs/PROCESS-TAP-ROUTING.md's
+  "Phase 3"). Confirmed by reading the code that `BGMTapRoute` creates one `BGMPlayThrough` per
+  output device sharing the same tap, and that switching an app's target set doesn't tear down
+  outputs that didn't change — never run against real hardware. Test: route one app to two
+  different output devices at once, confirm both actually play its audio simultaneously (not just
+  the first one, not one glitching when the other's added/removed), then click one of the two
+  already-checked devices again to remove just that one and confirm the other keeps playing
+  uninterrupted.
 - **Verify the keyboard-shortcut recorder actually captures keys while the Preferences menu is
   open** (added 2026-08-12, `BGMHotkeyRecorderButton`). It installs a local `NSEvent` monitor,
   which is the documented-correct way to observe events during a menu's own tracking loop — but

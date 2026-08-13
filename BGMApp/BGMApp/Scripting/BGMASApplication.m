@@ -97,39 +97,49 @@
                                  bundleID:application.bundleIdentifier];
 }
 
-- (BGMASOutputDevice* __nullable) outputDevice {
+- (NSArray<BGMASOutputDevice*>*) outputDevices {
     NSString* __nullable bundleID = application.bundleIdentifier;
-    NSString* __nullable uid =
+    NSArray<NSString*>* uids =
         bundleID ?
-            [outputRoutingController outputOverrideDeviceUIDForBundleID:BGMNN(bundleID)] : nil;
+            [outputRoutingController outputOverrideDeviceUIDsForBundleID:BGMNN(bundleID)] : @[];
 
-    if (!uid) {
-        return nil;
+    NSMutableArray<BGMASOutputDevice*>* devices = [NSMutableArray arrayWithCapacity:uids.count];
+
+    for (NSString* uid in uids) {
+        AudioObjectID deviceID = [outputRoutingController findConnectedDeviceIDForUID:uid];
+
+        if (deviceID == kAudioObjectUnknown) {
+            // The route's target device isn't currently connected -- same "not there right now"
+            // meaning as never having been in the override list, from a script's point of view.
+            continue;
+        }
+
+        [devices addObject:[[BGMASOutputDevice alloc] initWithAudioObjectID:deviceID
+                                                                 audioDevices:audioDevices
+                                                              parentSpecifier:parentSpecifier]];
     }
 
-    AudioObjectID deviceID = [outputRoutingController findConnectedDeviceIDForUID:BGMNN(uid)];
-
-    if (deviceID == kAudioObjectUnknown) {
-        // The route's target device isn't currently connected -- same "not there right now"
-        // meaning as no override, from a script's point of view.
-        return nil;
-    }
-
-    return [[BGMASOutputDevice alloc] initWithAudioObjectID:deviceID
-                                                audioDevices:audioDevices
-                                             parentSpecifier:parentSpecifier];
+    return devices;
 }
 
-- (void) setOutputDevice:(BGMASOutputDevice* __nullable)outputDevice {
+- (void) setOutputDevices:(NSArray<BGMASOutputDevice*>*)outputDevices {
     NSString* __nullable bundleID = application.bundleIdentifier;
 
     if (!bundleID) {
         return;
     }
 
-    [outputRoutingController userSelectedDeviceUID:outputDevice.uid
-                                 forAppWithBundleID:BGMNN(bundleID)
-                                            appName:application.localizedName];
+    NSMutableArray<NSString*>* uids = [NSMutableArray arrayWithCapacity:outputDevices.count];
+
+    for (BGMASOutputDevice* device in outputDevices) {
+        if (device.uid) {
+            [uids addObject:BGMNN(device.uid)];
+        }
+    }
+
+    [outputRoutingController setOutputOverrideDeviceUIDs:uids
+                                       forAppWithBundleID:BGMNN(bundleID)
+                                                  appName:application.localizedName];
 }
 
 - (NSScriptObjectSpecifier* __nullable) objectSpecifier {

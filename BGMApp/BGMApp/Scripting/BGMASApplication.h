@@ -56,9 +56,10 @@ NS_ASSUME_NONNULL_BEGIN
 // setEQBandGains:forAppWithProcessID:bundleID:, which this wraps directly.
 @property (nullable, copy) NSArray<NSNumber*>* eqBandGains;
 
-// The output device this app's audio is currently routed to, or nil if it's using the default
-// output (no override). Setting nil clears any existing override.
-@property (nullable, strong) BGMASOutputDevice* outputDevice;
+// The output device(s) this app's audio is currently routed to -- empty if it's using the default
+// output (no override). More than one plays this app's audio through every device in the array at
+// once. Setting an empty list clears any existing override.
+@property (copy) NSArray<BGMASOutputDevice*>* outputDevices;
 
 @end
 

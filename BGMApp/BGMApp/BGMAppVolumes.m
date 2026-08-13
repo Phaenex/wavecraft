@@ -854,7 +854,8 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
     self.pullsDown = NO;
 
     NSString* toolTip =
-        [NSString stringWithFormat:@"Route %@'s audio to a different output device",
+        [NSString stringWithFormat:@"Route %@'s audio to a different output device -- click "
+                                     "more than one to play through all of them at once",
                                     appName ? appName : @"this app"];
     self.toolTip = toolTip;
 
@@ -883,12 +884,21 @@ static BGMAVM_ShowMoreControlsButton* __nullable BGM_FindShowMoreControlsButton(
     }
 
     // The "Default" item has no representedObject; every other item's is the device's UID -- see
-    // BGMAppOutputRoutingController::populateMenuForButton:forBundleID:.
+    // BGMAppOutputRoutingController::populateMenuForButton:forBundleID:. Clicking "Default" clears
+    // every target device at once; clicking a device toggles just that one in or out of the set,
+    // leaving any others already selected alone -- so routing to more than one device at a time is
+    // a few clicks (reopening the pop-up and picking another device each time), not a single
+    // multi-select gesture.
     NSString* __nullable deviceUID = self.selectedItem.representedObject;
 
-    [routingController userSelectedDeviceUID:deviceUID
-                          forAppWithBundleID:BGMNN(appBundleID)
-                                     appName:appName];
+    if (deviceUID) {
+        [routingController userToggledDeviceUID:BGMNN(deviceUID)
+                              forAppWithBundleID:BGMNN(appBundleID)
+                                         appName:appName];
+    } else {
+        [routingController userSelectedDefaultForAppWithBundleID:BGMNN(appBundleID)
+                                                           appName:appName];
+    }
 }
 
 @end

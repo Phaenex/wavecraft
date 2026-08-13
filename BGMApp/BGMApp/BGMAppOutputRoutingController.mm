@@ -35,9 +35,11 @@
 #import "CAPropertyAddress.h"
 
 // STL Includes
+#import <algorithm>
 #import <map>
 #import <memory>
 #import <string>
+#import <vector>
 
 
 #pragma clang assume_nonnull begin
@@ -124,26 +126,41 @@
         deviceListListener);
 }
 
-// Tears down (but doesn't un-persist) any route whose target device is no longer connected. The
-// persisted assignment in userDefaults survives, so it's reapplied automatically if the device
-// reconnects later -- the same restoration path restoreRoutesForApps: already uses for apps that
-// weren't running yet, applied here to a device that wasn't connected yet instead.
+// Drops (but doesn't un-persist) just the disconnected device from any app's target set that
+// includes it, leaving any other still-connected targets for that app untouched. The persisted
+// assignment in userDefaults survives, so it's reapplied automatically if the device reconnects
+// later -- the same restoration path restoreRoutesForApps: already uses for apps that weren't
+// running yet, applied here to a device that wasn't connected yet instead.
 - (void) removeRoutesForDisconnectedDevices {
     // outputRouteDeviceUIDsByBundleID is documented main-thread-only (see its call sites elsewhere
     // in this class); the property listener block runs on a background queue, so hop to the main
     // thread before reading it.
     dispatch_async(dispatch_get_main_queue(), ^{
-        NSDictionary<NSString*, NSString*>* assignments = self->userDefaults.outputRouteDeviceUIDsByBundleID;
+        NSDictionary<NSString*, NSArray<NSString*>*>* assignments =
+            self->userDefaults.outputRouteDeviceUIDsByBundleID;
 
         for (NSString* bundleID in assignments) {
-            NSString* deviceUID = assignments[bundleID];
+            NSArray<NSString*>* deviceUIDs = assignments[bundleID];
+            NSMutableArray<NSString*>* stillConnected = [deviceUIDs mutableCopy];
+            BOOL anyRemoved = NO;
 
-            if ([self findConnectedDeviceIDForUID:deviceUID] == kAudioObjectUnknown) {
-                DebugMsg("BGMAppOutputRoutingController::removeRoutesForDisconnectedDevices: "
-                         "Device %s for %s is no longer connected -- clearing its route",
-                         deviceUID.UTF8String,
-                         bundleID.UTF8String);
-                [self applyRouteAsyncForBundleID:bundleID deviceUID:nil appName:nil];
+            for (NSString* deviceUID in deviceUIDs) {
+                if ([self findConnectedDeviceIDForUID:deviceUID] == kAudioObjectUnknown) {
+                    DebugMsg("BGMAppOutputRoutingController::removeRoutesForDisconnectedDevices: "
+                             "Device %s for %s is no longer connected -- dropping it from the "
+                             "route, leaving %lu other target(s) untouched",
+                             deviceUID.UTF8String,
+                             bundleID.UTF8String,
+                             (unsigned long)(deviceUIDs.count - 1));
+                    [stillConnected removeObject:deviceUID];
+                    anyRemoved = YES;
+                }
+            }
+
+            if (anyRemoved) {
+                [self setOutputOverrideDeviceUIDs:stillConnected
+                                forAppWithBundleID:bundleID
+                                           appName:nil];
             }
         }
     });
@@ -158,12 +175,12 @@
     NSMenu* menu = popUpButton.menu;
     [menu removeAllItems];
 
-    NSString* __nullable currentUID = userDefaults.outputRouteDeviceUIDsByBundleID[bundleID];
+    NSArray<NSString*>* currentUIDs = userDefaults.outputRouteDeviceUIDsByBundleID[bundleID] ?: @[];
 
     NSMenuItem* defaultItem = [[NSMenuItem alloc] initWithTitle:@"Default"
                                                           action:nil
                                                    keyEquivalent:@""];
-    defaultItem.state = currentUID ? NSOffState : NSOnState;
+    defaultItem.state = (currentUIDs.count == 0) ? NSOnState : NSOffState;
     [menu addItem:defaultItem];
 
     CAHALAudioSystemObject audioSystem;
@@ -204,62 +221,88 @@
                                                         action:nil
                                                  keyEquivalent:@""];
         item.representedObject = uid;
-        item.state =
-            (currentUID && [uid isEqualToString:BGMNN(currentUID)]) ? NSOnState : NSOffState;
+        item.state = [currentUIDs containsObject:BGMNN(uid)] ? NSOnState : NSOffState;
         [menu addItem:item];
     }
 }
 
 #pragma mark Selecting a Device
 
-- (void) userSelectedDeviceUID:(NSString* __nullable)deviceUID
+- (void) userToggledDeviceUID:(NSString*)deviceUID
              forAppWithBundleID:(NSString*)bundleID
                         appName:(NSString* __nullable)appName {
+    NSAssert([NSThread isMainThread], @"userToggledDeviceUID:forAppWithBundleID:appName: is not thread safe");
+
+    NSMutableArray<NSString*>* uids =
+        [(userDefaults.outputRouteDeviceUIDsByBundleID[bundleID] ?: @[]) mutableCopy];
+
+    if ([uids containsObject:deviceUID]) {
+        [uids removeObject:deviceUID];
+    } else {
+        [uids addObject:deviceUID];
+    }
+
+    [self setOutputOverrideDeviceUIDs:uids forAppWithBundleID:bundleID appName:appName];
+}
+
+- (void) userSelectedDefaultForAppWithBundleID:(NSString*)bundleID
+                                        appName:(NSString* __nullable)appName {
     NSAssert([NSThread isMainThread],
-             @"userSelectedDeviceUID:forAppWithBundleID:appName: is not thread safe");
+             @"userSelectedDefaultForAppWithBundleID:appName: is not thread safe");
+
+    [self setOutputOverrideDeviceUIDs:@[] forAppWithBundleID:bundleID appName:appName];
+}
+
+- (void) setOutputOverrideDeviceUIDs:(NSArray<NSString*>*)deviceUIDs
+                    forAppWithBundleID:(NSString*)bundleID
+                               appName:(NSString* __nullable)appName {
+    NSAssert([NSThread isMainThread],
+             @"setOutputOverrideDeviceUIDs:forAppWithBundleID:appName: is not thread safe");
 
     // Update the persisted assignment immediately, so the UI (checkmarks, hasOutputOverride...)
     // reflects the user's choice right away, even though actually starting/stopping the route
     // happens asynchronously below.
-    NSMutableDictionary<NSString*, NSString*>* assignments =
+    NSMutableDictionary<NSString*, NSArray<NSString*>*>* assignments =
         [userDefaults.outputRouteDeviceUIDsByBundleID mutableCopy];
 
-    if (deviceUID) {
-        assignments[bundleID] = deviceUID;
+    if (deviceUIDs.count > 0) {
+        assignments[bundleID] = deviceUIDs;
     } else {
         [assignments removeObjectForKey:bundleID];
     }
 
     userDefaults.outputRouteDeviceUIDsByBundleID = assignments;
 
-    [self applyRouteAsyncForBundleID:bundleID deviceUID:deviceUID appName:appName];
+    [self applyRouteAsyncForBundleID:bundleID deviceUIDs:deviceUIDs appName:appName];
 }
 
 - (BOOL) hasOutputOverrideForBundleID:(NSString*)bundleID {
-    return userDefaults.outputRouteDeviceUIDsByBundleID[bundleID] != nil;
+    return userDefaults.outputRouteDeviceUIDsByBundleID[bundleID].count > 0;
 }
 
-- (NSString* __nullable) outputOverrideDeviceUIDForBundleID:(NSString*)bundleID {
-    return userDefaults.outputRouteDeviceUIDsByBundleID[bundleID];
+- (NSArray<NSString*>*) outputOverrideDeviceUIDsForBundleID:(NSString*)bundleID {
+    return userDefaults.outputRouteDeviceUIDsByBundleID[bundleID] ?: @[];
 }
 
 - (void) removeAllOutputOverrides {
     NSAssert([NSThread isMainThread], @"removeAllOutputOverrides is not thread safe");
 
-    // Snapshot the keys first -- userSelectedDeviceUID:forAppWithBundleID:appName: below replaces
-    // userDefaults.outputRouteDeviceUIDsByBundleID with a new dictionary each call, so iterating a
-    // separately-captured array here is safe against mutating the thing we're iterating.
+    // Snapshot the keys first -- setOutputOverrideDeviceUIDs:forAppWithBundleID:appName: below
+    // replaces userDefaults.outputRouteDeviceUIDsByBundleID with a new dictionary each call, so
+    // iterating a separately-captured array here is safe against mutating the thing we're
+    // iterating.
     NSArray<NSString*>* bundleIDs = userDefaults.outputRouteDeviceUIDsByBundleID.allKeys;
 
     for (NSString* bundleID in bundleIDs) {
-        [self userSelectedDeviceUID:nil forAppWithBundleID:bundleID appName:nil];
+        [self setOutputOverrideDeviceUIDs:@[] forAppWithBundleID:bundleID appName:nil];
     }
 }
 
 #pragma mark Restoring Persisted Routes
 
 - (void) restoreRoutesForApps:(NSArray<NSRunningApplication*>*)apps {
-    NSDictionary<NSString*, NSString*>* assignments = userDefaults.outputRouteDeviceUIDsByBundleID;
+    NSDictionary<NSString*, NSArray<NSString*>*>* assignments =
+        userDefaults.outputRouteDeviceUIDsByBundleID;
 
     if (assignments.count == 0) {
         return;
@@ -267,15 +310,15 @@
 
     for (NSRunningApplication* app in apps) {
         NSString* __nullable bundleID = app.bundleIdentifier;
-        NSString* __nullable uid = bundleID ? assignments[BGMNN(bundleID)] : nil;
+        NSArray<NSString*>* __nullable uids = bundleID ? assignments[BGMNN(bundleID)] : nil;
 
-        if (bundleID && uid) {
+        if (bundleID && uids.count > 0) {
             DebugMsg("BGMAppOutputRoutingController::restoreRoutesForApps: "
                      "Restoring route for %s -> %s",
                      bundleID.UTF8String,
-                     uid.UTF8String);
+                     uids.description.UTF8String);
             [self applyRouteAsyncForBundleID:BGMNN(bundleID)
-                                    deviceUID:uid
+                                    deviceUIDs:BGMNN(uids)
                                       appName:app.localizedName];
         }
     }
@@ -309,69 +352,132 @@
 #pragma mark Routing (routingQueue only)
 
 - (void) applyRouteAsyncForBundleID:(NSString*)bundleID
-                          deviceUID:(NSString* __nullable)deviceUID
+                          deviceUIDs:(NSArray<NSString*>*)deviceUIDs
                             appName:(NSString* __nullable)appName {
     BGMAppOutputRoutingController* __weak weakSelf = self;
 
     dispatch_async(routingQueue, ^{
-        [weakSelf applyRouteForBundleID:bundleID deviceUID:deviceUID appName:appName];
+        [weakSelf applyRouteForBundleID:bundleID deviceUIDs:deviceUIDs appName:appName];
     });
 }
 
 - (void) applyRouteForBundleID:(NSString*)bundleID
-                      deviceUID:(NSString* __nullable)deviceUID
+                     deviceUIDs:(NSArray<NSString*>*)deviceUIDs
                         appName:(NSString* __nullable)appName {
     std::string key = BGM_Utils::NN(bundleID.UTF8String);
 
-    // Stop and remove any existing route for this app first -- whether we're switching to a
-    // different device or going back to Default, there's never more than one route per bundle ID.
-    // BGMTapRoute::~BGMTapRoute calls Stop(), which unmutes the app and tears down the tap.
-    routes.erase(key);
-
-    if (!deviceUID) {
+    if (deviceUIDs.count == 0) {
+        // Back to Default -- tear down the whole route. BGMTapRoute::~BGMTapRoute calls Stop(),
+        // which unmutes the app and destroys the tap.
+        routes.erase(key);
         return;
     }
 
-    AudioObjectID deviceID = [self findConnectedDeviceIDForUID:BGMNN(deviceUID)];
+    // Resolve every requested UID to a connected device up front. One that isn't connected gets
+    // its own error and is skipped, rather than blocking every other requested device in the same
+    // set from being routed.
+    std::vector<AudioObjectID> desiredDeviceIDs;
 
-    if (deviceID == kAudioObjectUnknown) {
-        DebugMsg("BGMAppOutputRoutingController::applyRouteForBundleID: "
-                 "Device %s isn't connected",
-                 deviceUID.UTF8String);
-        [self showRoutingErrorForAppName:appName reason:@"That output device isn't connected."];
-        return;
-    }
+    for (NSString* uid in deviceUIDs) {
+        AudioObjectID deviceID = [self findConnectedDeviceIDForUID:uid];
 
-    try {
-        // BGMTapRoute retains this for its lifetime (see its header), so give it a CACFString
-        // that actually owns a CFRetain -- the bridge cast below transfers the one this method's
-        // ARC-owned bundleID would otherwise have kept.
-        CACFString ownedBundleID((__bridge_retained CFStringRef)bundleID);
-        auto route =
-            std::unique_ptr<BGMTapRoute>(new BGMTapRoute(ownedBundleID, BGMAudioDevice(deviceID)));
-        route->Start();
-        routes[key] = std::move(route);
-    } catch (const CAException& e) {
-        LogError("BGMAppOutputRoutingController::applyRouteForBundleID: CAException %d",
-                 static_cast<int>(e.GetError()));
-
-        // BGMTapRoute::Start() distinguishes these two specific causes from a generic CoreAudio
-        // failure -- see its header comment. Only the fallback case is actually about a raw
-        // OSStatus; the other two have a real, specific explanation to show instead of a code.
-        NSString* reason;
-        if (e.GetError() == BGMTapRoute::kMacOSTooOld) {
-            reason = @"Per-app output routing needs macOS 26 or later.";
-        } else if (e.GetError() == BGMTapRoute::kOutputDeviceVanished) {
-            reason = @"That output device disconnected before routing could start.";
+        if (deviceID == kAudioObjectUnknown) {
+            DebugMsg("BGMAppOutputRoutingController::applyRouteForBundleID: "
+                     "Device %s isn't connected",
+                     uid.UTF8String);
+            [self showRoutingErrorForAppName:appName
+                                       reason:[NSString stringWithFormat:
+                                                   @"“%@” isn't connected.", uid]];
         } else {
-            reason = [NSString stringWithFormat:@"CoreAudio error %d.",
-                                                  static_cast<int>(e.GetError())];
+            desiredDeviceIDs.push_back(deviceID);
+        }
+    }
+
+    if (desiredDeviceIDs.empty()) {
+        // Every requested device failed to resolve -- nothing left to route to.
+        routes.erase(key);
+        return;
+    }
+
+    auto it = routes.find(key);
+    BGMTapRoute* __nullable route = nullptr;
+
+    if (it == routes.end()) {
+        // No existing route for this app -- create the tap fresh, with no outputs yet.
+        try {
+            // BGMTapRoute retains this for its lifetime (see its header), so give it a CACFString
+            // that actually owns a CFRetain -- the bridge cast below transfers the one this
+            // method's ARC-owned bundleID would otherwise have kept.
+            CACFString ownedBundleID((__bridge_retained CFStringRef)bundleID);
+            auto newRoute = std::unique_ptr<BGMTapRoute>(new BGMTapRoute(ownedBundleID));
+            newRoute->Start();
+            route = newRoute.get();
+            routes[key] = std::move(newRoute);
+        } catch (const CAException& e) {
+            [self showRoutingErrorForAppName:appName reason:[self reasonForTapRouteException:e]];
+            return;
+        } catch (...) {
+            LogError("BGMAppOutputRoutingController::applyRouteForBundleID: "
+                     "Unknown exception starting tap for %s",
+                     bundleID.UTF8String);
+            [self showRoutingErrorForAppName:appName reason:@"An unknown error occurred."];
+            return;
+        }
+    } else {
+        route = it->second.get();
+    }
+
+    // Reconcile this route's actual output devices with the desired set -- remove ones no longer
+    // wanted, add ones that are new. Deliberately leaves an output alone if it's already correct,
+    // so e.g. switching the target set from {A, B} to {A, C} doesn't glitch A's audio by tearing
+    // its BGMPlayThrough down and immediately back up for no reason.
+    for (const BGMAudioDevice& current : route->GetOutputDevices()) {
+        bool stillWanted = std::find(desiredDeviceIDs.begin(), desiredDeviceIDs.end(),
+                                      current.GetObjectID()) != desiredDeviceIDs.end();
+        if (!stillWanted) {
+            route->RemoveOutputDevice(current);
+        }
+    }
+
+    for (AudioObjectID desiredID : desiredDeviceIDs) {
+        BGMAudioDevice desiredDevice(desiredID);
+
+        if (route->HasOutputDevice(desiredDevice)) {
+            continue;
         }
 
-        [self showRoutingErrorForAppName:appName reason:reason];
-    } catch (...) {
-        LogError("BGMAppOutputRoutingController::applyRouteForBundleID: Unknown exception");
-        [self showRoutingErrorForAppName:appName reason:@"An unknown error occurred."];
+        try {
+            route->AddOutputDevice(desiredDevice);
+        } catch (const CAException& e) {
+            [self showRoutingErrorForAppName:appName reason:[self reasonForTapRouteException:e]];
+        } catch (...) {
+            LogError("BGMAppOutputRoutingController::applyRouteForBundleID: "
+                     "Unknown exception adding an output device for %s",
+                     bundleID.UTF8String);
+            [self showRoutingErrorForAppName:appName reason:@"An unknown error occurred."];
+        }
+    }
+
+    // If every output ended up failing to add (e.g. every requested device vanished between
+    // resolving its UID above and actually adding it), the route would otherwise be left running
+    // with zero outputs -- harmless (still tapping/muting the app for nothing) but pointless.
+    if (route->GetOutputDevices().empty()) {
+        routes.erase(key);
+    }
+}
+
+// BGMTapRoute::Start()/AddOutputDevice() distinguish these two specific causes from a generic
+// CoreAudio failure -- see BGMTapRoute.h. Only the fallback case is actually about a raw OSStatus;
+// the other two have a real, specific explanation to show instead of a code.
+- (NSString*) reasonForTapRouteException:(const CAException&)e {
+    LogError("BGMAppOutputRoutingController: CAException %d", static_cast<int>(e.GetError()));
+
+    if (e.GetError() == BGMTapRoute::kMacOSTooOld) {
+        return @"Per-app output routing needs macOS 26 or later.";
+    } else if (e.GetError() == BGMTapRoute::kOutputDeviceVanished) {
+        return @"That output device disconnected before routing could start.";
+    } else {
+        return [NSString stringWithFormat:@"CoreAudio error %d.", static_cast<int>(e.GetError())];
     }
 }
 

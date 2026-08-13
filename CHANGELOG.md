@@ -20,23 +20,29 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
   - App: `BGMAVM_EQBandSlider` in `BGMApp/BGMApp/BGMAppVolumes.{h,m}`, wired to
     `BGMBackgroundMusicDevice::SetAppEQBandGains`/`GetAppEQ`. The show-more-controls arrow
     highlights when an app has non-default EQ or pan set.
-- **Per-app output routing.** Send an individual app's audio to a different physical output device
-  than everything else, via CoreAudio Process Taps — not possible in upstream's single-virtual-
-  device architecture. See [docs/PROCESS-TAP-ROUTING.md](docs/PROCESS-TAP-ROUTING.md) for the full
-  design.
-  - `BGMTapRoute` (`BGMApp/BGMApp/BGMTapRoute.{h,mm}`) — the per-app tap/aggregate-device/
-    `BGMPlayThrough` engine. Distinguishes macOS-too-old, target-device-vanished, and generic
-    CoreAudio failures when `Start()` throws, so the error alert names the actual cause.
-  - `BGMAppOutputRoutingController` — owns routing assignments, persists them, restores them for
-    running apps, and now watches for the routed device disconnecting mid-route (clears the route,
-    keeps the persisted assignment so it reapplies if the device reconnects).
-  - `BGMAVM_OutputRouteButton` — the per-app output-device pop-up in the menu.
+- **Per-app output routing.** Send an individual app's audio to one or more physical output
+  devices, independent of everything else's output, via CoreAudio Process Taps — not possible in
+  upstream's single-virtual-device architecture. See
+  [docs/PROCESS-TAP-ROUTING.md](docs/PROCESS-TAP-ROUTING.md) for the full design.
+  - `BGMTapRoute` (`BGMApp/BGMApp/BGMTapRoute.{h,mm}`) — the per-app tap/aggregate-device engine,
+    one `BGMPlayThrough` per output device sharing the same tap (added 2026-08-12, "Phase 3" —
+    originally exactly one device per route). Distinguishes macOS-too-old, target-device-vanished,
+    and generic CoreAudio failures when `Start()`/`AddOutputDevice()` throw, so the error alert
+    names the actual cause.
+  - `BGMAppOutputRoutingController` — owns routing assignments (now per bundle ID an array of
+    device UIDs, not a single one), persists them, restores them for running apps, and watches for
+    a routed device disconnecting mid-route (drops just that device from the route, keeping any
+    others playing and the persisted assignment so it reapplies if the device reconnects).
+  - `BGMAVM_OutputRouteButton` — the per-app output-device pop-up in the menu. Clicking a device
+    toggles it into/out of the app's target set instead of replacing it, so routing to more than
+    one device is a few individual clicks.
   - Routed apps are marked in the main menu (an icon appended to the app's name) so a route is
     visible without opening that app's row.
   - Requires macOS 26.0+ (`CATapDescription.processRestoreEnabled`); everything else in Wavecraft
     still targets macOS 10.13+.
 - **AppleScript support for per-app EQ and output routing** — `BGMASApplication` gained
-  `eqBandGains` and `outputDevice` properties, alongside the existing `volume`/`pan`.
+  `eqBandGains` and `outputDevices` (a list, more than one item routes to all of them at once)
+  properties, alongside the existing `volume`/`pan`.
 - Native Apple Silicon (`arm64`) build from source — the reason this fork exists at all. Upstream's
   official release binary runs under Rosetta on Apple Silicon
   ([issue #395](https://github.com/kyleneideck/BackgroundMusic/issues/395)); building from source

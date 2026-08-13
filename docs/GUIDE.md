@@ -152,15 +152,24 @@ Not built into the app — add `Wavecraft.app` (installed as `Background Music.a
 Wavecraft is scriptable — open **Script Editor** and target "Background Music" (its underlying
 app/process name; see CLAUDE.md's Icons section for why the display name and process name differ).
 Each running app exposes `volume`, `pan`, `EQ band gains` (a list of 10 numbers, lowest frequency
-first), and `output device` (an output device object, or `missing value` for no override):
+first), and `output devices` (a list of output device objects, empty for no override — set more
+than one to play that app's audio through all of them at once):
 
 ```applescript
 tell application "Background Music"
     set volume of application "Music" to 50
     set EQ band gains of application "Music" to {0, 0, 0, 0, 0, 3, 3, 0, 0, 0}
-    set output device of application "Music" to (first output device whose name is "AirPods")
+    set output devices of application "Music" to {first output device whose name is "AirPods"}
+    -- Or route to two devices at once:
+    -- set output devices of application "Music" to {output device 1, output device 2}
+    -- Back to the default output:
+    -- set output devices of application "Music" to {}
 end tell
 ```
 
-The app-level `selected output device`, `output devices`, and `output volume` properties already
-documented by upstream Background Music still work unchanged.
+Wavecraft-the-application (not a specific running app) also still exposes upstream's own
+`selected output device`, `output devices`, and `output volume` properties unchanged — that
+top-level `output devices` is the full list of every connected device (`get output devices`), a
+different thing from the per-app `output devices` property above (`output devices of application
+"Music"`, which devices *that specific app* is routed to). AppleScript tells them apart by which
+object you ask.

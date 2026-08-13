@@ -21,8 +21,10 @@
 //
 //  Owns the per-app output-device routing assignments -- see BGMTapRoute and
 //  docs/PROCESS-TAP-ROUTING.md for the mechanism and why it exists. There's at most one
-//  BGMTapRoute per app that's been explicitly routed to a non-default output device; apps with no
-//  assignment keep using BGMDevice's normal per-app playthrough, unaffected by this class.
+//  BGMTapRoute per app that's been explicitly routed to one or more non-default output devices
+//  (BGMTapRoute itself supports playing through several devices at once from a single tap -- see
+//  its header); apps with no assignment keep using BGMDevice's normal per-app playthrough,
+//  unaffected by this class.
 //
 //  Assignments are persisted (bundle ID -> output device UID) in BGMUserDefaults so they survive
 //  Wavecraft restarting. Restoring a persisted assignment only happens for apps that are actually
@@ -48,31 +50,46 @@
 - (instancetype) initWithUserDefaults:(BGMUserDefaults*)userDefaults;
 
 // Rebuilds popUpButton's menu with "Default" plus one item per output device currently connected
-// (the same devices BGMOutputDeviceMenuSection would offer as BGMApp's own output), marking
-// whichever one matches this app's current routing (or "Default" if it has none). Call right
-// before the button's menu is shown -- see BGMAVM_OutputRouteButton's menuNeedsUpdate:. Safe to
-// call often; it doesn't touch anything but the button passed in.
+// (the same devices BGMOutputDeviceMenuSection would offer as BGMApp's own output), checkmarking
+// every device that's currently one of this app's targets (or "Default" alone if it has none).
+// Call right before the button's menu is shown -- see BGMAVM_OutputRouteButton's menuNeedsUpdate:.
+// Safe to call often; it doesn't touch anything but the button passed in.
 - (void) populateMenuForButton:(NSPopUpButton*)popUpButton
                     forBundleID:(NSString*)bundleID;
 
-// Called when the user picks an item from an app's output-device pop-up button. Persists the new
-// assignment immediately (so the UI reflects it right away), then starts or stops the underlying
-// route asynchronously, showing an error alert if that fails. Pass nil for deviceUID for
-// "Default" (i.e. remove any override and let the app go back through BGMDevice as normal).
-- (void) userSelectedDeviceUID:(NSString* __nullable)deviceUID
+// Called when the user clicks a device in an app's output-device pop-up button. Adds deviceUID to
+// the app's set of target devices if it wasn't already one (so the app's audio now also plays
+// through it, alongside any others already selected), or removes it if it was (so that device
+// stops, leaving any others playing). Persists the new set immediately (so the UI reflects it
+// right away), then reconciles the underlying route asynchronously, showing an error alert if
+// that fails.
+- (void) userToggledDeviceUID:(NSString*)deviceUID
              forAppWithBundleID:(NSString*)bundleID
                         appName:(NSString* __nullable)appName;
 
-// True if bundleID currently has a persisted output-device override. Reflects the user's most
-// recent choice immediately; the underlying route may still be starting/stopping asynchronously
-// to catch up to it.
+// Called when the user clicks "Default" in an app's output-device pop-up button. Clears every
+// target device for that app at once, back to using BGMDevice's normal default-output path.
+- (void) userSelectedDefaultForAppWithBundleID:(NSString*)bundleID
+                                        appName:(NSString* __nullable)appName;
+
+// Replaces bundleID's entire set of target output devices at once -- the primitive
+// userToggledDeviceUID:/userSelectedDefaultForAppWithBundleID: and AppleScript support
+// (BGMASApplication's outputDevices property) all funnel through, rather than each maintaining
+// their own copy of the add/remove/persist logic. An empty array means "no override" (Default).
+- (void) setOutputOverrideDeviceUIDs:(NSArray<NSString*>*)deviceUIDs
+                    forAppWithBundleID:(NSString*)bundleID
+                               appName:(NSString* __nullable)appName;
+
+// True if bundleID currently has at least one persisted output-device override. Reflects the
+// user's most recent choice immediately; the underlying route may still be starting/stopping
+// asynchronously to catch up to it.
 - (BOOL) hasOutputOverrideForBundleID:(NSString*)bundleID;
 
-// The UID of the device bundleID's audio is currently routed to, or nil if it has no override
+// The UIDs of the devices bundleID's audio is currently routed to -- empty if it has no override
 // (i.e. it's using the default output). Same underlying value hasOutputOverrideForBundleID: checks
-// for nil-ness -- exposed as its own accessor for callers (AppleScript support) that need the
-// actual UID, not just whether one exists.
-- (NSString* __nullable) outputOverrideDeviceUIDForBundleID:(NSString*)bundleID;
+// for emptiness -- exposed as its own accessor for callers (AppleScript support) that need the
+// actual UIDs, not just whether any exist.
+- (NSArray<NSString*>*) outputOverrideDeviceUIDsForBundleID:(NSString*)bundleID;
 
 // Removes every current output-device override, returning all routed apps to Wavecraft's normal
 // default-output path. For the "Remove All Output Routing Overrides" troubleshooter -- a panic

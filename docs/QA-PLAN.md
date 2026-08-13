@@ -123,9 +123,22 @@ Every control, once, confirming it does what the code says it does:
       up in the list and audio actually plays there (see TODO.md's AirPlay entry: the filter code
       has no AirPlay exclusion, confirmed by reading it, but never tested against real hardware)
 - [ ] AppleScript: from Script Editor, get and set `volume`, `pan`, `EQ band gains`, and
-      `output device` of a running app via `tell application "Background Music"` — confirm each
-      round-trips correctly and that setting `output device` actually starts a route (audible, and
-      visible via the new route indicator) the same as using the pop-up would
+      `output devices` of a running app via `tell application "Background Music"` — confirm each
+      round-trips correctly and that setting `output devices` to a one-item list actually starts a
+      route (audible, and visible via the route indicator) the same as using the pop-up would, and
+      that setting it to a two-item list plays through both at once
+- [ ] AppleScript: `set output devices of application "X" to {}` — confirm it clears the route back
+      to Default, same as clicking "Default" in the pop-up
+- [ ] Routing: route one app to two different output devices at once (click one device in the
+      pop-up, reopen it, click a second one without clicking Default in between) — confirm both
+      show checkmarked, and confirm audibly that the app's sound plays through *both* devices
+      simultaneously, not just the most recently clicked one
+- [ ] Routing: with an app routed to two devices, click one of the already-checked devices again —
+      confirm just that one stops (audibly) and unchecks, while the other keeps playing
+      uninterrupted (no audible glitch/restart on the device that wasn't touched)
+- [ ] Routing: with an app routed to two devices, unplug one of them — confirm the persisted
+      assignment drops just that device (not both), the still-connected one keeps playing, and the
+      pop-up shows only the remaining device checked
 
 ## 4. Regression check against upstream behavior
 

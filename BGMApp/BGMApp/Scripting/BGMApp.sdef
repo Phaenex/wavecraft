@@ -80,12 +80,12 @@
                 <cocoa key="eqBandGains"/>
             </property>
 
-            <property name="output device"
+            <property name="output devices"
                       code="pRte"
-                      type="output device"
                       access="rw"
-                      description="The output device this application's audio is routed to, or missing value if it's using the default output. Requires macOS 26 or later.">
-                <cocoa key="outputDevice"/>
+                      description="The output device(s) this application's audio is routed to (more than one plays the audio through every device in the list at once), or an empty list if it's using the default output. Requires macOS 26 or later.">
+                <type type="output device" list="yes"/>
+                <cocoa key="outputDevices"/>
             </property>
         </class>
 

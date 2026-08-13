@@ -140,3 +140,53 @@ devices. Nothing here has been run against real hardware yet; what's verified so
 whole thing builds clean and the driver-side `BGM_BiquadTests`/`BGM_ClientsTests`,
 `BGMAppUnitTests`'s `BGMTapRouteTests`, and the full BGMApp/BGMDriver/BGMXPCHelper build all pass
 -- see the "Build & test" section in `CLAUDE.md`.
+
+## Phase 3: multiple output devices per route (2026-08-12)
+
+TODO.md's "Feature parity" list flagged this as needing real design work, not a simple hookup --
+`BGMTapRoute` originally hard-coded exactly one output device (and one `BGMPlayThrough`) per tap.
+
+**The key fact that makes this tractable without a second tap per output**: a CoreAudio device
+supports multiple independent `IOProcID`s reading its captured audio simultaneously -- the same
+mechanism that lets several apps record from one microphone at once. The tap/aggregate device is
+the expensive, per-app resource (it's what actually mutes the source app and captures its audio);
+the *output* side is "just" a `BGMPlayThrough` writing that same captured audio to one physical
+device. So `BGMTapRoute` now owns a `std::vector` of `{device, BGMPlayThrough}` pairs all reading
+from the *same* aggregate input device, instead of exactly one. `Start()` creates the tap and
+mutes the app but plays through nothing yet; `AddOutputDevice()`/`RemoveOutputDevice()` manage the
+output list independently, so adding a second device to an already-running route doesn't tear down
+and recreate the tap (which would mean a moment of the app's audio not being muted, then muted
+again) -- it just adds one more `BGMPlayThrough` sharing the existing capture.
+
+`BGMAppOutputRoutingController` changed from "one device UID per bundle ID" to "an array of device
+UIDs per bundle ID" throughout: `BGMUserDefaults.outputRouteDeviceUIDsByBundleID` is now
+`NSDictionary<NSString*, NSArray<NSString*>*>*` (an empty/missing array means Default, matching the
+old nil-means-Default convention). `applyRouteForBundleID:deviceUIDs:appName:` *diffs* the desired
+device set against a route's actual current outputs (`BGMTapRoute::GetOutputDevices()`) rather than
+tearing the whole route down and rebuilding it on every change -- switching from `{A, B}` to
+`{A, C}` only touches `B` and `C`, leaving `A`'s `BGMPlayThrough` running untouched, so its audio
+doesn't glitch for no reason.
+
+**UI decision, deliberately conservative**: the per-app output-device pop-up
+(`BGMAVM_OutputRouteButton`) still uses the plain `NSPopUpButton`-driven "click a device, menu
+closes" interaction it already had -- clicking now *toggles* that device in the target set instead
+of replacing it, so selecting more than one device is several individual clicks (reopen the
+pop-up, pick the next one), not a single persistent multi-select gesture. A "stays open, check
+several boxes at once" checklist would need custom-view menu items with their own click handling
+that doesn't dismiss the menu -- exactly the category of AppKit menu interaction that caused the
+per-app EQ's real menu-closing bug this same session (see docs/LESSONS.md), and which isn't
+confirmed fixed yet. Reusing the existing, already-built click-and-close interaction avoids
+stacking a second unverified menu-interaction risk on top of the first. Revisit this once the
+two-column EQ fix (or lack thereof) is actually confirmed against a real running menu.
+
+AppleScript's per-app `output device` property became `output devices` (a list) --
+`BGMASApplication.outputDevices`/`setOutputDevices:` replace the old singular
+`outputDevice`/`setOutputDevice:`. `BGMApp.sdef`'s `pRte` property code is unchanged (same
+underlying property, now list-typed) so existing compiled `.sdef` references to it by code aren't
+broken, only the name/cocoa-key changed.
+
+**Nothing about the underlying mechanism (mute behavior, `processRestoreEnabled`, tap creation)
+changed** -- multi-output only affects the output side. The same Phase 2 caveat still applies in
+full: `CATapMuted` is still unverified against real hardware, and now so is the specific multi-
+output claim that two devices really do play the same audio simultaneously without one glitching
+the other. See TODO.md's "Needs a human" section.

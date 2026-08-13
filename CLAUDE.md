@@ -42,7 +42,7 @@ xcodebuild -workspace BGM.xcworkspace -scheme "Background Music Device" -configu
 python3 tools/verify-icons.py
 ```
 
-All three targets build clean (Debug and Release). 52/52 unit tests passing (28 BGMAppUnitTests +
+All three targets build clean (Debug and Release). 63/63 unit tests passing (39 BGMAppUnitTests +
 24 BGMDriverTests, 0 failures — re-run directly via the commands above, not carried over from an
 older count). Two driver tests are regression tests for real bugs found in this fork, not ordinary
 feature tests:
@@ -181,11 +181,28 @@ always needs a human, above) followed by actually moving the new sliders/pop-up 
   generic CoreAudio failure, so the error alert shown for a failed route names the actual cause
   instead of always blaming "needs macOS 26."
 - **AppleScript support** — `BGMASApplication` (`BGMApp/BGMApp/Scripting/`) gained `eqBandGains`
-  (wraps the getter/setter above) and `outputDevice` (resolves to/from a `BGMASOutputDevice` via
-  `BGMAppOutputRoutingController`'s newly-public `outputOverrideDeviceUIDForBundleID:`/
-  `findConnectedDeviceIDForUID:`) properties, declared in `BGMApp.sdef`. `BGMAppDelegate` gained a
-  public `outputRoutingController` property (mirroring the existing `appVolumes` one) so the
-  scripting layer can reach it.
+  (wraps the getter/setter above) and `outputDevices` (a list; resolves to/from `BGMASOutputDevice`
+  objects via `BGMAppOutputRoutingController`'s newly-public
+  `outputOverrideDeviceUIDsForBundleID:`/`findConnectedDeviceIDForUID:`) properties, declared in
+  `BGMApp.sdef`. `BGMAppDelegate` gained a public `outputRoutingController` property (mirroring the
+  existing `appVolumes` one) so the scripting layer can reach it.
+- **Multiple output devices per route** (added 2026-08-12, see docs/PROCESS-TAP-ROUTING.md's "Phase
+  3") — `BGMTapRoute` generalized from exactly one `BGMPlayThrough` per tap to a `std::vector` of
+  them, all reading the same aggregate input device (CoreAudio devices support several independent
+  `IOProcID`s on one device simultaneously, the same way multiple apps can record from one mic).
+  `AddOutputDevice:`/`RemoveOutputDevice:` manage outputs independently of the tap's lifecycle, so
+  changing an app's target device set diffs against what's already running instead of tearing the
+  whole route down. `BGMUserDefaults.outputRouteDeviceUIDsByBundleID` changed from
+  `NSDictionary<NSString*, NSString*>*` to `NSDictionary<NSString*, NSArray<NSString*>*>*` — the
+  getter defensively drops any entry that isn't actually an array of strings, since a plist saved
+  by the earlier single-device version would otherwise deserialize as the wrong shape (Objective-C
+  generics are erased at runtime) and crash the first caller that treats it as an array. The
+  per-app pop-up (`BGMAVM_OutputRouteButton`) deliberately kept its existing click-and-close
+  `NSPopUpButton` interaction rather than becoming a persistent multi-select checklist — clicking a
+  device now toggles it in/out of the set instead of replacing it, so multi-device selection is
+  several individual clicks, not one gesture. That's a deliberate scope decision to avoid a second
+  unverified custom-view-menu interaction risk stacked on top of the EQ menu-closing bug from
+  earlier this session (still not confirmed fixed) — see PROCESS-TAP-ROUTING.md for the reasoning.
 
 ## Also new in Wavecraft: troubleshooters, hotkeys, customization
 
@@ -225,13 +242,17 @@ a real install**:
   real-audio checks it still needs (does the muted app actually go silent, does the restored volume
   match what it was before, not a default).
 
-62/62 unit tests passing after this work (38 BGMAppUnitTests + 24 BGMDriverTests). The 10 new
+63/63 unit tests passing after this work (39 BGMAppUnitTests + 24 BGMDriverTests). The 10
 `BGMUserDefaultsTests.mm` tests cover the hotkey-binding storage/defaults/clamping/helper-function
-logic, which is plain Foundation/plist code with no CoreAudio HAL dependency — but `BGMHotkeys`
-itself, `BGMHotkeyRecorderButton`'s actual key-capture behavior, and the troubleshooters/EQ/routing
-UI still depend on real system state (`AXIsProcessTrusted()`, `NSWorkspace.frontmostApplication`,
-live `AudioObjectSetPropertyData`, `AVCaptureDevice` authorization, a real live `NSMenu` tracking
-session) that the mocked `BGMAppUnitTests` target can't exercise, the same limitation
+logic, which is plain Foundation/plist code with no CoreAudio HAL dependency; the 1 new
+`BGMTapRouteTests.mm` test (`testHasOutputDeviceIsFalseForAnyDeviceBeforeAddOutputDeviceIsCalled`)
+only covers construction-time state, matching that file's existing "construction/validation only"
+scope — but `BGMHotkeys` itself, `BGMHotkeyRecorderButton`'s actual key-capture behavior,
+`BGMDoNotDisturb`, and the troubleshooters/EQ/routing UI (including the new multi-output diffing
+logic in `BGMAppOutputRoutingController`) still depend on real system state
+(`AXIsProcessTrusted()`, `NSWorkspace.frontmostApplication`, live `AudioObjectSetPropertyData`,
+`AVCaptureDevice` authorization, a real live `NSMenu` tracking session, real CoreAudio tap/aggregate
+devices) that the mocked `BGMAppUnitTests` target can't exercise, the same limitation
 `BGMTapRouteTests.mm` documents. See TODO.md's "Needs a human" section for what real-install
 verification these still need.
 

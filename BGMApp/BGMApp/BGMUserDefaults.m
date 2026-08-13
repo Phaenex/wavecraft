@@ -168,12 +168,42 @@ static NSString* const kKeychainLabelGPMDPAuthCode =
     [self set:kDefaultKeyPreferredDeviceUIDs to:devices];
 }
 
-- (NSDictionary<NSString*, NSString*>*) outputRouteDeviceUIDsByBundleID {
-    NSDictionary<NSString*, NSString*>* __nullable uids = [self get:kDefaultKeyOutputRouteDeviceUIDs];
-    return uids ? BGMNN(uids) : @{};
+- (NSDictionary<NSString*, NSArray<NSString*>*>*) outputRouteDeviceUIDsByBundleID {
+    NSDictionary* __nullable stored = [self get:kDefaultKeyOutputRouteDeviceUIDs];
+
+    if (!stored) {
+        return @{};
+    }
+
+    // Per-app output routing used to store a single UID string per bundle ID, not an array --
+    // Objective-C generics are erased at runtime, so a plist saved by that older version would
+    // deserialize fine as a plain NSDictionary and only fail once something calls an NSArray-only
+    // method (e.g. containsObject:) on what's actually an NSString. Validate defensively and drop
+    // any entry that isn't actually an array of strings, rather than propagating a value that's
+    // guaranteed to crash the first real caller downstream.
+    NSMutableDictionary<NSString*, NSArray<NSString*>*>* validated = [NSMutableDictionary new];
+
+    for (NSString* bundleID in stored) {
+        id __nullable value = stored[bundleID];
+
+        if ([value isKindOfClass:[NSArray class]] &&
+            [value count] > 0 &&
+            [value indexOfObjectPassingTest:^BOOL(id obj, NSUInteger idx, BOOL* stop) {
+                #pragma unused (idx, stop)
+                return ![obj isKindOfClass:[NSString class]];
+            }] == NSNotFound) {
+            validated[bundleID] = value;
+        } else {
+            NSLog(@"BGMUserDefaults::outputRouteDeviceUIDsByBundleID: Dropping malformed entry "
+                   "for %@ (expected a non-empty array of strings, e.g. from a pre-multi-output "
+                   "install)", bundleID);
+        }
+    }
+
+    return validated;
 }
 
-- (void) setOutputRouteDeviceUIDsByBundleID:(NSDictionary<NSString*, NSString*>*)uids {
+- (void) setOutputRouteDeviceUIDsByBundleID:(NSDictionary<NSString*, NSArray<NSString*>*>*)uids {
     [self set:kDefaultKeyOutputRouteDeviceUIDs to:uids];
 }
 
