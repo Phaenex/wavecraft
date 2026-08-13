@@ -44,17 +44,20 @@
     BGMAudioDeviceManager* audioDevices;
     BGMPreferredOutputDevices* preferredOutputDevices;
     BGMAppOutputRoutingController* outputRoutingController;
+    BGMDoNotDisturb* doNotDisturb;
     BGMXPCListener* __nullable xpcListener;
 }
 
 - (instancetype) initWithPreferencesMenu:(NSMenu*)prefsMenu
                             audioDevices:(BGMAudioDeviceManager*)inAudioDevices
                  preferredOutputDevices:(BGMPreferredOutputDevices*)inPreferredOutputDevices
-                outputRoutingController:(BGMAppOutputRoutingController*)inOutputRoutingController {
+                outputRoutingController:(BGMAppOutputRoutingController*)inOutputRoutingController
+                           doNotDisturb:(BGMDoNotDisturb*)inDoNotDisturb {
     if ((self = [super init])) {
         audioDevices = inAudioDevices;
         preferredOutputDevices = inPreferredOutputDevices;
         outputRoutingController = inOutputRoutingController;
+        doNotDisturb = inDoNotDisturb;
 
         [self setupMenu:prefsMenu];
     }
@@ -139,7 +142,8 @@
     alert.messageText = @"Reset every app’s volume, pan, and EQ?";
     alert.informativeText = @"Every app currently boosted, panned, or EQ’d away from its default "
                               "will go back to flat/centered/unboosted. This doesn’t affect your "
-                              "output-routing assignments.";
+                              "output-routing assignments, and it won’t un-mute anything Do Not "
+                              "Disturb is currently muting.";
     [alert addButtonWithTitle:@"Cancel"];
     [alert addButtonWithTitle:@"Reset"];
 
@@ -173,7 +177,8 @@
     }
 }
 
-// Returns the number of clients whose volume/pan were reset.
+// Returns the number of clients whose volume/pan were actually reset -- doesn't include any app
+// this method skipped because Do Not Disturb is currently muting it (see the loop body).
 - (NSUInteger) resetAllAppVolumesAndPan {
     CACFArray volumes(audioDevices.bgmDevice.GetAppVolumes(), false);
     UInt32 count = volumes.GetNumberItems();
@@ -184,14 +189,33 @@
     const SInt32 kDefaultVolume = (kAppRelativeVolumeMinRawValue + kAppRelativeVolumeMaxRawValue) / 2;
     const SInt32 kDefaultPan = 0;
 
+    NSUInteger resetCount = 0;
+
     for (UInt32 i = 0; i < count; i++) {
         CACFDictionary entry(false);
         volumes.GetCACFDictionary(i, entry);
 
+        // A Do Not Disturb-muted app's volume is at kAppRelativeVolumeMinRawValue, which makes it
+        // "non-default" by the same test that includes any other boosted/cut app here -- but
+        // resetting it would silently un-mute an app Do Not Disturb is actively suppressing,
+        // without Do Not Disturb's own state (which app it's muting) ever finding out, so the
+        // mismatch would persist until Do Not Disturb is toggled off or the app relaunches. Skip
+        // it instead; the confirmation alert already tells the user Do Not Disturb-muted apps
+        // aren't touched here.
+        CACFString bundleID;
+        bundleID.DontAllowRelease();
+        entry.GetCACFString(CFSTR(kBGMAppVolumesKey_BundleID), bundleID);
+
+        if (bundleID.IsValid() &&
+            [doNotDisturb isMutingBundleID:(__bridge NSString*)bundleID.GetCFString()]) {
+            continue;
+        }
+
         [self setVolume:kDefaultVolume pan:kDefaultPan forClientEntry:entry];
+        resetCount++;
     }
 
-    return count;
+    return resetCount;
 }
 
 - (NSUInteger) resetAllAppEQ {
@@ -322,11 +346,10 @@
 #pragma mark Result Alert
 
 - (void) showResultAlert:(NSString*)title text:(NSString*)text success:(BOOL)success {
-    #pragma unused (success)
-
     NSAlert* alert = [NSAlert new];
     alert.messageText = title;
     alert.informativeText = text;
+    alert.alertStyle = success ? NSAlertStyleInformational : NSAlertStyleCritical;
     [alert runModal];
 }
 

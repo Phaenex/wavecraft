@@ -54,6 +54,15 @@
 // enabling Do Not Disturb with no priority app set mutes every running app.
 @property NSString* __nullable doNotDisturbPriorityAppBundleID;
 
+// Bundle ID -> the volume (an NSNumber wrapping an SInt32 in
+// kAppRelativeVolumeMinRawValue...kAppRelativeVolumeMaxRawValue) to restore that app to once
+// Do Not Disturb stops muting it. Persisted (not just kept in memory) so that a Wavecraft
+// relaunch while Do Not Disturb is on and an app is already muted doesn't lose the app's real
+// pre-mute volume -- without this, re-muting on launch would capture the app's *current*
+// (already-muted) volume as if it were the original, permanently replacing it. See
+// BGMDoNotDisturb.
+@property NSDictionary<NSString*, NSNumber*>* doNotDisturbMutedAppVolumes;
+
 // The UIDs of the output devices most recently selected by the user. The most-recently selected
 // device is at index 0. See BGMPreferredOutputDevices.
 @property NSArray<NSString*>* preferredDeviceUIDs;

@@ -29,6 +29,7 @@
 // Local Includes
 #import "BGMAppOutputRoutingController.h"
 #import "BGMAudioDeviceManager.h"
+#import "BGMDoNotDisturb.h"
 #import "BGMPreferredOutputDevices.h"
 #import "BGMXPCListener.h"
 
@@ -43,7 +44,8 @@
 - (instancetype) initWithPreferencesMenu:(NSMenu*)prefsMenu
                             audioDevices:(BGMAudioDeviceManager*)audioDevices
                  preferredOutputDevices:(BGMPreferredOutputDevices*)preferredOutputDevices
-                outputRoutingController:(BGMAppOutputRoutingController*)outputRoutingController;
+                outputRoutingController:(BGMAppOutputRoutingController*)outputRoutingController
+                           doNotDisturb:(BGMDoNotDisturb*)doNotDisturb;
 
 // BGMXPCListener isn't constructed yet when this class is (see BGMAppDelegate's launch sequence),
 // so it's handed over later instead of through the initializer. The "Reconnect to BGMXPCHelper"

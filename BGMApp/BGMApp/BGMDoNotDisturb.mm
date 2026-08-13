@@ -59,9 +59,14 @@ static void* kRunningApplicationsContext = &kRunningApplicationsContext;
     if ((self = [super init])) {
         audioDevices = inAudioDevices;
         userDefaults = inUserDefaults;
-        mutedApps = [NSMutableDictionary new];
         enabled = NO;
         observingRunningApplications = NO;
+
+        // Restore the persisted mute map (if any) BEFORE deciding whether to resume, not after --
+        // if Do Not Disturb was left on and an app was already muted, applyForRunningApps: below
+        // must see its real pre-mute volume already in mutedApps, or it'll capture the app's
+        // *current* (already-muted) volume as if that were the original, permanently losing it.
+        mutedApps = [userDefaults.doNotDisturbMutedAppVolumes mutableCopy];
 
         // Resume on launch if it was left on -- matches BGMHotkeys's own resume-on-launch
         // behavior. Unlike hotkeys, this needs no extra permission, so there's no gate here.
@@ -168,6 +173,8 @@ static void* kRunningApplicationsContext = &kRunningApplicationsContext;
             [self muteApp:app];
         }
     }
+
+    [self persistMutedApps];
 }
 
 - (void) muteApp:(NSRunningApplication*)app {
@@ -208,6 +215,16 @@ static void* kRunningApplicationsContext = &kRunningApplicationsContext;
     for (NSString* bundleID in bundleIDs) {
         [self restoreAppIfMuted:bundleID];
     }
+
+    [self persistMutedApps];
+}
+
+- (void) persistMutedApps {
+    userDefaults.doNotDisturbMutedAppVolumes = [mutedApps copy];
+}
+
+- (BOOL) isMutingBundleID:(NSString*)bundleID {
+    return mutedApps[bundleID] != nil;
 }
 
 // Same fallback default (unity gain, the midpoint of the raw volume range) BGMHotkeys and

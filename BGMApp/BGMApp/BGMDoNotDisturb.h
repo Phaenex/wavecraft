@@ -61,6 +61,12 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly, nullable) NSString* priorityAppBundleID;
 - (void) setPriorityAppBundleID:(NSString* __nullable)bundleID;
 
+// True if bundleID is currently muted by Do Not Disturb (i.e. this instance is the reason its
+// volume is at kAppRelativeVolumeMinRawValue right now). For callers that need to avoid clobbering
+// a Do Not Disturb mute -- see BGMTroubleshootMenu's "Reset All App Volumes, Pan & EQ", which skips
+// muted apps rather than un-muting them out from under Do Not Disturb with no warning.
+- (BOOL) isMutingBundleID:(NSString*)bundleID;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -38,6 +38,7 @@ static NSString* const kDefaultKeyAutoPauseMusicEnabled = @"AutoPauseMusicEnable
 static NSString* const kDefaultKeyDoNotDisturbEnabled   = @"DoNotDisturbEnabled";
 static NSString* const kDefaultKeyDoNotDisturbPriorityAppBundleID =
     @"DoNotDisturbPriorityAppBundleID";
+static NSString* const kDefaultKeyDoNotDisturbMutedAppVolumes = @"DoNotDisturbMutedAppVolumes";
 static NSString* const kDefaultKeySelectedMusicPlayerID = @"SelectedMusicPlayerID";
 static NSString* const kDefaultKeyPreferredDeviceUIDs   = @"PreferredDeviceUIDs";
 static NSString* const kDefaultKeyOutputRouteDeviceUIDs = @"OutputRouteDeviceUIDsByBundleID";
@@ -129,6 +130,16 @@ static NSString* const kKeychainLabelGPMDPAuthCode =
 
 - (void) setDoNotDisturbPriorityAppBundleID:(NSString* __nullable)bundleID {
     [self set:kDefaultKeyDoNotDisturbPriorityAppBundleID to:bundleID];
+}
+
+- (NSDictionary<NSString*, NSNumber*>*) doNotDisturbMutedAppVolumes {
+    NSDictionary<NSString*, NSNumber*>* __nullable volumes =
+        [self get:kDefaultKeyDoNotDisturbMutedAppVolumes];
+    return volumes ? BGMNN(volumes) : @{};
+}
+
+- (void) setDoNotDisturbMutedAppVolumes:(NSDictionary<NSString*, NSNumber*>*)volumes {
+    [self set:kDefaultKeyDoNotDisturbMutedAppVolumes to:volumes];
 }
 
 #pragma mark Auto-pause Delays
