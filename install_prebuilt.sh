@@ -102,6 +102,10 @@ echo " - ${DRIVER_INSTALL_PATH}/${DRIVER_DIR}"
 echo " - a small helper service under /usr/local/libexec or /Library/Application Support"
 echo " - ${LAUNCHD_PLIST}"
 echo
+echo "Partway through, coreaudiod (the system audio process) gets restarted so it picks up the"
+echo "newly-installed driver -- audio will glitch briefly when that happens, so pause anything"
+echo "that's playing first."
+echo
 echo "$(tput setaf 11)One more thing:$(tput sgr0) since these files were downloaded rather than"
 echo "built on this Mac, macOS may show a security warning the first time you try to open"
 echo "Wavecraft after this finishes -- that's expected, not a sign of a problem. See README.md's"
@@ -139,19 +143,50 @@ echo "[2/3] Installing $(bold_face ${XPC_HELPER_DIR})"
 XPC_HELPER_RESOURCES="${XPC_HELPER_DIR}/Contents/Resources"
 XPC_HELPER_INSTALL_DIR="$(bash "${XPC_HELPER_RESOURCES}/safe_install_dir.sh" -y)"
 
+# safe_install_dir.sh -y silently falls back to an unsafe directory (rather than prompting) if
+# neither of its normal candidates checks out -- rare (only if /usr/local/libexec and
+# /Library/Application Support are both already in a bad state, e.g. some Homebrew setups), but
+# since -y means it won't ask, check it ourselves and at least warn instead of installing a
+# privileged helper into an insecure location with zero indication. pkg/postinstall's GUI
+# installer path does this same second check via an alert; this is the terminal equivalent.
+if [[ "$(bash "${XPC_HELPER_RESOURCES}/safe_install_dir.sh" "${XPC_HELPER_INSTALL_DIR}")" != "1" ]]; then
+    echo
+    echo "$(tput setaf 11)WARNING$(tput sgr0): ${XPC_HELPER_INSTALL_DIR} (and all of its parent"
+    echo "directories) should be owned by 'root', with the group 'wheel', and have permissions 755"
+    echo "(rwxr-xr-x) for it to be safe to install a privileged helper there -- this Mac's copy"
+    echo "isn't set up that way. Wavecraft will still work if you continue, but this is worth fixing"
+    echo "(check ownership/permissions on that path and its parents)."
+    echo
+fi
+
 sudo rm -rf "${XPC_HELPER_INSTALL_DIR}/${XPC_HELPER_DIR}"
 sudo mkdir -p "${XPC_HELPER_INSTALL_DIR}"
 sudo cp -R "${XPC_HELPER_DIR}" "${XPC_HELPER_INSTALL_DIR}/"
 sudo chown -R root:wheel "${XPC_HELPER_INSTALL_DIR}/${XPC_HELPER_DIR}"
 
+# Since macOS 14.0, a quarantined launchd daemon (as opposed to a GUI app) just gets silently
+# blocked by Gatekeeper with no dialog to click through -- there's no right-click-Open or System
+# Settings entry for a background daemon the way there is for Background Music.app below. Strip it
+# explicitly, matching pkg/postinstall's handling of this exact bundle.
+sudo xattr -dr com.apple.quarantine "${XPC_HELPER_INSTALL_DIR}/${XPC_HELPER_DIR}" 2>/dev/null || true
+
 # post_install.sh (bundled next to this script, not inside the .xpc -- it's a build-time script,
 # not a bundle resource in the real Xcode project either) registers the launchd plist and creates
 # the unprivileged user BGMXPCHelper runs as. Same script the real build uses, just invoked
 # directly instead of by xcodebuild.
-INSTALL_DIR="${XPC_HELPER_INSTALL_DIR}" \
-EXECUTABLE_PATH="${XPC_HELPER_DIR}/Contents/MacOS/BGMXPCHelper" \
-RESOURCES_PATH="${XPC_HELPER_INSTALL_DIR}/${XPC_HELPER_RESOURCES}" \
-    bash post_install.sh
+#
+# Positional args, not env vars: post_install.sh only falls back to reading INSTALL_DIR/
+# EXECUTABLE_PATH from the environment when $1/$2 are empty, but its fallback for $3 specifically
+# checks Xcode-only build variables (TARGET_BUILD_DIR/UNLOCALIZED_RESOURCES_FOLDER_PATH) instead
+# of a RESOURCES_PATH env var -- those don't exist outside an actual xcodebuild invocation, so
+# setting RESOURCES_PATH alone here would always fail with "Environment variable TARGET_BUILD_DIR
+# was not set." Positional args ($1=INSTALL_DIR, $2=EXECUTABLE_PATH, $3=RESOURCES_PATH, per
+# post_install.sh's own argument parsing) sidestep that fallback entirely and are what it actually
+# reads, whether called this way or by xcodebuild's Run Script phase.
+bash post_install.sh \
+    "${XPC_HELPER_INSTALL_DIR}" \
+    "${XPC_HELPER_DIR}/Contents/MacOS/BGMXPCHelper" \
+    "${XPC_HELPER_INSTALL_DIR}/${XPC_HELPER_RESOURCES}"
 
 # 3. App.
 
@@ -165,6 +200,7 @@ sudo chown -R "$(whoami):admin" "${APP_INSTALL_PATH}/${APP_DIR}"
 
 echo "Restarting coreaudiod to load the virtual audio device."
 
+RESTARTED_COREAUDIOD=0
 (sudo killall coreaudiod &>/dev/null || \
     sudo launchctl kickstart -k system/com.apple.audio.coreaudiod &>/dev/null || \
     sudo launchctl kill SIGTERM system/com.apple.audio.coreaudiod &>/dev/null || \
@@ -173,7 +209,37 @@ echo "Restarting coreaudiod to load the virtual audio device."
     sudo launchctl kill -15 system/com.apple.audio.coreaudiod &>/dev/null || \
     (sudo launchctl unload "${COREAUDIOD_PLIST}" &>/dev/null && \
         sudo launchctl load "${COREAUDIOD_PLIST}" &>/dev/null)) && \
-    sleep 5
+    RESTARTED_COREAUDIOD=1
+
+if [[ "${RESTARTED_COREAUDIOD}" -ne 1 ]]; then
+    echo "$(tput setaf 11)WARNING$(tput sgr0): couldn't restart coreaudiod through any of the" \
+         "usual methods -- the driver is installed, but it may not actually be loaded until you" \
+         "restart this Mac." >&2
+fi
+
+# Don't just sleep and hope -- actually confirm the device came up before calling this done, the
+# same way pkg/postinstall (the .pkg installer's equivalent step) does. A silent failure here
+# would otherwise look identical to a successful install from this script's own output.
+echo "Confirming the virtual audio device is available."
+DEVICE_FOUND=0
+for ATTEMPT in 1 2 3 4 5; do
+    if system_profiler SPAudioDataType 2>/dev/null | grep -q "Background Music"; then
+        DEVICE_FOUND=1
+        break
+    fi
+    if [[ "${ATTEMPT}" -lt 5 ]]; then
+        sleep 3
+    fi
+done
+
+if [[ "${DEVICE_FOUND}" -ne 1 ]]; then
+    echo "$(tput setaf 9)ERROR$(tput sgr0): The virtual audio device never showed up in" \
+         "system_profiler after restarting coreaudiod. The driver and helper are installed, but" \
+         "something's preventing coreaudiod from actually loading it." >&2
+    echo "Try restarting your Mac, then check with: system_profiler SPAudioDataType | grep -A5" \
+         "'Background Music'" >&2
+    exit 1
+fi
 
 sudo -k
 
@@ -211,3 +277,5 @@ echo "   where every control lives: per-app volume, per-app EQ, per-app output r
 echo "   output device picker."
 echo " - Full walkthrough of every control: docs/GUIDE.md, if you have the source repo, or"
 echo "   https://github.com/Phaenex/wavecraft/blob/main/docs/GUIDE.md online."
+echo " - Something not working right: docs/TROUBLESHOOTING.md, or"
+echo "   https://github.com/Phaenex/wavecraft/blob/main/docs/TROUBLESHOOTING.md online."
