@@ -13,13 +13,14 @@ Free forever, but if it's useful to you: [ko-fi.com/phaenex](https://ko-fi.com/p
 [What is this](#what-is-this)<br/>
 [Features](#features)<br/>
 [Requirements](#requirements)<br/>
-[Install (build from source)](#install-build-from-source)<br/>
+[Install](#install)<br/>
 [Run / Configure](#run--configure)<br/>
 [Full guide](docs/GUIDE.md)<br/>
 [Uninstall](#uninstall)<br/>
 [Known limitations](#known-limitations)<br/>
 [Troubleshooting](#troubleshooting)<br/>
 [Why a fork instead of a paid app](#why-a-fork-instead-of-a-paid-app)<br/>
+[Share this project](#share-this-project)<br/>
 [Contributing](#contributing)<br/>
 [Related projects](#related-projects)<br/>
 [License](#license)<br/>
@@ -46,9 +47,12 @@ Background Music, unchanged.
 
 # Features
 
-Everything marked *(new in Wavecraft)* below builds clean and passes its unit tests, but hasn't
-been installed and used against real audio yet — see [TODO.md](TODO.md)'s "Needs a human" section
-and [docs/QA-PLAN.md](docs/QA-PLAN.md) for exactly what's still unverified.
+Everything marked *(new in Wavecraft)* below builds clean and passes its unit tests. Real-install
+testing is in progress but not complete — the per-app EQ layout has had one real-world round of
+feedback and a fix already (it originally shipped as a single tall column, which turned out to
+cause the whole menu to close on any slider click; it's since been redesigned into two columns).
+See [TODO.md](TODO.md)'s "Needs a human" section and [docs/QA-PLAN.md](docs/QA-PLAN.md) for exactly
+what's still unverified.
 
 - **Per-app volume** — a volume slider for every running app, independent of the system volume.
   You can boost quiet apps above their normal maximum.
@@ -87,18 +91,35 @@ older systems. On an older macOS, everything else works normally; routing just i
 
 Per-app EQ has no extra requirement beyond the base app.
 
-# Install (build from source)
+# Install
 
-There's no signed release build — no download, no Homebrew cask, no `.pkg`. Building from source is
-the point — the *only* reason this fork exists is that [upstream's official release binary runs
-under Rosetta on Apple Silicon](https://github.com/kyleneideck/BackgroundMusic/issues/395), and
-building it yourself with a current Xcode produces a native `arm64` build instead. It usually takes
-under a minute, and doesn't need any macOS restart.
+There's no *signed* release — no Apple Developer ID is configured for this project (that's a
+$99/year enrollment; see [Why a fork instead of a paid app](#why-a-fork-instead-of-a-paid-app) for
+what that would take). Two ways to install anyway, depending on whether you have Xcode:
 
-**Requires [Xcode](https://apps.apple.com/us/app/xcode/id497799835) (not just the Command Line
-Tools) — the driver target needs the full Xcode toolchain.**
+## Option A — prebuilt release (no Xcode needed)
 
-### Option 1 — one command
+1. Download the latest zip from [Releases](https://github.com/Phaenex/wavecraft/releases).
+2. Unzip it, and inside the unzipped folder, double-click **Install Wavecraft.command**.
+3. **You'll likely see a macOS security warning right away**, before Terminal even opens — since
+   this file was downloaded rather than built on your Mac. This is expected, not a sign anything is
+   broken; see [Installing a prebuilt
+   release](#installing-a-prebuilt-release-what-the-warning-means) below for exactly what it looks
+   like and how to get past it (a one-time thing per file, not on every launch).
+4. Once it's past that, it opens Terminal, explains exactly what it's about to do, and asks for
+   your Mac password partway through — that's needed to install the audio driver, not optional.
+5. You'll likely need to get past the same kind of warning **one more time**, for the Wavecraft app
+   itself, the first time the installer tries to open it at the end.
+
+## Option B — build from source (needs Xcode)
+
+Building it yourself avoids the warning above entirely — a locally-built app is trusted
+automatically, since it was never downloaded. It's also the *only* way to get a build newer than
+the latest tagged release. Requires
+[Xcode](https://apps.apple.com/us/app/xcode/id497799835) (not just the Command Line Tools — the
+driver target needs the full toolchain). Usually takes under a minute, no restart needed.
+
+### One command
 
 Open **Terminal** and paste this in:
 
@@ -118,7 +139,7 @@ script.
 
 </details>
 
-### Option 2 — clone it yourself
+### Or clone it yourself
 
 ```shell
 git clone https://github.com/Phaenex/wavecraft.git
@@ -136,6 +157,32 @@ For a manual, step-by-step build (no install script), see
 [MANUAL-INSTALL.md](MANUAL-INSTALL.md). If something goes wrong, check
 [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) first — it's a running log of build/install
 problems that actually happened while developing this fork, with the real fix for each.
+
+## Installing a prebuilt release: what the warning means
+
+Every Mac trusts software it built itself, automatically. It does *not* automatically trust
+software downloaded from the internet — macOS tags any downloaded file with a "quarantine" flag,
+and Gatekeeper checks that flag before letting it open. Normally, passing that check needs Apple to
+have code-signed and notarized the app, which needs a paid Developer ID. This project doesn't have
+one yet, so the prebuilt release isn't notarized — which means you'll see a real warning, and
+you'll need to manually tell macOS you trust it. That's the actual cost of skipping the $99/year
+fee, not a bug in the build.
+
+**What you'll likely see**, on both the installer script and the app it installs: something like
+*"Apple could not verify 'Wavecraft' is free of malware that may harm your Mac or compromise your
+privacy"* — no direct "Open" button, just "Done" or "Move to Trash."
+
+**Getting past it** (once per file, never again after):
+- **Try first:** right-click (or Control-click) the file in Finder and choose **Open**. On older
+  macOS versions this shows a dialog with a real "Open" button.
+- **If that doesn't offer an Open option:** go to **System Settings > Privacy & Security**, scroll
+  down, and you'll see a message naming the blocked file with an **Open Anyway** button next to it.
+  Click it, confirm once more, and it'll open.
+
+This is standard macOS behavior for any unsigned software, not specific to Wavecraft — the same
+thing happens with plenty of legitimate open-source Mac software that hasn't paid for
+notarization. If you'd rather avoid it entirely, build from source instead (Option B above); a
+locally-built copy is trusted from the start.
 
 # Run / Configure
 
@@ -223,9 +270,20 @@ features SoundSource charges for.
 
 <img src="Images/README/comparison.png" width="700" alt="Comparison table: Wavecraft is free and open source with per-app volume, 10-band EQ, and per-app output routing; SoundSource is $49 one-time with per-app volume, 10-band EQ, and per-app output routing; Sound Control is $25 one-time or subscription with per-app volume, 10/31-band EQ plus AutoEQ, and per-app output routing" />
 
-Wavecraft's EQ has fewer bands than either paid app — that's the honest tradeoff of a smaller,
-volunteer-built project, not something to hide. Feature parity (more EQ bands, AutoEQ, etc.) is on
-the roadmap; see [TODO.md](TODO.md).
+Wavecraft now matches SoundSource's 10-band EQ and Sound Control's base 10-band tier. Sound
+Control's optional 31-band + AutoEQ tier still has more bands — an honest remaining gap, not
+something to hide. See [TODO.md](TODO.md) for what's still on the roadmap.
+
+# Share this project
+
+A few shareable graphics if you want to tell someone about Wavecraft — Discord, a forum post,
+wherever:
+
+<img src="Images/README/cards/info-card.png" width="500" alt="Wavecraft info card: free, open source, macOS. Per-app volume, 10-band EQ, per-app output routing. No subscription, no account, $0." /> <img src="Images/README/cards/comparison-card.png" width="500" alt="Same features, zero subscription: Wavecraft $0 vs SoundSource $49 vs Sound Control $25+/subscription, feature comparison" />
+
+<img src="Images/README/cards/quickstart-card.png" width="320" alt="Four-step install guide: download the release, double-click the installer, enter your Mac password once, approve the one-time security warning" />
+
+All three are in [Images/README/cards/](Images/README/cards/) at full resolution.
 
 # Contributing
 

@@ -57,8 +57,9 @@ None of this is started. If you want to tackle one, open an issue first so effor
   to?), the global keyboard shortcuts (does the Accessibility prompt flow work, do the presets
   actually change step size audibly?), and their menu items — all of that only exists as build +
   unit-test-clean code so far, none of it has been clicked or pressed on a real running install.
-  Also unverified: the 10-band EQ (does the new XIB layout render correctly, all 10 sliders visible
-  and correctly labeled, no clipping?), the non-flat-EQ/pan highlight on the show-more-controls
+  Also unverified: the two-column 10-band EQ layout (does it actually fix the menu-closing bug the
+  original single-column version caused — see docs/LESSONS.md, this is a real bug report from an
+  actual install, not a hypothetical), the non-flat-EQ/pan highlight on the show-more-controls
   button, the "this app is routed" indicator in the main menu, the three-way routing error message
   split (does each of the three messages actually show for its intended cause?), automatic recovery
   when a routed device is unplugged mid-route, and the new AppleScript EQ/output-device properties

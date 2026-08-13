@@ -452,3 +452,41 @@ part of this project's standard verification sequence) and specifically grep the
 `produced analyzer issues`, not just `BUILD SUCCEEDED`/`BUILD FAILED`, since an analyzer finding
 doesn't fail the build or show up in the pass/fail summary line. `** BUILD SUCCEEDED **` on its own
 is not proof there's nothing to fix.
+
+## A real-world bug report (menu closes on slider click) traced to a row-height regression, not a click-handling bug
+
+**Symptom:** the first actual real-world use of the 10-band per-app EQ -- the user, not a test --
+reported that clicking *any* volume/pan/EQ slider inside an expanded app row made "the menu close
+or disappear," across multiple apps, not one specific control. The instinctive place to look is the
+slider's own click handling (`BGMAVM_VolumeSlider`/`BGMAVM_EQBandSlider`, `mouseDown:`/target-action
+wiring) since that's the code that changed most recently and directly touches the reported symptom.
+
+**What was actually true, as far as it could be diagnosed without a live running menu bar app (no
+way to interact with a real NSMenu from this environment):** the per-app EQ shipped as a single
+column of 10 bands, which grew the expanded row's custom view from 147pt to 222pt -- a 51% height
+increase. NSMenu has a documented, well-known interaction: once a menu (or a scrollable region
+within it) needs to scroll to show all its content, custom `NSMenuItem` views can lose mouse
+tracking mid-drag, because AppKit's own scroll-handling machinery competes with the view's tracking
+loop for the same mouse-down/mouse-dragged events -- a click that starts on a slider can register as
+"outside the menu item" partway through and dismiss the whole menu, which matches the reported
+symptom (any slider, any app, only when the row/menu was tall) far better than a per-control bug
+would (which would affect one slider type, not all of them uniformly).
+
+**How this was actually resolved:** not by reproducing the bug (impossible from this environment)
+but by removing the suspected trigger -- redesigning the layout from one column of 10 bands back to
+two columns of 5, restoring the original 147pt row height entirely (see "Growing a collapsible XIB
+menu-item view: shift everything by the same delta" above for the layout mechanics), so the
+menu never needs the taller scrolling state that's believed to cause the lost tracking. This is
+explicitly a **theory-driven mitigation, not a confirmed fix** -- it was never verified against a
+live menu, only against static XIB geometry (no overlaps, everything in bounds) and the mechanism's
+plausibility. TODO.md and docs/QA-PLAN.md both carry this as an open, unverified item until the user
+actually reinstalls and clicks a slider on a real running instance.
+
+**How to apply:** when a bug report describes symptoms that are broad and environmental ("any
+control, any row, only sometimes") rather than narrow and specific to one code path, consider
+whether a recent *layout* change (something that alters container size, triggers scrolling, or
+changes view hierarchy depth) is the actual cause before assuming the most recently touched
+*interaction* code is at fault -- especially for AppKit constructs like NSMenu with known, documented
+interactions between built-in scrolling and custom-view mouse tracking. When a live target can't be
+interacted with directly to confirm a theory, say so explicitly rather than presenting a plausible
+mitigation as a verified fix.
