@@ -852,6 +852,26 @@ if [[ "${XCODEBUILD_ACTION}" == "install" ]]; then
     # deleted easily after installing.
     sudo chown -R "$(whoami):admin" "BGMApp/build" "BGMDriver/build"
 
+    # Quit any already-running copy of Background Music before restarting coreaudiod. Otherwise it
+    # survives the restart still holding CoreAudio object references from before the driver
+    # reload -- `open` below just refocuses an already-running instance instead of starting a
+    # fresh one against the newly installed driver, so the stale process keeps going with
+    # invalid references and can throw an uncaught exception (crashing) the next time something
+    # touches one of them, e.g. the user moving a volume slider.
+    if ps -Ao ucomm= | grep 'Background Music' > /dev/null; then
+        echo "Quitting the already-running copy of Background Music before restarting coreaudiod." \
+             | tee -a ${LOG_FILE}
+
+        osascript -e 'tell application "Background Music" to quit' &>/dev/null
+
+        for i in 1 2 3 4 5; do
+            if ! (ps -Ao ucomm= | grep 'Background Music' > /dev/null); then
+                break
+            fi
+            sleep 1
+        done
+    fi
+
     # Restart coreaudiod.
 
     echo "Restarting coreaudiod to load the virtual audio device." \

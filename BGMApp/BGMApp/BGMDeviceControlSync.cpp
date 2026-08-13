@@ -207,23 +207,33 @@ OSStatus    BGMDeviceControlSync::BGMDeviceListenerProc(AudioObjectID inObjectID
                 {
                     CAMutex::Locker locker(refCon->mMutex);
 
-                    // Update the output device's volume.
+                    // Update the output device's volume. This runs on a thread CoreAudio owns, not
+                    // one of BGMApp's own -- if either device's ID has gone stale (e.g. the driver
+                    // was just reloaded by a coreaudiod restart while this listener was still
+                    // registered against the old instance) and CopyVolumeFrom throws, there's no
+                    // caller further up this stack that could catch it, so an uncaught exception
+                    // here crashes the whole app instead of just failing this one update.
                     if(checkState())
                     {
-                        refCon->mOutputDevice.CopyVolumeFrom(refCon->mBGMDevice, scope);
+                        BGMLogAndSwallowExceptions("BGMDeviceControlSync::BGMDeviceListenerProc", [&] {
+                            refCon->mOutputDevice.CopyVolumeFrom(refCon->mBGMDevice, scope);
+                        });
                     }
                 }
                 break;
-                
+
             case kAudioDevicePropertyMute:
                 {
                     CAMutex::Locker locker(refCon->mMutex);
 
                     // Update the output device's mute control. Note that this also runs when you
-                    // change the volume (on BGMDevice).
+                    // change the volume (on BGMDevice). Same reasoning as the volume case above for
+                    // why this needs to swallow, not just log-and-continue by relying on a caller.
                     if(checkState())
                     {
-                        refCon->mOutputDevice.CopyMuteFrom(refCon->mBGMDevice, scope);
+                        BGMLogAndSwallowExceptions("BGMDeviceControlSync::BGMDeviceListenerProc", [&] {
+                            refCon->mOutputDevice.CopyMuteFrom(refCon->mBGMDevice, scope);
+                        });
                     }
                 }
                 break;

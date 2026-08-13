@@ -80,6 +80,18 @@ fi
 
 # TODO: Verify the installed files, their permissions, the _BGMXPCHelper user/group, etc.
 
+# Quit any already-running copy of Background Music before restarting coreaudiod. Otherwise it
+# survives the restart still holding CoreAudio object references from before the driver reload --
+# a stale process left running with invalid references can throw an uncaught exception (crashing)
+# the next time something touches one of them, e.g. the user moving a volume slider. This script
+# runs as root, so reach into the logged-in user's session via launchctl asuser to actually quit
+# their copy of the app, the same way this script later uses launchctl asuser to open it.
+quit_logged_in_user_id="$(id -u "${USER}")"
+if launchctl asuser "${quit_logged_in_user_id}" \
+        osascript -e 'tell application "Background Music" to quit' &>/dev/null; then
+    log "Quit the already-running copy of Background Music before restarting coreaudiod."
+fi
+
 # The extra or-clauses are fallback versions of the command that restarts coreaudiod. Apparently
 # some of these commands don't work with older versions of launchctl, so I figure there's no
 # harm in trying a bunch of different ways (which should all work).
