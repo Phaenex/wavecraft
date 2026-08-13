@@ -352,15 +352,28 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
             subview.frame = newSubview;
         }
 
-        // Align system sounds and app volumes
+        // Align system sounds and app volumes. Identify each row by a reliable marker instead of
+        // subview count, which broke silently once already: this used to check for exactly 7
+        // subviews (app-volume rows) or 3 (the system-sounds row), and both counts went stale the
+        // moment EQ sliders, pan controls, and the output-route pop-up were added to the per-app
+        // row's view -- a real app-volume row has 29 direct subviews today, and the system-sounds
+        // row has 4, so this whole block (including the routed-app indicator below) silently
+        // stopped running entirely. An app-volume row's menuItem.representedObject is always the
+        // NSRunningApplication it belongs to (set in BGMAppVolumes.m's insertMenuItemForApp:, and
+        // already relied on a few lines below here too), and the system-sounds row's view is
+        // always exactly self.systemSoundsView -- both are exact-identity checks, not fragile
+        // counts that silently drift out of sync the next time either row's layout changes.
         double appIconTitleOffset = 0;
         for (NSMenuItem* menuItem in self.bgmMenu.itemArray) {
-            if (menuItem.view.subviews.count == 7 || menuItem.view.subviews.count == 3) {
+            BOOL isAppVolumeRow = [menuItem.representedObject isKindOfClass:[NSRunningApplication class]];
+            BOOL isSystemSoundsRow = (menuItem.view == self.systemSoundsView);
+
+            if (isAppVolumeRow || isSystemSoundsRow) {
                 NSTextField* appTitle;
                 NSImageView* appIcon;
-                
+
                 for (NSView* subview in menuItem.view.subviews) {
-                    if (menuItem.view.subviews.count == 3) {
+                    if (isSystemSoundsRow) {
                         // System sounds
                         if ([subview isKindOfClass:[NSTextField class]]) {
                             appTitle = (NSTextField*)subview;
@@ -368,7 +381,7 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
                         if ([subview isKindOfClass:[NSImageView class]]) {
                             appIcon = (NSImageView*)subview;
                         }
-                    } else if (menuItem.view.subviews.count == 7) {
+                    } else {
                         // App volumes
                         if ([subview isKindOfClass:[BGMAVM_AppNameLabel class]]) {
                             appTitle = (NSTextField*)subview;
@@ -378,7 +391,7 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
                         }
                     }
                 }
- 
+
                 if (appIconTitleOffset == 0) {
                     appIconTitleOffset = appTitle.frame.origin.x - appIcon.frame.origin.x;
                 }
@@ -395,7 +408,7 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
                 // output-routing feature with no way to tell it's active without expanding every
                 // row individually). This runs every time the menu opens, which naturally picks up
                 // routes added/removed since the last time it was open.
-                if (menuItem.view.subviews.count == 7 && appTitle) {
+                if (isAppVolumeRow && appTitle) {
                     NSRunningApplication* app = menuItem.representedObject;
                     NSString* bundleID = app.bundleIdentifier;
                     BOOL isRouted = bundleID && [outputRoutingController hasOutputOverrideForBundleID:bundleID];
