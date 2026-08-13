@@ -48,21 +48,21 @@
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <menu key="submenu" title="Preferences" id="Img-Dh-cpU">
                         <items>
-                            <menuItem title="Auto-pause" tag="1" enabled="NO" id="2aT-t7-HGW">
+                            <menuItem title="Auto-pause" tag="1" enabled="NO" toolTip="Turned on/off from “Auto-pause Music” in the main menu, not here -- this section only picks which player." id="2aT-t7-HGW">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                             </menuItem>
-                            <menuItem isSeparatorItem="YES" id="nb1-jq-97L"/>
+                            <menuItem isSeparatorItem="YES" tag="10" id="nb1-jq-97L"/>
                             <menuItem title="Status Bar Icon" enabled="NO" id="CmD-ot-1wE">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                             </menuItem>
-                            <menuItem title="Background Music Logo" state="on" tag="2" id="9VF-qy-6fh">
+                            <menuItem title="Wavecraft Logo" state="on" tag="2" indentationLevel="1" id="9VF-qy-6fh">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                             </menuItem>
-                            <menuItem title="Volume Icon" tag="3" id="B47-O2-wd0">
+                            <menuItem title="Volume Icon" tag="3" indentationLevel="1" id="B47-O2-wd0">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="pYP-Fy-nKA"/>
-                            <menuItem title="About Background Music" tag="4" id="R45-Vo-Eto">
+                            <menuItem title="About Wavecraft" tag="4" id="R45-Vo-Eto">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                             </menuItem>
                         </items>
@@ -71,7 +71,7 @@
                 <menuItem title="Debug Logging" hidden="YES" toolTip="Log detailed messages to help diagnose bugs. Search for &quot;bgm&quot; or &quot;background music&quot; in Console.app." id="sc9-vO-KyP">
                     <modifierMask key="keyEquivalentModifierMask"/>
                 </menuItem>
-                <menuItem title="Quit Background Music" id="Nj2-gJ-DhW">
+                <menuItem title="Quit Wavecraft" id="Nj2-gJ-DhW">
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <connections>
                         <action selector="terminate:" target="-1" id="seH-Fc-tXb"/>
@@ -433,7 +433,7 @@
                         </textFieldCell>
                     </textField>
                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" tag="4" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="tRj-QC-GuQ" customClass="BGMLinkField">
-                        <rect key="frame" x="168" y="75" width="194" height="16"/>
+                        <rect key="frame" x="178" y="75" width="194" height="16"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" sendsActionOnEndEditing="YES" alignment="left" tag="3" title="Background Music contributors" placeholderString="" allowsEditingTextAttributes="YES" usesSingleLineMode="YES" id="UC2-MX-fML">
                             <font key="font" metaFont="system"/>
@@ -499,18 +499,17 @@
                     </textFieldCell>
                 </textField>
                 <imageView identifier="SystemSoundsIcon" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="V2D-eM-8yN">
-                    <rect key="frame" x="20" y="1" width="16" height="16"/>
+                    <rect key="frame" x="20" y="0.0" width="16" height="16"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="NSComputer" id="8Xp-9S-hOz"/>
                 </imageView>
-                <button springLoaded="YES" verticalHuggingPriority="750" id="9bY-qU-4Fu" customClass="BGMAVM_VolumeMute">
-                    <rect key="frame" x="139" y="-2.5" width="21.5" height="21"/>
-                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                    <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="NSAddTemplate" imagePosition="overlaps" alignment="center" lineBreakMode="truncatingTail" enabled="NO" state="on" transparent="YES" imageScaling="proportionallyDown" inset="2" id="bs5-gp-FRF">
-                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                        <font key="font" metaFont="system"/>
-                    </buttonCell>
-                </button>
+                <!-- A permanently disabled and transparent BGMAVM_VolumeMute button used to be
+                     here, copy-pasted from the per-app row template without adjusting its frame
+                     for this much shorter row: it rendered nothing (transparent) and did nothing
+                     (disabled, no code ever referenced it by outlet), while its declared frame
+                     (y equals -2.5, height 21) extended past this customView's own declared
+                     bounds (height 16) on both edges. Removed rather than resized, since there
+                     was no real control here to preserve. -->
             </subviews>
             <point key="canvasLocation" x="116.5" y="-133"/>
         </customView>

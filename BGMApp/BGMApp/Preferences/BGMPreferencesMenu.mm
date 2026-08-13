@@ -129,7 +129,8 @@ outputRoutingController:(BGMAppOutputRoutingController*)inOutputRoutingControlle
             [[BGMTroubleshootMenu alloc] initWithPreferencesMenu:prefsMenu
                                                      audioDevices:inAudioDevices
                                           preferredOutputDevices:inPreferredOutputDevices
-                                         outputRoutingController:inOutputRoutingController];
+                                         outputRoutingController:inOutputRoutingController
+                                                    doNotDisturb:inDoNotDisturb];
 
         hotkeys = inHotkeys;
         [self setupHotkeysMenu:prefsMenu];
@@ -157,6 +158,8 @@ outputRoutingController:(BGMAppOutputRoutingController*)inOutputRoutingControlle
                                                   keyEquivalent:@""];
     hotkeysEnabledMenuItem.target = self;
     hotkeysEnabledMenuItem.state = hotkeys.isEnabled ? NSOnState : NSOffState;
+    hotkeysEnabledMenuItem.toolTip =
+        @"Adjust system or app volume without opening the menu. Needs Accessibility permission.";
     [prefsMenu addItem:hotkeysEnabledMenuItem];
 
     hotkeyRecorderButtons = [NSMutableArray arrayWithCapacity:(NSUInteger)kBGMHotkeyActionCount];
@@ -280,17 +283,28 @@ outputRoutingController:(BGMAppOutputRoutingController*)inOutputRoutingControlle
 }
 
 - (void) updateHotkeyMenuItemStates {
-    hotkeysEnabledMenuItem.state = hotkeys.isEnabled ? NSOnState : NSOffState;
+    BOOL hotkeysEnabled = hotkeys.isEnabled;
+
+    hotkeysEnabledMenuItem.state = hotkeysEnabled ? NSOnState : NSOffState;
 
     for (NSInteger i = kBGMHotkeyActionMinValue; i <= kBGMHotkeyActionMaxValue; i++) {
         BGMHotkeyAction action = (BGMHotkeyAction)i;
-        [hotkeyRecorderButtons[(NSUInteger)i] refreshWithBinding:[userDefaults hotkeyBindingForAction:action]];
+        BGMHotkeyRecorderButton* recorder = hotkeyRecorderButtons[(NSUInteger)i];
+        [recorder refreshWithBinding:[userDefaults hotkeyBindingForAction:action]];
+        // Grayed out (not just cosmetically -- genuinely unclickable) while shortcuts are off,
+        // since recording a binding here has no effect at all until "Enable Keyboard Shortcuts"
+        // is checked -- there was previously nothing here to warn a user they'd set up shortcuts
+        // that don't do anything yet.
+        recorder.enabled = hotkeysEnabled;
     }
 
     NSInteger stepSize = userDefaults.hotkeyStepSize;
     hotkeyStepFineMenuItem.state = (stepSize == BGMHotkeyStepSizeFine) ? NSOnState : NSOffState;
     hotkeyStepNormalMenuItem.state = (stepSize == BGMHotkeyStepSizeNormal) ? NSOnState : NSOffState;
     hotkeyStepCoarseMenuItem.state = (stepSize == BGMHotkeyStepSizeCoarse) ? NSOnState : NSOffState;
+    hotkeyStepFineMenuItem.enabled = hotkeysEnabled;
+    hotkeyStepNormalMenuItem.enabled = hotkeysEnabled;
+    hotkeyStepCoarseMenuItem.enabled = hotkeysEnabled;
 
     hotkeyBindingsDescriptionMenuItem.title = [hotkeys currentBindingsDescription];
 }
@@ -436,16 +450,25 @@ outputRoutingController:(BGMAppOutputRoutingController*)inOutputRoutingControlle
 }
 
 - (void) setupDelayPreferences:(NSMenu*)prefsMenu {
-    // Create delay preference menu items dynamically
-    
+    // Create delay preference menu items dynamically, inserted right after the Auto-pause
+    // player-picker list (which BGMAutoPauseMusicPrefs, constructed just before this method runs,
+    // has already inserted right after the "Auto-pause" header) instead of appended at the very
+    // end of the whole Preferences menu -- this section configures the same feature, so it
+    // belongs next to it, not buried after Status Bar Icon/About/Troubleshoot/Keyboard Shortcuts/
+    // Do Not Disturb. tag="10" on the separator between "Auto-pause" and "Status Bar Icon" in
+    // MainMenu.xib exists specifically to give this method a stable insertion point.
+    NSInteger insertIndex = [prefsMenu indexOfItemWithTag:10];
+
     // Add separator
-    [prefsMenu addItem:[NSMenuItem separatorItem]];
-    
+    [prefsMenu insertItem:[NSMenuItem separatorItem] atIndex:insertIndex];
+    insertIndex++;
+
     // Add "Auto-pause Delays" header
     NSMenuItem* delaysHeader = [[NSMenuItem alloc] initWithTitle:@"Auto-pause Delays" action:nil keyEquivalent:@""];
     delaysHeader.enabled = NO;
-    [prefsMenu addItem:delaysHeader];
-    
+    [prefsMenu insertItem:delaysHeader atIndex:insertIndex];
+    insertIndex++;
+
     // Create pause delay menu item with slider
     pauseDelayMenuItem = [[NSMenuItem alloc] initWithTitle:@"" action:nil keyEquivalent:@""];
     NSView* pauseDelayView = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 280, 25)];
@@ -472,8 +495,9 @@ outputRoutingController:(BGMAppOutputRoutingController*)inOutputRoutingControlle
     [pauseDelayView addSubview:pauseDelayLabel];
     
     pauseDelayMenuItem.view = pauseDelayView;
-    [prefsMenu addItem:pauseDelayMenuItem];
-    
+    [prefsMenu insertItem:pauseDelayMenuItem atIndex:insertIndex];
+    insertIndex++;
+
     // Create max unpause delay menu item with slider
     maxUnpauseDelayMenuItem = [[NSMenuItem alloc] initWithTitle:@"" action:nil keyEquivalent:@""];
     NSView* maxUnpauseDelayView = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 280, 25)];
@@ -500,7 +524,7 @@ outputRoutingController:(BGMAppOutputRoutingController*)inOutputRoutingControlle
     [maxUnpauseDelayView addSubview:maxUnpauseDelayLabel];
     
     maxUnpauseDelayMenuItem.view = maxUnpauseDelayView;
-    [prefsMenu addItem:maxUnpauseDelayMenuItem];
+    [prefsMenu insertItem:maxUnpauseDelayMenuItem atIndex:insertIndex];
     
     // Initialize the delay sliders with current values and targets
     [self initDelaySliders];
