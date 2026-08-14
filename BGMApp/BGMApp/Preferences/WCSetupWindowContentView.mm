@@ -29,14 +29,18 @@
 
 #pragma clang assume_nonnull begin
 
-static CGFloat const kContentWidth = 460;
-static CGFloat const kContentPadding = 20;
+// 460 read as cramped on a real screen -- confirmed by actually looking at it, not guessed --
+// especially with small-system-sized body text as the thing a user is meant to actually read
+// before making a permission decision. Widened along with the font sizes below, not just one or
+// the other, so the wider window doesn't just leave more empty margin around still-small text.
+static CGFloat const kContentWidth = 560;
+static CGFloat const kContentPadding = 26;
 // Spacing between elements within one row (title -> body -> button).
-static CGFloat const kInnerRowSpacing = 6;
+static CGFloat const kInnerRowSpacing = 8;
 // Extra spacing added after a row's last element, on top of kInnerRowSpacing, so rows read as
 // distinct groups instead of one undifferentiated list.
-static CGFloat const kBetweenRowsExtraSpacing = 14;
-static CGFloat const kHeaderIconSize = 56;
+static CGFloat const kBetweenRowsExtraSpacing = 18;
+static CGFloat const kHeaderIconSize = 64;
 
 // The amber from the app icon's four-bar mark (sampled directly from
 // Images.xcassets/AppIcon.appiconset/appicon_512.png, not eyeballed) -- the one accent color this
@@ -112,11 +116,11 @@ static NSColor* BGMBrandAmberColor(void) {
     ]];
 
     NSTextField* titleLabel = [NSTextField labelWithString:title];
-    titleLabel.font = [NSFont boldSystemFontOfSize:20];
+    titleLabel.font = [NSFont boldSystemFontOfSize:24];
     titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
 
     NSTextField* subtitleLabel = [NSTextField labelWithString:subtitle];
-    subtitleLabel.font = [NSFont systemFontOfSize:[NSFont smallSystemFontSize]];
+    subtitleLabel.font = [NSFont systemFontOfSize:[NSFont systemFontSize]];
     subtitleLabel.textColor = [NSColor secondaryLabelColor];
     subtitleLabel.translatesAutoresizingMaskIntoConstraints = NO;
 
@@ -144,7 +148,7 @@ static NSColor* BGMBrandAmberColor(void) {
     CGFloat const rowContentWidth = kContentWidth - (kContentPadding * 2);
 
     NSTextField* introLabel = [NSTextField wrappingLabelWithString:text];
-    introLabel.font = [NSFont systemFontOfSize:[NSFont systemFontSize]];
+    introLabel.font = [NSFont systemFontOfSize:15];
     introLabel.preferredMaxLayoutWidth = rowContentWidth;
     introLabel.translatesAutoresizingMaskIntoConstraints = NO;
 
@@ -164,13 +168,13 @@ static NSColor* BGMBrandAmberColor(void) {
 
     // Title + status badge, side by side.
     NSTextField* titleLabel = [NSTextField labelWithString:title];
-    titleLabel.font = [NSFont boldSystemFontOfSize:[NSFont systemFontSize]];
+    titleLabel.font = [NSFont boldSystemFontOfSize:16];
     titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [titleLabel setContentHuggingPriority:NSLayoutPriorityDefaultLow
                             forOrientation:NSLayoutConstraintOrientationHorizontal];
 
     NSTextField* statusLabel = [NSTextField labelWithString:@""];
-    statusLabel.font = [NSFont boldSystemFontOfSize:[NSFont smallSystemFontSize]];
+    statusLabel.font = [NSFont boldSystemFontOfSize:13];
     statusLabel.alignment = NSTextAlignmentRight;
     statusLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [statusLabel setContentHuggingPriority:NSLayoutPriorityRequired
@@ -191,7 +195,7 @@ static NSColor* BGMBrandAmberColor(void) {
     // preferredMaxLayoutWidth is set explicitly rather than left to intrinsic content size (an
     // NSTextField can't compute a wrapped height from its string alone; it needs a width first).
     NSTextField* bodyLabel = [NSTextField wrappingLabelWithString:body];
-    bodyLabel.font = [NSFont systemFontOfSize:[NSFont smallSystemFontSize]];
+    bodyLabel.font = [NSFont systemFontOfSize:14];
     bodyLabel.textColor = [NSColor secondaryLabelColor];
     bodyLabel.preferredMaxLayoutWidth = rowContentWidth;
     bodyLabel.translatesAutoresizingMaskIntoConstraints = NO;
@@ -207,7 +211,7 @@ static NSColor* BGMBrandAmberColor(void) {
     if (buttonTitle) {
         button = [NSButton buttonWithTitle:BGMNN(buttonTitle) target:nil action:nil];
         BGMNN(button).bezelStyle = NSBezelStyleRounded;
-        BGMNN(button).controlSize = NSControlSizeSmall;
+        BGMNN(button).controlSize = NSControlSizeRegular;
         BGMNN(button).bezelColor = BGMBrandAmberColor();
         BGMNN(button).translatesAutoresizingMaskIntoConstraints = NO;
 

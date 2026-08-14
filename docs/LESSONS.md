@@ -705,6 +705,27 @@ first, not a `PRODUCT_NAME`/bundle-identifier rename. The latter is a much bigge
 (breaks existing installs' TCC grants, requires updating every script/doc with a hardcoded path)
 for the same visible result.
 
+**Follow-up, 2026-08-14:** the same class of bug hit Accessibility too, on a real `.pkg` install,
+independent of the Microphone fix above -- System Settings' Accessibility list showed the
+permission row under the stale name `"Background Music.app"`, and toggling it ON had no effect on
+`WCSetupWindow`'s live status check (`AXIsProcessTrustedWithOptions`), which kept reading "Not
+Granted." Unlike the Microphone case, this isn't just a display-name cache -- this project is
+unsigned (ad-hoc-signed only, no paid Developer ID), and ad-hoc signatures are derived from the
+actual binary bytes, so two builds of the exact same bundle ID with different code between them
+get different signatures. TCC's identity check for some services goes beyond the bundle ID string
+alone, so a grant (or a stale not-yet-decided entry) recorded against one build's signature isn't
+reliably honored for a later rebuild, even though `com.bearisdriving.BGM.App` never changed. The
+app-side code (`updateAccessibilityRow`, the button's `AXIsProcessTrustedWithOptions` call) had no
+bug -- both matched Apple's documented usage exactly. The only real fix is the same one-liner as
+before, `tccutil reset Accessibility com.bearisdriving.BGM.App`, run by a human. **How to apply:**
+for any unsigned/ad-hoc-signed app under active development, expect *every* TCC-gated permission
+(not just the one that broke once) to be able to leave stale or mismatched entries behind after
+enough rebuilds across a session -- don't treat the Microphone fix as having closed this class of
+bug, since each service (Microphone, Accessibility, Camera, etc.) keeps its own independent TCC
+state and can go stale on its own schedule. A real Developer ID + consistent code signing would
+remove this whole failure class; until then, `tccutil reset <Service> <bundle-id>` is the expected,
+recurring unblock during development, not a one-time fix.
+
 ## An isolated off-screen `NSView` render needs its own background before dark mode "works"
 
 **The trap:** verifying `BGMSetupWindowContentView`'s new dark-mode-adaptive header/buttons meant

@@ -248,6 +248,10 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
   Access" button; and the window itself landed pinned to the screen's bottom-left corner on every
   first-ever show, never centered, because of a `frameAutosaveName` self-fulfilling-restore bug.
   Both confirmed fixed with real screenshots afterward. See docs/LESSONS.md's two new entries.
+- `WCSetupWindow` was too small and hard to read on a real screen (real user feedback after the
+  first `.pkg` install) -- widened from 460pt to 560pt and increased every font size (header title
+  20→24pt, row titles 13→16pt, body text 11→14pt, intro text 13→15pt, status badges 11→13pt),
+  with regular-sized buttons instead of small ones. Reconfirmed readable via screenshot.
 
 ### Removed
 

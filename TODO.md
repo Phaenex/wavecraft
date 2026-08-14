@@ -144,18 +144,36 @@ None of this is started. If you want to tackle one, open an issue first so effor
   initial position is actually resolved. Now confirmed on a real screen: the window auto-shows on
   first launch, is genuinely centered, no system dialog appears before a button click, and both
   status badges correctly show "Not Granted" on fresh state with no visible text clipping.
-  **Still not seen on a real screen**: clicking a row's button actually opens the right System
-  Settings pane and the badge updates to "Granted" after returning to Wavecraft (the completion
-  handler itself was only exercised via the already-granted-at-set-time path, not a live grant);
-  `frameAutosaveName`'s remembered position surviving a quit/relaunch *after* the user has actually
-  moved the window (only the fresh-launch/no-saved-frame path was tested); and reopening via
-  Preferences → "Setup & Permissions…" shows live, not stale, status. Built specifically in
-  response to real confusion this session ("installed no app is running" — the app and its status
-  item were both actually running; a menu bar organizer, `Ice`, had the icon parked in a collapsed
-  section) — independently reconfirmed 2026-08-14 that `Ice` is still running on this dev machine
-  and still does exactly this, so the third row's copy addresses a real, currently-reproducible
-  condition on this machine, though whether the copy itself actually resolves a real user's
-  confusion in the moment is still unconfirmed.
+  Update 2026-08-14, later the same day: the user's own real `.pkg` install (not a Debug test run)
+  confirmed the microphone completion-handler fix works end to end with a live, first-ever grant,
+  not just the already-granted-at-set-time path — the badge correctly showed "✓ Granted" after
+  clicking through the real system dialog. Also confirmed real, user-reported feedback that the
+  window read as too small/cramped (460pt wide, 11pt body text) — widened to 560pt with larger
+  fonts throughout (title 24pt, row titles 16pt, body 14pt, regular-sized buttons instead of
+  small) and reconfirmed readable via screenshot after rebuilding.
+  **Still not seen on a real screen**: `frameAutosaveName`'s remembered position surviving a
+  quit/relaunch *after* the user has actually moved the window (only the fresh-launch/no-saved-
+  frame path was tested); and reopening via Preferences → "Setup & Permissions…" shows live, not
+  stale, status. Built specifically in response to real confusion this session ("installed no app
+  is running" — the app and its status item were both actually running; a menu bar organizer,
+  `Ice`, had the icon parked in a collapsed section) — independently reconfirmed 2026-08-14 that
+  `Ice` is still running on this dev machine and still does exactly this, so the third row's copy
+  addresses a real, currently-reproducible condition on this machine, though whether the copy
+  itself actually resolves a real user's confusion in the moment is still unconfirmed.
+- **Accessibility permission shows under a stale "Background Music.app" entry in System
+  Settings, and toggling it does nothing for the real app** (found 2026-08-14 on the user's real
+  `.pkg` install). Same root cause as the Microphone display-name bug already documented (see
+  docs/LESSONS.md's `CFBundleDisplayName` entry), plus this project being unsigned/ad-hoc-signed:
+  TCC recorded a decision for `com.bearisdriving.BGM.App` under an old build's name and/or
+  ad-hoc signature during earlier testing this session, and a rebuilt binary with different
+  ad-hoc signature bytes isn't reliably treated as "the same app" by TCC even though the bundle ID
+  matches. The System Settings row the user toggled ON didn't change `WCSetupWindow`'s "Not
+  Granted" badge at all, confirming it's not being read as the same identity. No code bug found in
+  `updateAccessibilityRow`/`AXIsProcessTrustedWithOptions` — both match Apple's documented usage.
+  Fix is the same class as the Microphone one: `tccutil reset Accessibility
+  com.bearisdriving.BGM.App`, run by a human, never by an agent. Not yet confirmed this actually
+  resolves it (the user hadn't run the reset as of this entry) — needs a follow-up check after a
+  fresh grant post-reset.
 - **`BGMAppUITests` fails locally, 3/3 tests, all with `Element StatusItem ... is not hittable`**
   (found 2026-08-14 running `xcodebuild test` on the `Wavecraft` scheme, which runs both
   `BGMAppUnitTests` and `BGMAppUITests` — `BGMAppUnitTests` itself is unaffected, 47/47 still
