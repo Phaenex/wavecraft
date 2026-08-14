@@ -207,6 +207,13 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
   apps launch and quit, plus a screen-position floor on the panel itself as a second layer of
   defense. See [docs/LESSONS.md](docs/LESSONS.md)'s "silently dropped NSMenu's free scrolling"
   entry.
+- Uninstalling never reset Microphone/Accessibility permission state, so a fresh reinstall would
+  silently inherit whatever was decided for a previous install — confirmed directly: Accessibility
+  showed as already granted immediately after a clean install, with `WCSetupWindow`'s badge never
+  updating to match, because the old decision was still sitting in TCC's database (which is keyed
+  by bundle ID and stored entirely separately from the app files uninstalling removes).
+  `_uninstall-non-interactive.sh` now runs `tccutil reset` for both permissions as a normal part of
+  every uninstall, rather than a manual step someone has to remember and run separately.
 - A real `.pkg` install was silently installing into the old, pre-rename `/Applications/Background
   Music.app` folder instead of creating `/Applications/Wavecraft.app` — confirmed via the running
   process's actual executable path, not assumed. Root cause: `pkg/pkgbuild.plist`'s relocatable

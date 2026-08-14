@@ -219,6 +219,15 @@ None of this is started. If you want to tackle one, open an issue first so effor
   end to end: (1) `tccutil reset Accessibility com.bearisdriving.BGM.App` (and possibly Microphone
   too, to fully clear old records), run by a human; (2) confirm both badges reflect a live grant
   afterward.
+  **Third update, 2026-08-14**: user directly confirmed the exact symptom this predicted —
+  Accessibility shows as already granted immediately after a fresh install, without the badge
+  ever updating, because the prior grant (from testing earlier the same session) was never
+  cleared. Rather than keep handing out a manual `tccutil reset` command after every uninstall,
+  `_uninstall-non-interactive.sh` now runs `tccutil reset Microphone`/`Accessibility` for
+  `com.bearisdriving.BGM.App` itself, every time, as a normal (non-sudo, `|| true`-guarded so it
+  can't abort the rest of the uninstall) part of the standard uninstall flow. **Not yet verified**
+  a real uninstall + reinstall cycle with this change actually produces a genuinely fresh
+  permission state — needs the next real test to confirm.
 - **`pkg/postinstall` could hang indefinitely on `./ListInputDevices`** (found 2026-08-14 on a
   real install — confirmed via `ps`, 6+ minutes stuck where a normal call takes milliseconds, not
   just slow). Root cause: `AVCaptureDevice`'s device-discovery APIs, called as root from a

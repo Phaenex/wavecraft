@@ -137,6 +137,18 @@ else
   echo "Warning: could not delete the Wavecraft user/group due to an internal error in $0." >&2
 fi
 
+# Without this, a later reinstall's first launch can show stale results for both permissions --
+# confirmed for real this session: an old grant/denial decision survives an uninstall (TCC data is
+# keyed by bundle ID, stored completely separately from the app bundle on disk, and isn't touched
+# by deleting it) and gets misread against whatever's reinstalled next, showing a permission as
+# already decided when the user never actually made that choice for the new install. `|| true` on
+# each -- this is a courtesy reset, not something that should abort the rest of the uninstall if it
+# fails for any reason (e.g. no existing record to reset).
+echo "Resetting Wavecraft's Microphone and Accessibility permissions."
+bundle_id="com.bearisdriving.BGM.App"
+tccutil reset Microphone "${bundle_id}" &>/dev/null || true
+tccutil reset Accessibility "${bundle_id}" &>/dev/null || true
+
 # We're done removing files, so now actually move trash_dir into the trash. And if that fails, just delete it normally.
 osascript -e 'tell application id "com.apple.finder"
                 move the POSIX file "'"${trash_dir}"'" to trash
