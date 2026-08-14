@@ -6,6 +6,8 @@
 	<string>None</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>Wavecraft</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -29,15 +31,15 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>Background Music needs to control your music player app if you want it to automatically pause your music.</string>
+	<string>Wavecraft needs to control your music player app if you want it to automatically pause your music.</string>
 	<key>NSAppleScriptEnabled</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2016-2026 Background Music contributors</string>
+	<string>Copyright © 2016-2026 Wavecraft contributors</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>The &quot;Background Music&quot; virtual audio device sends system audio to Background Music (the app) through a virtual input device.</string>
+	<string>The &quot;Wavecraft&quot; virtual audio device sends system audio to Wavecraft (the app) through a virtual input device.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>NSServices</key>
@@ -47,7 +49,7 @@
 	<key>OSAScriptingDefinition</key>
 	<string>BGMApp.sdef</string>
     <!--
-    Hopefully this will keep Background Music from using the discrete GPU on multi-GPU systems,
+    Hopefully this will keep Wavecraft from using the discrete GPU on multi-GPU systems,
     which wastes energy. I don't have any hardware I could easily test this on, so it's untested.
     -->
 	<key>NSSupportsAutomaticGraphicsSwitching</key>

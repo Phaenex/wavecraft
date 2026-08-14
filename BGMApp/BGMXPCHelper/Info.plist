@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>BGMXPCHelper</string>
+	<string>Wavecraft Helper</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -23,7 +23,7 @@
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2016-2026 Background Music contributors</string>
+	<string>Copyright © 2016-2026 Wavecraft contributors</string>
 	<key>XPCService</key>
 	<dict>
 		<key>ServiceType</key>

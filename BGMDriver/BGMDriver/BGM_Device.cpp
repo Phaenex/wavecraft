@@ -76,7 +76,7 @@ void	BGM_Device::StaticInitializer()
     try
     {
         // The main instance, usually referred to in the code as "BGMDevice". This is the device
-        // that appears in System Preferences as "Background Music".
+        // that appears in System Preferences as "Wavecraft".
         sInstance = new BGM_Device(kObjectID_Device,
                                    CFSTR(kDeviceName),
 								   CFSTR(kBGMDeviceUID),
@@ -803,7 +803,7 @@ void	BGM_Device::Device_GetPropertyData(AudioObjectID inObjectID, pid_t inClient
 
         // TODO: Should we return the real kAudioDevicePropertyLatency and/or
         //       kAudioDevicePropertySafetyOffset for the real/wrapped output device?
-        //       If so, should we also add on the extra latency added by Background Music? 
+        //       If so, should we also add on the extra latency added by Wavecraft?
 
 		case kAudioDevicePropertyNominalSampleRate:
 			//	This property returns the nominal sample rate of the device.

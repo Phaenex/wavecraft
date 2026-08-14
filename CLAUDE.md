@@ -79,10 +79,18 @@ DerivedData isn't installed until this script (or a manual copy) puts it in plac
 ### Verifying after install
 
 ```bash
-system_profiler SPAudioDataType | grep -A5 "Background Music"
+system_profiler SPAudioDataType | grep -A5 "Wavecraft"
 launchctl print system/com.bearisdriving.BGM.XPCHelper | grep "state = running"
 ps aux | grep "Background Music" | grep -v grep
 ```
+
+Two different names here on purpose, not a typo: the CoreAudio device's own display name
+(`kDeviceName` in `BGM_Device.h`) was renamed to "Wavecraft", but the `.app` bundle, its
+executable, `CFBundleName`, and the bundle identifier were all deliberately left as "Background
+Music"/`com.bearisdriving.BGM.*` — see `CFBundleDisplayName`'s addition to `Info.plist` and
+docs/LESSONS.md for why. So `ps` (which reports the real executable name) still needs to match
+"Background Music", while `system_profiler` (which reports the device's own display string) now
+needs "Wavecraft".
 
 The device should show up in `SPAudioDataType`, the XPC helper should report `state = running`,
 and the menu bar app should be running. **Don't use plain `launchctl list` for the XPC helper** —

@@ -16,7 +16,8 @@ not a browser) — not eyeballing the code and assuming it's fine.
 ## 0. Install sanity (do first, blocks everything else)
 
 - [ ] `./build_and_install.sh` completes without error
-- [ ] `system_profiler SPAudioDataType` shows the Wavecraft/Background Music device
+- [ ] `system_profiler SPAudioDataType` shows the "Wavecraft" device (its own display name, not the
+      `.app`'s — see CLAUDE.md's "Verifying after install" for why these differ)
 - [ ] `launchctl print system/com.bearisdriving.BGM.XPCHelper | grep "state = running"` — **not**
       plain `launchctl list` (see docs/TROUBLESHOOTING.md for why that gives a false negative)
 - [ ] `ps aux | grep "Background Music"` shows the app running

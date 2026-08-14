@@ -211,10 +211,10 @@ private:
     static BGM_Device* __nonnull    sUISoundsInstance;
 
 	// TODO: On macOS Tahoe, the device name is shown when you change the system volume. See if we're able to change
-	//       BGMDevice's name to include the name of the real device, e.g. "MacBook Pro Speakers (Background Music)".
-    #define kDeviceName                 "Background Music"
-    #define kDeviceName_UISounds        "Background Music (UI Sounds)"
-    #define kDeviceManufacturerName     "Background Music contributors"
+	//       BGMDevice's name to include the name of the real device, e.g. "MacBook Pro Speakers (Wavecraft)".
+    #define kDeviceName                 "Wavecraft"
+    #define kDeviceName_UISounds        "Wavecraft (UI Sounds)"
+    #define kDeviceManufacturerName     "Wavecraft contributors"
 
 	const CFStringRef __nonnull	mDeviceName;
 	const CFStringRef __nonnull mDeviceUID;

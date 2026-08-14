@@ -78,7 +78,7 @@
                     </connections>
                 </menuItem>
             </items>
-            <accessibility description="Background Music Main Menu" identifier="MainMenu"/>
+            <accessibility description="Wavecraft Main Menu" identifier="MainMenu"/>
             <point key="canvasLocation" x="-184" y="-69.5"/>
         </menu>
         <customView wantsLayer="YES" id="MWB-XH-kFI">
@@ -331,7 +331,7 @@
                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="r51-dd-LGP">
                         <rect key="frame" x="71" y="125" width="240" height="22"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                        <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="center" title="Background Music" id="Dw2-nu-eBQ">
+                        <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="center" title="Wavecraft" id="Dw2-nu-eBQ">
                             <font key="font" metaFont="system" size="18"/>
                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -435,7 +435,7 @@
                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" tag="4" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="tRj-QC-GuQ" customClass="BGMLinkField">
                         <rect key="frame" x="178" y="75" width="194" height="16"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                        <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" sendsActionOnEndEditing="YES" alignment="left" tag="3" title="Background Music contributors" placeholderString="" allowsEditingTextAttributes="YES" usesSingleLineMode="YES" id="UC2-MX-fML">
+                        <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" sendsActionOnEndEditing="YES" alignment="left" tag="3" title="Wavecraft contributors" placeholderString="" allowsEditingTextAttributes="YES" usesSingleLineMode="YES" id="UC2-MX-fML">
                             <font key="font" metaFont="system"/>
                             <color key="textColor" red="0.20000000000000001" green="0.40000000000000002" blue="0.59999999999999998" alpha="1" colorSpace="calibratedRGB"/>
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>

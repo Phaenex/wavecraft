@@ -34,9 +34,9 @@
 
 #pragma mark Project URLs
 
-static const char* const kBGMProjectURL = "https://github.com/kyleneideck/BackgroundMusic";
-static const char* const kBGMIssueTrackerURL = "https://github.com/kyleneideck/BackgroundMusic/issues";
-static const char* const kBGMContributorsURL = "https://github.com/kyleneideck/BackgroundMusic/graphs/contributors";
+static const char* const kBGMProjectURL = "https://github.com/Phaenex/wavecraft";
+static const char* const kBGMIssueTrackerURL = "https://github.com/Phaenex/wavecraft/issues";
+static const char* const kBGMContributorsURL = "https://github.com/Phaenex/wavecraft/graphs/contributors";
 
 #pragma mark IDs
 
