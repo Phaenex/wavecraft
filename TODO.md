@@ -158,6 +158,15 @@ None of this is started. If you want to tackle one, open an issue first so effor
   couldn't open Installer.app from this environment to see the real rendering (a `.pkg` `open`
   call fails with a Launch Services error from this tool context specifically, confirmed earlier
   this session; works fine when a real person runs the identical command).
+- **Verify the `BGM` -> `WC` class/file rename (2026-08-13) with a real install.** Confirmed by
+  clean Release and Debug builds of both the app and the driver, zero new warnings or analyzer
+  issues, 24/24 `BGMDriverTests` and 47/47 `BGMAppUnitTests` passing (identical counts to before
+  the rename), and an explicit whole-tree scan confirming zero remaining references to any of the
+  107 renamed names. Not run against real audio on a real install — the driver side specifically
+  (`WC_Device`, `WC_PlugIn`, etc.) is a pure rename with no logic changes, so the risk is low, but
+  "the unit tests pass" and "audio actually plays correctly through a freshly rebuilt driver" are
+  different claims, and this session already has one example (docs/LESSONS.md's device-wide crash
+  entry) of a defect that unit tests didn't catch but a real install did.
 
 ## Fairly quick
 
@@ -179,6 +188,17 @@ None open right now — the last item here (arbitrary keyboard-shortcut rebindin
 
 ## Less quick
 
+- **Docs still reference old `BGM`-prefixed class names** after the 2026-08-13 `BGM` -> `WC`
+  rename (see CHANGELOG.md) — the rename itself was deliberately scoped to source code only, not
+  prose (rewriting every class-name mention across every doc in the same pass as a system-critical
+  driver rename would have been real scope creep). Rough count at rename time:
+  `docs/PROCESS-TAP-ROUTING.md` (29), `TODO.md` itself (38, including entries below this one),
+  `docs/QA-PLAN.md` (9), `docs/TROUBLESHOOTING.md` (3), `README.md` and `docs/GUIDE.md` (1 each).
+  Also out of scope in the code rename itself, and larger/riskier than the class rename was: free
+  functions, macros, and `#define` constants still carrying the old `BGM` prefix (`BGMNN()`,
+  `BGMAppEQKey_BundleID`, etc.) — some of these are literal dictionary/XPC keys where the string
+  *value*, not just the symbol name, may matter, so this needs more care than a straightforward
+  rename, not just more time.
 - Per-app output routing assignments live in the menu bar app's own process (see
   docs/PROCESS-TAP-ROUTING.md's "hybrid, not a replacement" design decision) and are only restored
   for apps that are already running when Wavecraft starts or that launch later in the same session

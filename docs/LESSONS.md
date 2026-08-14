@@ -735,3 +735,59 @@ something. Missing either one produces a result that looks like a real bug in th
 but is actually purely an artifact of the harness -- worth ruling out explicitly (as was done here,
 by adding the missing piece and confirming the *same* unmodified source then rendered correctly)
 before concluding the production code is actually broken.
+
+## An unquoted `$(cat file-list)` silently truncated a 256-file mechanical rename
+
+**The trap:** renaming the codebase's internal `BGM` class prefix to `WC` (see the commit itself,
+"Rename the internal BGM class/file prefix to WC") meant running one Perl script across 256 files,
+invoked as `perl script.pl map.tsv $(cat files_to_rename.txt)`. The script logged 114 "changed:"
+lines and exited 0 -- read at face value, that looked like a clean, complete run, and very nearly
+was reported as done on that basis (see the earlier `tee`/`pipefail` entry in this file for why
+"exited 0" alone was already flagged as insufficient evidence this same session).
+
+**What was actually true:** this project has a directory with a space in its name (`BGMApp/BGMApp/
+Music Players/`). The unquoted `$(cat files_to_rename.txt)` let the shell word-split every path
+under it into two bogus arguments before Perl ever saw them. The very first one Perl tried to
+`open()` doesn't exist, so it `die`d immediately -- and Perl's `die` aborts the whole process, not
+just that one iteration. Every file later in the argument list -- 21 file pairs across `Music
+Players/`, `Preferences/`, and `Scripting/`, roughly 40 files -- silently never got touched. Worse,
+a *separate* pass (`git mv`, driven by a different, unaffected file list built from the rename map
+rather than the crashed run) had already renamed those exact files' *names* to the new prefix --
+so the failure mode wasn't "these files still have their old name," which would have been obvious
+on sight, but "these files have their new name and their old, wrong content," which is invisible
+without actually opening them. The first correctness check written to catch this reused the
+*original* (pre-`git mv`) file list and silently skipped every file it couldn't find at its old
+path anymore -- concluding "only 4 files missed" when the real number was over 40, because it was
+checking against a snapshot of the world that had already moved on.
+
+**How to apply:** never pass a file list to a command via unquoted `$(cat ...)` or unquoted
+`$(find ...)` -- one path with a space anywhere in the tree corrupts the whole argument list from
+that point on, and a script that `die`s (or just errors) on the first bad argument won't even
+signal that everything after it was skipped. Use `xargs -0` with a NUL-delimited list, a `while
+IFS= read -r` loop, or a shell array (`mapfile`/`readarray` in bash; a `while read` loop building
+an array in zsh, which has no `mapfile` builtin -- confirmed the hard way mid-fix here). Separately:
+when verifying a bulk mechanical change, always re-scan the *current* state of the tree (`git
+ls-files` at the moment of checking), never a *snapshot* file list captured before the change ran
+-- a snapshot check that silently treats "file not found" as "already handled, skip it" will hide
+exactly this failure mode, since the file moving out from under the old path is indistinguishable,
+from that check's perspective, from success.
+
+## A file whose name doesn't exactly match its class needs its own rename rule
+
+**The trap:** the same rename above matched file names to class names by exact basename equality
+(`BGMAppDelegate.h` -> a class named exactly `BGMAppDelegate` -> renamed to `WCAppDelegate.h`).
+One category file, `BGMAppDelegate+AppleScript.{h,mm}` (an Objective-C category extending
+`BGMAppDelegate`, not a class named `BGMAppDelegate+AppleScript`), doesn't exactly match any single
+class name, so the exact-match file-rename pass correctly, silently left it alone -- while the
+separate, independent *content* rename (which operates on whole-token matches anywhere in a file,
+not on file names at all) still correctly rewrote `BGMAppDelegate` to `WCAppDelegate` everywhere
+it appeared inside that file, including inside its own `#import "BGMAppDelegate+AppleScript.h"`
+line, producing `#import "WCAppDelegate+AppleScript.h"` -- a reference to a file that, until this
+was caught by an actual build's "file not found" compile error, didn't exist under that name.
+
+**How to apply:** a rename pass split into "rename files that exactly match a renamed symbol" and
+"rename the symbol wherever it's referenced in content" will always miss files whose name is a
+*compound* of a renamed symbol plus something else (a category, a suffix, a variant) -- the content
+half doesn't know about file names, and the file half only matches whole names. `grep` for the
+renamed symbol as a *prefix* of any remaining file name (not just an exact match) after the main
+pass, to catch these before a build does.

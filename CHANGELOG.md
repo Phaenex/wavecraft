@@ -130,12 +130,23 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
   upstream's repo, meaning bug reports from Wavecraft users would have gone to the wrong tracker)
   all follow. The CoreAudio device's own display name — what shows in System Settings > Sound and
   Audio MIDI Setup, arguably the single most-seen piece of identity in the whole app — is now
-  "Wavecraft" too (`BGM_Device.h`'s `kDeviceName`). Deliberately unchanged: the bundle identifiers
+  "Wavecraft" too (`WC_Device.h`'s `kDeviceName`). Deliberately unchanged: the bundle identifiers
   (`com.bearisdriving.BGM.*`), the `.app` folder/executable name, and the device's persistent UID
   (`kBGMDeviceUID`) — renaming any of those would make macOS treat existing installs as a different
   app (losing granted permissions) for no user-visible benefit. See CLAUDE.md's "Verifying after
   install" section for why its own troubleshooting commands now intentionally grep for two
   different names on adjacent lines.
+- **The `BGM` class/file prefix throughout the codebase is now `WC`** (`BGMAppDelegate` ->
+  `WCAppDelegate`, `BGM_Device` -> `WC_Device`, and 105 others) — the code's own internal identity
+  now matches "Wavecraft" the same way the user-facing strings above do. Scoped deliberately to
+  class/protocol/struct names and the files matching them, not the much larger (and in places
+  riskier — some are literal dictionary/XPC keys where the string value, not just the symbol name,
+  matters) surface of free functions, macros, and `#define` constants still carrying the old
+  prefix; not the bundle identifiers, launchd/XPC service labels, Xcode scheme/workspace names, or
+  the device UID string values, all left alone for the same "everything else references this exact
+  string" reasons as the identity work above. See docs/LESSONS.md for two real bugs caught and
+  fixed during the rename itself (a silently-truncated bulk edit from an unquoted file-list
+  substitution, and a category file's compound name slipping past exact-match file renaming).
 - `BGMPlayThrough` generalized to accept a non-`BGMDevice` input (`SetRequireBGMDeviceInput`), so
   `BGMTapRoute` can reuse its ring-buffer/clock-sync engine instead of reimplementing it.
 - Per-app EQ grew from 5 bands (60Hz/250Hz/1kHz/4kHz/12kHz) to 10 (the standard ISO octave-band
