@@ -679,3 +679,59 @@ command was piped through `tee` (or anything else) without `pipefail`. Either ad
 before piping, capture the real exit code explicitly (`cmd; ec=$?; ... | tee log; exit $ec` or
 `${PIPESTATUS[0]}` in bash), or -- simplest, and what actually caught this -- read the log's tail
 for the tool's own pass/fail banner instead of trusting the wrapper's exit code alone.
+
+## `CFBundleDisplayName`, not `CFBundleName`, is what TCC permission dialogs show
+
+**The trap:** `BGMSetupWindow` was built to explain, among other things, exactly why macOS is
+about to show a Microphone permission dialog. But the dialog itself still said `"Background
+Music.app" would like to access the Microphone` -- a real screenshot from an actual install, not
+a hypothetical -- even after `docs/LESSONS.md`'s prior entries about this session's rearchitecture
+had shipped. The instinct was to assume this needed some deeper fix in how the permission request
+was triggered.
+
+**What was actually true:** the dialog was reading `CFBundleName`, which was `$(PRODUCT_NAME)` =
+"Background Music" -- the literal Xcode target name, unrelated to what this fork calls itself
+anywhere else. `CFBundleDisplayName` is the separate key macOS actually prefers for this exact
+text (Finder, Activity Monitor, and TCC/system permission dialogs all read it first, falling back
+to `CFBundleName` only if it's absent) -- confirmed via a real, documented instance of the same
+bug in an unrelated project (Claude Code's own CLI hit this from a missing/misconfigured
+`CFBundleDisplayName`, GitHub issue #27322). Setting it doesn't touch `CFBundleName`, the bundle
+identifier, the `.app` folder name, or anything else scripts/docs depend on -- it's a purely
+additive key with no coupling to the technical plumbing.
+
+**How to apply:** any time an app's user-visible name needs to differ from its internal
+target/bundle name (a rebrand, a fork, a white-label build), reach for `CFBundleDisplayName`
+first, not a `PRODUCT_NAME`/bundle-identifier rename. The latter is a much bigger, riskier change
+(breaks existing installs' TCC grants, requires updating every script/doc with a hardcoded path)
+for the same visible result.
+
+## An isolated off-screen `NSView` render needs its own background before dark mode "works"
+
+**The trap:** verifying `BGMSetupWindowContentView`'s new dark-mode-adaptive header/buttons meant
+rendering it off-screen to a PNG rather than guessing (per this project's own render-and-look
+standard) -- a standalone harness was built that compiles the real source file directly, forces
+`NSAppearanceNameDarkAqua`, and calls `cacheDisplayInRect:toBitmapImageRep:`. The first render came
+back with every `labelColor`/`secondaryLabelColor` text field completely invisible in dark mode --
+title, subtitle, every row's title and body text, all gone. Read at face value, that looks like a
+real color-resolution bug in the shipped code.
+
+**What was actually true:** it wasn't a code bug at all. Setting `view.appearance` positions the
+view for dark mode but doesn't push it as the *drawing-time* current appearance that dynamic
+`NSColor`s resolve against inside `drawRect:` -- fixed by wrapping the render in
+`[appearance performAsCurrentDrawingAppearance:^{ ... }]` instead, which *is* documented for
+exactly this. That alone didn't fix it either: the text was very likely rendering correctly as
+white, just invisible against a transparent canvas that PNG export flattens to white. A real
+`NSWindow` supplies an opaque background to its content view for free; an isolated off-screen view
+rendered in complete isolation has none, so nothing was actually wrong with the production code --
+only with the harness testing it in a way the real deployment never would be.
+
+**How to apply:** when building an off-screen rendering harness for any AppKit view that isn't
+hosted in a real window, two things are required for a faithful test, not one:
+`performAsCurrentDrawingAppearance:` to make dynamic colors actually resolve for the target
+appearance, *and* an explicit opaque background layer (`wantsLayer = YES` +
+`layer.backgroundColor = NSColor.windowBackgroundColor.CGColor`, or whichever background color the
+real host window would actually provide) so text rendered in that color is visible against
+something. Missing either one produces a result that looks like a real bug in the code under test
+but is actually purely an artifact of the harness -- worth ruling out explicitly (as was done here,
+by adding the missing piece and confirming the *same* unmodified source then rendered correctly)
+before concluding the production code is actually broken.

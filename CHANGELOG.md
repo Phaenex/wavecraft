@@ -97,16 +97,45 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
   system in one place — Microphone access (required, for the virtual audio device), Accessibility
   access (optional, only for global keyboard shortcuts), and a tip about menu bar organizer apps
   (Bartender, Ice, Hidden Bar, etc.) potentially hiding a newly-installed icon in a collapsed
-  section, which looks identical to "didn't launch" but isn't. Each permission row shows live
+  section, which looks identical to "didn't launch" but isn't — the exact confusion that motivated
+  adding this row, hit for real on this session's own test install. Each permission row shows live
   granted/not-granted status (refreshed on open and again when Wavecraft regains focus, e.g. after
-  returning from System Settings) and a button straight to the right Privacy & Security pane.
-  Previously these were only ever explained reactively — a one-time alert right before the system
-  prompt, or an error dialog on denial — with nowhere to go back and see the whole picture, and
-  nothing anywhere addressed the menu-bar-visibility confusion at all. Shown automatically once, on
-  a first launch; reachable afterwards from Preferences → "Setup & Permissions…".
+  returning from System Settings) and a button that does the actual thing for its current state —
+  triggers the real system permission request when it's never been asked, or deep-links to the
+  right Privacy & Security pane once it has been and was declined (asking again after a decline
+  doesn't re-prompt, so those need to be different actions, not just different labels). Shown
+  automatically before anything else touches a system permission, the first time each new version
+  launches — not gated on a one-time "ever shown" flag, so a version bump (including, for now,
+  every distinct rebuild) shows it again, since that's exactly when new requirements are most
+  likely to appear. Also reachable anytime from Preferences → "Setup & Permissions…". Has its own
+  visual identity — the app icon, a "Welcome to Wavecraft" header, and the same amber accent color
+  as the README's own graphics on its action buttons — rather than looking like a generic system
+  dialog. Previously all of this was only ever explained reactively — a one-time alert right before
+  the system prompt, or an error dialog on denial — with nowhere to go back and see the whole
+  picture, and nothing anywhere addressed the menu-bar-visibility confusion at all.
+- **A `<welcome>` pane in the `.pkg` installer.** `Distribution.xml.template` previously only had
+  `<background>`/`<license>`, so Installer.app's Introduction page showed no branded content at
+  all — it went straight to Destination Select. Now explains what Wavecraft is, exactly what the
+  installer sets up, and what to expect (an admin password prompt, a brief audio interruption from
+  the `coreaudiod` restart, the new Setup & Permissions window right after).
 
 ### Changed
 
+- **"Wavecraft" is now the name macOS itself shows, not just the docs.** Every system-facing name
+  was still literally "Background Music" — the exact text in Finder, Activity Monitor, and the
+  system Microphone permission dialog itself. `CFBundleDisplayName` (the key TCC/system dialogs
+  actually read) is now set to "Wavecraft" on the app and "Wavecraft Helper" on the XPC helper; the
+  Microphone/Apple-Events permission-prompt body text, the About panel's header and copyright, and
+  the project/issue-tracker/contributors URLs baked into error dialogs (previously pointing at
+  upstream's repo, meaning bug reports from Wavecraft users would have gone to the wrong tracker)
+  all follow. The CoreAudio device's own display name — what shows in System Settings > Sound and
+  Audio MIDI Setup, arguably the single most-seen piece of identity in the whole app — is now
+  "Wavecraft" too (`BGM_Device.h`'s `kDeviceName`). Deliberately unchanged: the bundle identifiers
+  (`com.bearisdriving.BGM.*`), the `.app` folder/executable name, and the device's persistent UID
+  (`kBGMDeviceUID`) — renaming any of those would make macOS treat existing installs as a different
+  app (losing granted permissions) for no user-visible benefit. See CLAUDE.md's "Verifying after
+  install" section for why its own troubleshooting commands now intentionally grep for two
+  different names on adjacent lines.
 - `BGMPlayThrough` generalized to accept a non-`BGMDevice` input (`SetRequireBGMDeviceInput`), so
   `BGMTapRoute` can reuse its ring-buffer/clock-sync engine instead of reimplementing it.
 - Per-app EQ grew from 5 bands (60Hz/250Hz/1kHz/4kHz/12kHz) to 10 (the standard ISO octave-band

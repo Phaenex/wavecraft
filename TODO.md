@@ -143,6 +143,21 @@ None of this is started. If you want to tackle one, open an issue first so effor
   actually running; a menu bar organizer, `Ice`, had the icon parked in a collapsed section) — the
   third row's copy is a hypothesis about what would have prevented that confusion, not something
   confirmed to actually help a confused user in the moment.
+- **Verify the identity/rebrand pass (2026-08-13 — see CHANGELOG.md's "Changed" entry).** Confirmed
+  structurally (the built binaries actually contain the new strings — checked with `strings`/
+  `PlistBuddy` on a real compiled `.pkg`) and `BGMSetupWindowContentView`'s icon/amber-button
+  header was actually rendered off-screen in both light and dark mode and looked right — but three
+  things still need a real screen: (1) the system Microphone permission dialog actually says
+  "Wavecraft" now, not "Background Music" — the fix (`CFBundleDisplayName`) is standard, documented
+  behavior, but this exact project already had one confirmed miss in this area this session,
+  so don't take it as proven until someone's actually seen the real dialog; (2) `system_profiler
+  SPAudioDataType` / Sound settings / Audio MIDI Setup actually show "Wavecraft" as the device name
+  after a real install, not a cached/stale name held over from before the rename; (3) the new
+  `.pkg` installer's `<welcome>` pane (`pkg/welcome.txt`) actually renders legibly in Installer.app
+  — confirmed the file and the `Distribution.xml` reference to it are structurally correct, but
+  couldn't open Installer.app from this environment to see the real rendering (a `.pkg` `open`
+  call fails with a Launch Services error from this tool context specifically, confirmed earlier
+  this session; works fine when a real person runs the identical command).
 
 ## Fairly quick
 
