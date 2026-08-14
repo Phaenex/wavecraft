@@ -198,7 +198,14 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
   Launch-Services-based placement resolution entirely rather than trying to out-race it from a
   script. `pkg/postinstall`'s launch step also now tries the explicit install path before bundle-ID
   lookup. See [docs/LESSONS.md](docs/LESSONS.md)'s "relocatable pkg component" entry and its
-  same-day follow-up.
+  same-day follow-up. Confirmed on a third real install: the app now genuinely lands at
+  `/Applications/Wavecraft.app` and the old bundle is actually gone.
+- `pkg/postinstall` could hang a real install indefinitely on `./ListInputDevices` (confirmed via
+  `ps`, stuck 6+ minutes where a normal call takes milliseconds) — `AVCaptureDevice`'s
+  device-discovery APIs appear to wait on a TCC decision that can never resolve when called as
+  root from a temporary, unsigned install script. Now wrapped with a hard 5-second timeout,
+  falling back to `system_profiler` alone if it's hit. See
+  [docs/LESSONS.md](docs/LESSONS.md)'s "`AVCaptureDevice` device-discovery APIs can hang" entry.
 - A device-wide crash on first real install: `Device_GetPropertyDataSize`'s case for
   `kAudioObjectPropertyCustomPropertyInfoList` had gone stale at 7 entries after
   `kAudioDeviceCustomPropertyAppEQ` became the 8th custom property, silently making AppEQ

@@ -1003,3 +1003,41 @@ location must be deterministic (a fixed path, not "wherever a same-bundle-ID app
 be registered"), set that directly in the component plist, don't try to steer it from a script.
 Reserve script-side cleanup for genuinely orthogonal jobs (removing an old *duplicate*, not
 un-recreating one) once the placement mechanism can't fight back against them.
+
+## `AVCaptureDevice` device-discovery APIs can hang indefinitely when run as root, unsandboxed
+
+**The trap:** `pkg/postinstall`'s device-verification loop (confirming the driver actually loaded
+before declaring the install done) calls a small helper, `./ListInputDevices`
+(`pkg/ListInputDevices.swift`), as a fallback for `system_profiler SPAudioDataType` not working on
+CI. It uses `AVCaptureDevice.DiscoverySession`/`.devices(for:)` and had worked fine in every prior
+test this session. On a real install, the whole install hung -- not slow, genuinely stuck --
+confirmed via `ps`: `./ListInputDevices` still running after 6+ minutes, when a normal call
+completes in milliseconds. The existing code only handled the helper *failing* (non-zero exit),
+not *hanging* -- there was no timeout at all.
+
+**What was actually true:** `postinstall` scripts run as root, invoked from a temporary,
+ephemerally-signed sandbox location (`/tmp/PKInstallSandbox.*/Scripts/...`) with no real app bundle
+and no `NSMicrophoneUsageDescription`. `AVCaptureDevice`'s discovery APIs appear to depend on a TCC
+authorization decision under those conditions -- one that has no UI context to ever resolve in
+(no windowed app, no bundle identity to prompt on behalf of, running as root) -- and simply wait
+forever rather than failing fast or erroring out. This is exactly the class of thing `docs/
+LESSONS.md` already warned about with `AVCaptureDevice`/microphone permission timing earlier this
+session, just hitting a completely different call site: a plain CLI enumeration call, not a
+user-facing permission request, can be subject to the same TCC machinery and hang the same way.
+
+**How to apply:** any call into a TCC-gated framework (`AVFoundation`, `CoreLocation`,
+`Contacts`, etc.) from a process that isn't a normal, windowed, properly-bundled app -- a root
+install script, a headless CLI tool, anything running from a temp/ephemeral bundle -- should be
+treated as capable of hanging indefinitely, not just failing. Wrap it with an actual timeout,
+always, even (especially) if it "always worked in testing" -- a hang like this is exactly the kind
+of thing that only shows up on a real install, on a real machine, never in a dev loop where the
+calling context (a real signed app, already TCC-authorized from prior testing) is different enough
+to not trigger it. macOS ships no `timeout(1)`/`gtimeout` by default, so the portable fix is a
+plain background-job-plus-watchdog loop (fixed here: `pkg/postinstall`'s new
+`run_list_input_devices` function) -- tested directly against a deliberately hanging fake binary
+before trusting it (confirmed timeout at the intended bound, confirmed zero leftover processes) and
+against a fast-succeeding one (confirmed real output still passes through), not just read and
+assumed correct. The first version of that test also caught a second real bug in the timeout
+wrapper itself: killing only the immediate child PID left a grandchild process orphaned and still
+running when the child forked before hanging -- fixed by also killing children of the watched PID,
+not just the PID itself, before trusting the wrapper as done.

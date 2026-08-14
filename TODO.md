@@ -179,14 +179,26 @@ None of this is started. If you want to tackle one, open an issue first so effor
   against. Real fix: `BundleIsRelocatable: false` in `pkg/pkgbuild.plist` (matching what the driver
   component already used), removing bundle-ID-based placement entirely so the component always
   installs at the literal path. `pkg/postinstall`'s launch step also reordered to try the explicit
-  path before bundle-ID lookup. **Still needs, after the next real install** (now genuinely
-  untested — this exact combination has never been run for real): (1) confirm the app actually
-  ends up at `/Applications/Wavecraft.app` this time (`ps -p <pid> -o command`, not just
-  Installer.app's success screen, and not just "it opened" since a stale copy opening looks
-  identical from the outside); (2) confirm the old `/Applications/Background Music.app` is
-  actually gone afterward; (3) `tccutil reset Accessibility com.bearisdriving.BGM.App` (and
-  possibly Microphone too, to fully clear old records), run by a human; (4) confirm both badges
-  reflect a live grant afterward.
+  path before bundle-ID lookup. **Confirmed 2026-08-14, third real install**: (1) and (2) are now
+  actually verified, not just theorized — `/Applications/Wavecraft.app` correctly exists (`ps -p
+  <pid> -o command` showing the right path) and `/Applications/Background Music.app` is gone. This
+  install then hung on an unrelated bug (see the new `ListInputDevices` entry below and
+  docs/LESSONS.md) before finishing, so the app never got auto-launched by `postinstall` itself —
+  worked around by launching it manually. **Still needs**, once a full install finishes cleanly
+  end to end: (1) `tccutil reset Accessibility com.bearisdriving.BGM.App` (and possibly Microphone
+  too, to fully clear old records), run by a human; (2) confirm both badges reflect a live grant
+  afterward.
+- **`pkg/postinstall` could hang indefinitely on `./ListInputDevices`** (found 2026-08-14 on a
+  real install — confirmed via `ps`, 6+ minutes stuck where a normal call takes milliseconds, not
+  just slow). Root cause: `AVCaptureDevice`'s device-discovery APIs, called as root from a
+  temporary unsigned script sandbox with no real app bundle, appear to wait on a TCC decision that
+  can never resolve in that context. Fixed with a hard 5-second timeout
+  (`run_list_input_devices`), tested directly against a deliberately hanging fake binary (confirmed
+  it actually times out at the intended bound, confirmed zero leftover processes after — the first
+  version of the fix left an orphaned grandchild process behind, caught by the test, then fixed).
+  **Not yet confirmed on a real install** — the timeout logic itself is tested, but this exact
+  path (a real hang, real timeout, real fallback to `system_profiler` alone, real install still
+  completing successfully afterward) hasn't been observed end to end on a real machine yet.
 - **`BGMAppUITests` fails locally, 3/3 tests, all with `Element StatusItem ... is not hittable`**
   (found 2026-08-14 running `xcodebuild test` on the `Wavecraft` scheme, which runs both
   `BGMAppUnitTests` and `BGMAppUITests` — `BGMAppUnitTests` itself is unaffected, 47/47 still

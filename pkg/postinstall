@@ -39,6 +39,47 @@ function log_output {
     done < /dev/stdin
 }
 
+# Runs ./ListInputDevices and prints its stdout, but never blocks more than 5 seconds -- confirmed
+# on a real install that it can hang indefinitely otherwise. It uses AVCaptureDevice's device-
+# discovery APIs, which appear to wait on a TCC authorization decision that has no way to resolve
+# when running as root, mid-install, from a temporary script sandbox with no real app bundle or
+# NSMicrophoneUsageDescription to prompt with -- confirmed via `ps`, a real hang lasting 6+ minutes
+# where a normal call takes milliseconds. No `timeout(1)`/`gtimeout` on a stock Mac, so this is a
+# plain background-job-and-watchdog loop instead. Returns 124 (matching `timeout(1)`'s own
+# convention) if it had to kill the process, so the caller can log a timeout distinctly from a
+# genuine failure.
+function run_list_input_devices {
+    local output_file
+    output_file="$(mktemp)"
+
+    ./ListInputDevices > "$output_file" 2>&1 &
+    local cmd_pid=$!
+
+    local waited=0
+    while kill -0 "$cmd_pid" 2>/dev/null && [[ $waited -lt 5 ]]; do
+        sleep 1
+        waited=$((waited + 1))
+    done
+
+    if kill -0 "$cmd_pid" 2>/dev/null; then
+        # Also kill any direct children, not just cmd_pid itself -- confirmed by testing that a
+        # process which forks before hanging leaves an orphaned, still-running grandchild behind
+        # otherwise. Not expected to matter for the real compiled ListInputDevices binary (a
+        # simple synchronous AVFoundation call, not something that forks), but cheap insurance.
+        pkill -9 -P "$cmd_pid" 2>/dev/null
+        kill -9 "$cmd_pid" 2>/dev/null
+        wait "$cmd_pid" 2>/dev/null
+        rm -f "$output_file"
+        return 124
+    fi
+
+    wait "$cmd_pid"
+    local exit_status=$?
+    cat "$output_file"
+    rm -f "$output_file"
+    return "$exit_status"
+}
+
 coreaudiod_plist="/System/Library/LaunchDaemons/com.apple.audio.coreaudiod.plist"
 dest_volume="$3"
 xpc_helper_install_path="$(bash safe_install_dir.sh -y)"
@@ -123,9 +164,14 @@ while [[ $retries -gt 0 ]]; do
     # other systems as well. Only a fallback for system_profiler, so a failure here isn't fatal on
     # its own -- but note it distinctly rather than letting a crashed/missing binary look identical
     # to "ran fine, found nothing."
-    input_device_list="$(./ListInputDevices 2>&1)"
+    input_device_list="$(run_list_input_devices)"
     list_input_devices_status=$?
-    if [[ ${list_input_devices_status} -ne 0 ]]; then
+    if [[ ${list_input_devices_status} -eq 124 ]]; then
+        log "ListInputDevices didn't finish within 5 seconds -- killed it and falling back to" \
+            "system_profiler alone for this check. (A known issue with running it as root during" \
+            "install; doesn't mean the driver itself failed to install.)"
+        input_device_list=""
+    elif [[ ${list_input_devices_status} -ne 0 ]]; then
         log "ListInputDevices itself failed to run (exit ${list_input_devices_status}) --" \
             "falling back to system_profiler alone for this check."
         input_device_list=""
