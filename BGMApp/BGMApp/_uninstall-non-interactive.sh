@@ -141,13 +141,15 @@ fi
 # confirmed for real this session: an old grant/denial decision survives an uninstall (TCC data is
 # keyed by bundle ID, stored completely separately from the app bundle on disk, and isn't touched
 # by deleting it) and gets misread against whatever's reinstalled next, showing a permission as
-# already decided when the user never actually made that choice for the new install. `|| true` on
-# each -- this is a courtesy reset, not something that should abort the rest of the uninstall if it
-# fails for any reason (e.g. no existing record to reset).
+# already decided when the user never actually made that choice for the new install. Not silenced
+# with `&>/dev/null` -- tccutil can fail for reasons worth actually seeing (e.g. whatever's running
+# this script not having the standing to modify TCC's database at all), and a hidden failure here
+# is worse than a visible one: it would look identical to success while quietly not doing anything.
+# Still `|| true` on each -- a courtesy reset shouldn't abort the rest of the uninstall if it fails.
 echo "Resetting Wavecraft's Microphone and Accessibility permissions."
 bundle_id="com.bearisdriving.BGM.App"
-tccutil reset Microphone "${bundle_id}" &>/dev/null || true
-tccutil reset Accessibility "${bundle_id}" &>/dev/null || true
+tccutil reset Microphone "${bundle_id}" || echo "  (tccutil reset Microphone failed -- see above)"
+tccutil reset Accessibility "${bundle_id}" || echo "  (tccutil reset Accessibility failed -- see above)"
 
 # We're done removing files, so now actually move trash_dir into the trash. And if that fails, just delete it normally.
 osascript -e 'tell application id "com.apple.finder"
