@@ -185,6 +185,14 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
 
 ### Fixed
 
+- A real `.pkg` install was silently installing into the old, pre-rename `/Applications/Background
+  Music.app` folder instead of creating `/Applications/Wavecraft.app` — confirmed via the running
+  process's actual executable path, not assumed. Root cause: `pkg/pkgbuild.plist`'s relocatable
+  bundle handling upgrades an existing install *by bundle ID*, not by path, so a leftover old-named
+  copy from before this session's rename kept absorbing every new install's payload under its old
+  name. `pkg/preinstall` now removes any old-named bundle with a matching bundle ID before install;
+  `_uninstall-non-interactive.sh` also checks the old path so a plain uninstall cleans it up too.
+  See [docs/LESSONS.md](docs/LESSONS.md)'s "relocatable pkg component" entry.
 - A device-wide crash on first real install: `Device_GetPropertyDataSize`'s case for
   `kAudioObjectPropertyCustomPropertyInfoList` had gone stale at 7 entries after
   `kAudioDeviceCustomPropertyAppEQ` became the 8th custom property, silently making AppEQ

@@ -162,18 +162,21 @@ None of this is started. If you want to tackle one, open an issue first so effor
   itself actually resolves a real user's confusion in the moment is still unconfirmed.
 - **Accessibility permission shows under a stale "Background Music.app" entry in System
   Settings, and toggling it does nothing for the real app** (found 2026-08-14 on the user's real
-  `.pkg` install). Same root cause as the Microphone display-name bug already documented (see
-  docs/LESSONS.md's `CFBundleDisplayName` entry), plus this project being unsigned/ad-hoc-signed:
-  TCC recorded a decision for `com.bearisdriving.BGM.App` under an old build's name and/or
-  ad-hoc signature during earlier testing this session, and a rebuilt binary with different
-  ad-hoc signature bytes isn't reliably treated as "the same app" by TCC even though the bundle ID
-  matches. The System Settings row the user toggled ON didn't change `WCSetupWindow`'s "Not
-  Granted" badge at all, confirming it's not being read as the same identity. No code bug found in
-  `updateAccessibilityRow`/`AXIsProcessTrustedWithOptions` — both match Apple's documented usage.
-  Fix is the same class as the Microphone one: `tccutil reset Accessibility
-  com.bearisdriving.BGM.App`, run by a human, never by an agent. Not yet confirmed this actually
-  resolves it (the user hadn't run the reset as of this entry) — needs a follow-up check after a
-  fresh grant post-reset.
+  `.pkg` install). **Update, same day, root cause now confirmed** (see docs/LESSONS.md's
+  "relocatable pkg component" entry): `/Applications/Background Music.app` was never actually
+  replaced by any install this session — `pkg/pkgbuild.plist`'s relocatable-bundle handling kept
+  upgrading its *contents* in place under its old folder name, every single install, because it
+  matches by bundle ID (via Launch Services) rather than by path. Since it's the exact same bundle
+  that's existed (never deleted, just repeatedly overwritten) since before this session's rename,
+  TCC's cached display name for it — the same caching mechanism as the already-documented
+  `CFBundleDisplayName` Microphone bug — is stale for every permission service checked against it,
+  not just Microphone. No code bug in `updateAccessibilityRow`/`AXIsProcessTrustedWithOptions`.
+  Now fixed at the source (`pkg/preinstall` removes the old-named bundle before install, so a
+  fresh `/Applications/Wavecraft.app` actually gets created) — still needs, after the next real
+  install: (1) confirm the app actually ends up at `/Applications/Wavecraft.app` this time (`ps -p
+  <pid> -o command`, not just Installer.app's success screen); (2) `tccutil reset Accessibility
+  com.bearisdriving.BGM.App` (and possibly Microphone too, to fully clear old records), run by a
+  human; (3) confirm both badges reflect a live grant afterward.
 - **`BGMAppUITests` fails locally, 3/3 tests, all with `Element StatusItem ... is not hittable`**
   (found 2026-08-14 running `xcodebuild test` on the `Wavecraft` scheme, which runs both
   `BGMAppUnitTests` and `BGMAppUITests` — `BGMAppUnitTests` itself is unaffected, 47/47 still

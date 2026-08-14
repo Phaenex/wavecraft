@@ -914,3 +914,62 @@ expect), suspect the autosave timing before suspecting the centering call itself
 `NSLog` around the actual sequence of calls rather than reasoning about `NSWindow` behavior from
 memory, since positioning APIs like `-center` have real, non-obvious dependencies on window
 visibility state that aren't fully documented.
+
+## A relocatable pkg component upgrades an old-named bundle in place, silently, forever
+
+**The trap:** the app itself was renamed on disk this session (`Background Music.app` ->
+`Wavecraft.app`, see the earlier "Rename the app itself" entries), and `pkg/pkgbuild.plist` was
+fixed to point at the new path (`RootRelativeBundlePath = Applications/Wavecraft.app`) -- verified
+correct, re-checked, confirmed present in the built `.pkg`. A real, fresh `.pkg` install still
+produced an app running from `/Applications/Background Music.app`, the *old* path -- confirmed via
+`ps -p <pid> -o command` showing the literal old path, not a hypothesis. Every individual piece of
+the rename looked right in isolation.
+
+**What was actually true:** `pkgbuild.plist`'s app component was also marked
+`BundleIsRelocatable: true` with `BundleOverwriteAction: upgrade` -- correct, ordinary behavior
+for handling a user who's moved the app before installing an update (Launch Services finds the
+existing install *by bundle ID*, not by the path in the component plist, and upgrades it in
+place). But a leftover `/Applications/Background Music.app` from *before this session's rename*
+was still sitting on disk, sharing the unchanged bundle identifier `com.bearisdriving.BGM.App`.
+`pkgbuild`'s relocatable-upgrade logic found that old bundle by ID, and upgraded its *contents* in
+place -- new executable, new `CFBundleShortVersionString`, everything inside correctly reporting
+"Wavecraft" -- while leaving the enclosing folder under its old name, because "upgrade in place"
+means exactly that: it never moves or renames the folder itself. `/Applications/Wavecraft.app`
+was never created at all. `pkg/postinstall`'s own launch step (`open -b com.bearisdriving.BGM.App`)
+then correctly found and launched that same bundle -- at the old path -- and its own header
+comment had *already predicted this exact failure mode* ("TODO: If they have multiple copies of
+BGMApp, this might open one of the old ones"), written by the original project author years before
+this session's rename made it newly relevant.
+
+**A second, compounding bug rode along with this one:** ad-hoc debug testing earlier the same
+session (`open BGMApp/build/Debug/Wavecraft.app` directly, to verify an unrelated UI fix) used the
+real, standard `NSUserDefaults` domain for `com.bearisdriving.BGM.App` -- the *same* domain the
+real `.pkg` install reads from, since defaults are keyed by bundle ID, not by which copy of the
+binary happens to be running. That test session recorded `LastShownSetupWindowVersion` and
+`HasShownMicrophonePermissionExplanation` against the exact version string the next real `.pkg`
+build also produced (same commit, same `set-version.sh` output) -- so when the user's real install
+launched, `WCSetupWindow::showOnFirstLaunchIfNeeded` saw a version match and skipped the window
+entirely, falling through to the older, less-explained permission-request path, which *also* saw
+its "already explained" flag set from testing and skipped straight to the real system dialog with
+no explanation at all. Two independent bugs (a stale bundle, and stale shared defaults) combined
+to reproduce exactly the symptom the whole `WCSetupWindow` rearchitecture existed to prevent.
+
+**How to apply:**
+- Any time a `pkgbuild` component is `BundleIsRelocatable` + `BundleOverwriteAction: upgrade`
+  (the normal, correct choice for handling user-moved installs), a rename of that bundle's on-disk
+  name needs an explicit, one-time migration step -- a `preinstall` script that finds any existing
+  bundle with the *old* name and the *same* bundle ID, and removes it before the main payload
+  installs, so relocatable-upgrade has nothing stale to "helpfully" reuse. Fixed here by adding
+  exactly that to `pkg/preinstall`. The uninstaller needed the identical fix (`_uninstall-non-
+  interactive.sh`'s `file_paths` array) so a plain uninstall without a following reinstall also
+  fully cleans up -- the same "check both the new and legacy path" pattern already used for the
+  XPC helper's backup install dir, just not yet extended to the app bundle itself.
+- Never test a rebuilt app by launching it directly against the *real* `NSUserDefaults` domain a
+  production install shares -- pass `--no-persistent-data` (already implemented, see
+  `WCAppDelegate::createUserDefaults` and `kOptNoPersistentData`) for any ad-hoc launch of a build
+  sharing a real app's bundle ID, so test-only state never contaminates what a real install reads.
+  Confirmed after the fact by reading the exact polluted keys back out of the shared domain.
+- When a fix is verified only by reading code/config that looks correct, and a live symptom still
+  reproduces, suspect a *second*, unrelated mechanism before re-reading the same fix again --
+  `ps -p <pid> -o command` (the actual running executable's real path, not an assumption about
+  where it "should" be) is what actually broke this open.

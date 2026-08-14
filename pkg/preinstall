@@ -24,6 +24,34 @@
 
 PATH=/bin:/sbin:/usr/bin:/usr/sbin; export PATH
 
+# Earlier versions of this app installed as "Background Music.app" -- if that folder is still
+# around and shares this app's bundle ID, remove it before the real payload installs. Otherwise
+# pkgbuild's relocatable bundle handling (see pkg/pkgbuild.plist's BundleIsRelocatable/
+# BundleOverwriteAction=upgrade for the app component) finds it via Launch Services *by bundle ID,
+# not by path*, and upgrades its contents in place -- leaving the folder itself under its old name
+# forever, even though everything inside (the executable, Info.plist's version string) correctly
+# reports the new one. Confirmed the hard way: a real install did exactly this, and postinstall's
+# own `open -b com.bearisdriving.BGM.App` (see its header comment, which already predicted this
+# exact failure mode for "multiple copies") then launched the app from that stale path.
+#
+# Safe to just remove outright, not migrate: all of this app's persistent state (NSUserDefaults,
+# window positions, TCC grants) is keyed by bundle ID, not by the app bundle's location on disk,
+# so nothing is lost by removing the old folder and letting the new payload install fresh.
+old_app_path="/Applications/Background Music.app"
+
+if [ -d "$old_app_path" ]; then
+    old_bundle_id="$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" \
+        "${old_app_path}/Contents/Info.plist" 2>/dev/null)"
+
+    if [ "$old_bundle_id" = "com.bearisdriving.BGM.App" ]; then
+        logger "Removing old-named app bundle at ${old_app_path} before install (bundle ID matches; \
+same app, new name)."
+        pkill -x "Wavecraft" 2>/dev/null || true
+        pkill -x "Background Music" 2>/dev/null || true
+        rm -rf "$old_app_path"
+    fi
+fi
+
 # Show a warning if we can't find a safe dir to install BGMXPCHelper in. Should be very unlikely.
 xpc_helper_path="$(bash safe_install_dir.sh -y)"
 

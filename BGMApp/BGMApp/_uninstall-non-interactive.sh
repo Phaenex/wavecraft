@@ -39,6 +39,13 @@ bold=$(tput bold)
 normal=$(tput sgr0)
 
 app_path="/Applications/Wavecraft.app"
+# The app itself used to install as "Background Music.app" -- still checked here (not just the
+# new path above) so an install from before that rename gets fully cleaned up too. This isn't just
+# a leftover-folder concern: pkgbuild's relocatable bundle handling upgrades an existing bundle
+# *in place* by matching bundle ID via Launch Services, not by path, so a stale copy at this old
+# path can silently keep absorbing every future install under its old name -- confirmed for real,
+# see docs/LESSONS.md.
+app_path_legacy="/Applications/Background Music.app"
 driver_path="/Library/Audio/Plug-Ins/HAL/Background Music Device.driver"
 xpc_path1="/usr/local/libexec/BGMXPCHelper.xpc"
 xpc_path2="/Library/Application Support/Wavecraft/BGMXPCHelper.xpc"
@@ -51,7 +58,7 @@ xpc_path2_legacy="/Library/Application Support/Background Music/BGMXPCHelper.xpc
 # include debug symbols, e.g. if you use build_and_install.sh, which makes them a lot bigger.
 max_size_mb_for_rm=30
 
-file_paths=("${app_path}" "${driver_path}" "${xpc_path1}" "${xpc_path2}" "${xpc_path2_legacy}")
+file_paths=("${app_path}" "${app_path_legacy}" "${driver_path}" "${xpc_path1}" "${xpc_path2}" "${xpc_path2_legacy}")
 
 bgmapp_process_name="Wavecraft"
 
