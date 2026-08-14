@@ -228,6 +228,15 @@ None of this is started. If you want to tackle one, open an issue first so effor
   can't abort the rest of the uninstall) part of the standard uninstall flow. **Not yet verified**
   a real uninstall + reinstall cycle with this change actually produces a genuinely fresh
   permission state — needs the next real test to confirm.
+  **Fourth update, same day**: the attempt to verify the above surfaced a completely separate,
+  blocking bug first — `sudo ./uninstall.sh` (the command actually given to the user, twice, both
+  times against the script's own "don't run this with sudo" documentation) died immediately with
+  `tput: unknown terminal "xterm-ghostty"` and produced no other output at all, meaning the
+  `tccutil reset` calls above were never even reached, let alone verified. Root cause and fix: see
+  docs/LESSONS.md's "`sudo whole-script.sh`... breaks `tput`" entry. **Still not verified**: the
+  `tccutil reset`/genuinely-fresh-permission-state question this whole update chain is about —
+  needs the *correctly-invoked* `./uninstall.sh` (no `sudo` prefix) run for real before anything
+  in this bullet can be marked confirmed.
 - **`pkg/postinstall` could hang indefinitely on `./ListInputDevices`** (found 2026-08-14 on a
   real install — confirmed via `ps`, 6+ minutes stuck where a normal call takes milliseconds, not
   just slow). Root cause: `AVCaptureDevice`'s device-discovery APIs, called as root from a

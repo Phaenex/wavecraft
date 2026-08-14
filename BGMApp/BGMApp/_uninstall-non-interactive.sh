@@ -35,8 +35,12 @@ set -e
 
 PATH=/bin:/sbin:/usr/bin:/usr/sbin; export PATH
 
-bold=$(tput bold)
-normal=$(tput sgr0)
+# See uninstall.sh's identical fix for why this can't be a bare `tput bold`/`tput sgr0` -- a
+# custom terminal emulator's terminfo entry not being reachable (most commonly because this ends
+# up invoked in a root/sudo context that doesn't have it) would otherwise abort this entire script
+# under `set -e`, over what's purely cosmetic bold text.
+bold=$(tput bold 2>/dev/null || true)
+normal=$(tput sgr0 2>/dev/null || true)
 
 app_path="/Applications/Wavecraft.app"
 # The app itself used to install as "Background Music.app" -- still checked here (not just the

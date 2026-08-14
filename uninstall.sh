@@ -30,8 +30,16 @@ set -e
 
 PATH=/bin:/sbin:/usr/bin:/usr/sbin; export PATH
 
-bold=$(tput bold)
-normal=$(tput sgr0)
+# tput can fail outright (not just print nothing) if it doesn't recognize $TERM -- confirmed for
+# real: a custom terminal emulator's own terminfo entry (e.g. Ghostty's "xterm-ghostty") is
+# typically only reachable through the invoking *user's* environment, not root's, so this fails
+# specifically when the whole script is run via `sudo` rather than run normally and letting it
+# `sudo` internally where it actually needs to (see the root check right below, which -- before
+# this fix -- was itself unreachable in that exact scenario, since this line would already have
+# aborted the whole script under `set -e` before ever getting there). Bold/normal text is purely
+# cosmetic; losing it is a fine trade for the script not dying over it.
+bold=$(tput bold 2>/dev/null || true)
+normal=$(tput sgr0 2>/dev/null || true)
 
 # Warn if running as root.
 if [[ $(id -u) -eq 0 ]]; then

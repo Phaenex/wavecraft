@@ -189,6 +189,16 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
 
 ### Fixed
 
+- `uninstall.sh` (run as `sudo ./uninstall.sh`, against its own documented usage — it's meant to
+  be run normally and `sudo` internally where it needs to) would die immediately with
+  `tput: unknown terminal "xterm-ghostty"` and no other output, looking like it silently did
+  nothing. Root's environment doesn't have standing to reach a custom terminal emulator's own
+  terminfo entry, and `bold=$(tput bold)` — a bare assignment, unlike the many other `tput` calls
+  in this codebase that are used inline inside larger strings — aborts the whole script under
+  `set -e` if it fails. Fixed in `uninstall.sh` and `_uninstall-non-interactive.sh` by falling back
+  to an unstyled string instead of erroring. Verified by reproducing the exact reported error
+  message against the old code and confirming the fix survives the identical forced failure. See
+  [docs/LESSONS.md](docs/LESSONS.md).
 - The main panel's master output volume row rendered on top of the Auto-pause row above it —
   confirmed on a real screen (the first time this panel had actually been looked at, not just
   built). `outputVolumeView` is a 47pt-tall XIB template (label above the slider), but was being

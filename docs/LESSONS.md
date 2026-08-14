@@ -1109,3 +1109,50 @@ stopped doing. Fixed here: the apps section wrapped in its own `NSScrollView` wi
 (recomputed before every show, since rows are added/removed live as apps launch and quit -- a
 static one-time measurement would go stale), plus a defensive floor on the panel's Y position so
 even content taller than the cap accounts for can't push it below the visible screen.
+
+## `sudo whole-script.sh` instead of "run normally, it `sudo`s internally" breaks `tput`, silently
+
+**The trap:** `uninstall.sh` was invoked as `sudo ./uninstall.sh` (told to the user this way,
+repeatedly, across the same session that had *already* independently identified this exact
+mistake once before and apparently didn't stick). Running it produced a single line --
+`tput: unknown terminal "xterm-ghostty"` -- and returned straight to the prompt. No confirmation
+prompt, no file-removal messages, nothing. Looked like the script silently did nothing.
+
+**What was actually true:** `uninstall.sh` line 33 (before this fix) was `bold=$(tput bold)`,
+followed immediately by `set -e`'s effect: a failing command substitution used as a bare
+assignment aborts the whole script right there (confirmed directly: a minimal repro script with
+`x=$(false)` under `set -e` dies at that exact line, while the identical failing command used
+*inline* inside a larger string, like `echo "$(false)text"`, does not -- `set -e` only watches the
+outer command's own exit status in that case, not substitutions embedded within it). `tput`
+failed specifically because the script was run as root (`sudo ./uninstall.sh` runs the *entire*
+script, including this line, as root from the start) -- and a custom terminal emulator's terminfo
+entry (Ghostty ships `xterm-ghostty`, not a stock entry) is typically only reachable through the
+*invoking user's* environment, not root's default one. The user never even saw
+`uninstall.sh`'s own "this script is not intended to be run as root" warning, because that check
+is a few lines *after* the `tput` line that was already fatal by the time execution would have
+reached it.
+
+**How to apply:**
+- When a script documents its own correct invocation ("run it normally, it escalates internally
+  where needed"), don't override that with an assumption that "just prefix sudo, it's safer" --
+  running the whole thing as root can change its behavior in ways that have nothing to do with
+  privilege, and this project's own uninstall/build scripts explicitly warn about exactly this.
+  This was flagged once already earlier the same session and recommended again anyway -- worth
+  actually checking a script's own header/warnings before restating a usage instruction, not
+  relying on memory of having checked it once.
+- `VAR=$(cmd)` and `echo "$(cmd)more text"` are **not equally dangerous** under `set -e` -- only
+  the bare-assignment form aborts the script on failure; a substitution embedded in a larger
+  command does not. Verified directly with a minimal repro before trusting this distinction,
+  rather than assuming it from general `set -e` folklore (which is inconsistent enough across
+  shells and Bash versions that "verified locally" beats "recalled").
+- Any `VAR=$(tput ...)` used purely for cosmetic formatting (bold, color) should never be allowed
+  to abort a whole script -- `VAR=$(tput ... 2>/dev/null || true)` degrades to an unstyled string
+  instead of killing the run. Fixed in `uninstall.sh` and `_uninstall-non-interactive.sh`, the only
+  two places this bare-assignment form actually existed -- checked directly (`grep` for the exact
+  `VAR=$(tput` pattern), not assumed: `build_and_install.sh`/`install_prebuilt.sh`/`setup.sh` all
+  use `tput` exclusively inline inside larger `echo` strings, the already-safe form, so they were
+  never actually at risk from this specific interaction despite calling `tput` far more often.
+- Verified the fix, not just read it: reproduced the *exact* reported error message
+  (`tput: unknown terminal "xterm-ghostty"`, exit 3) by forcing `TERMINFO` to a nonexistent path
+  against the old pattern, confirmed the new pattern survives the identical forced failure and
+  reaches the line after it with empty (not erroring) fallback values.
