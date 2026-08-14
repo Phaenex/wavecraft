@@ -61,6 +61,16 @@
 // explanation when this window, which already covers it, just showed instead.
 - (BOOL) showOnFirstLaunchIfNeeded;
 
+// Called exactly once, the moment Microphone access is actually granted -- either by the user
+// clicking this window's own "Grant Access" button, or by returning here (see
+// applicationDidBecomeActive:) after granting it in System Settings. If access is already granted
+// at the moment this is set (e.g. this window's already been through Setup in an earlier
+// session), it fires immediately and synchronously from inside the setter -- callers shouldn't
+// assume it only fires later, asynchronously. Lets a caller (WCAppDelegate) wait for the user to
+// actually finish the permission flow themselves, at their own pace, instead of triggering the
+// system permission dialog automatically the instant this window appears.
+@property (nonatomic, copy, nullable) void (^microphoneAccessGrantedHandler)(void);
+
 @end
 
 #pragma clang assume_nonnull end

@@ -172,11 +172,19 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
         // they open Wavecraft, we won't interrupt it while we're waiting for them to click
         // OK.
         if (showedSetupWindow) {
-            // The Setup window's own Microphone row already explains this and has a button that
-            // does the exact same thing -- showing the older, narrower one-time alert too would
-            // just be a second, redundant interruption stacked right on top of it.
+            // Don't request access ourselves here -- that would trigger the system permission
+            // dialog immediately, before the user's had any chance to even read the Setup window
+            // that's supposed to explain it first, defeating the entire point of that window.
+            // WCSetupWindow's own Microphone row already has a button that requests access when
+            // *they* click it; just wait for that to actually succeed (or for them to grant it in
+            // System Settings and switch back -- see WCSetupWindow::applicationDidBecomeActive:)
+            // before continuing the rest of launch.
             userDefaults.hasShownMicrophonePermissionExplanation = YES;
-            [self requestMicrophoneAccess];
+
+            WCAppDelegate* __weak weakSelf = self;
+            setupWindow.microphoneAccessGrantedHandler = ^{
+                [weakSelf continueLaunchAfterInputDevicePermissionGranted];
+            };
         } else {
             [self explainMicrophonePermissionIfFirstRunThenRequestAccess];
         }

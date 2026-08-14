@@ -242,6 +242,12 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
     [docs/LESSONS.md](docs/LESSONS.md).
   - Leftover "Background Music" branding in a few accessibility labels/menu items, a dead
     permanently-disabled button on the System Sounds row, and a couple of XIB layout overlaps.
+- Two real `WCSetupWindow` bugs found live, on a real screen, by actually launching a built Debug
+  copy of the app: the system Microphone permission dialog was firing automatically the instant
+  the window appeared, before the user had any chance to read it or click the window's own "Grant
+  Access" button; and the window itself landed pinned to the screen's bottom-left corner on every
+  first-ever show, never centered, because of a `frameAutosaveName` self-fulfilling-restore bug.
+  Both confirmed fixed with real screenshots afterward. See docs/LESSONS.md's two new entries.
 
 ### Removed
 

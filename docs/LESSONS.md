@@ -822,3 +822,74 @@ because they're rarely opened by hand and don't show up in a mental model built 
 human-facing surface area. Then actually run the full downstream pipeline (not just build the
 renamed target) before calling a rename like this complete -- `package.sh` end-to-end is what
 surfaced this, not a broader or smarter grep.
+
+## A "shown first" onboarding window still lost the race to an unconditional call right after it
+
+**The trap:** `WCAppDelegate::applicationDidFinishLaunching` called `[setupWindow
+showOnFirstLaunchIfNeeded]` *before* touching any system permission -- specifically to fix an
+earlier, real bug where the permission dialog appeared before the user had a chance to read the
+explanation. That looked like the fix. But two lines later, in the very same method, `if
+(showedSetupWindow) { ... [self requestMicrophoneAccess]; }` called the real
+`AVCaptureDevice requestAccessForMediaType:` request *itself*, unconditionally, the instant the
+window had been ordered onto screen -- not when the user clicked its own "Grant Access" button.
+Ordering the window first didn't help, because a second, independent code path also fired the
+same real request immediately after, racing the user's ability to even read the window before the
+system dialog appeared on top of it. Caught only by actually launching the built app and
+screenshotting it -- clean builds and 47/47 unit tests never touch this, since nothing in the
+suite drives a real `applicationDidFinishLaunching` and watches what system UI shows up.
+
+**What was actually true:** "shown before" and "the user decided" are different claims. The
+window being visually in front doesn't mean nothing downstream can still race ahead of the user's
+own input -- the reordering fixed the *visual* race (window paints before the dialog) but not the
+*causal* one (something other than the user's own click still triggers the dialog). The tell was
+in the app-delegate comment itself: "the Setup window's own Microphone row already ... has a
+button that does the exact same thing" -- true, but the code right below it called that same
+action from the delegate too, not just from the button.
+
+**How to apply:** when a UI element exists specifically so the user can trigger a consequential
+action (a permission request, a payment, a send) at their own pace, grep for every other call site
+of that same underlying action and confirm none of them can fire on a path that doesn't go through
+a real user click -- "the button also does this" is not evidence nothing else does. The fix here
+was a completion-handler property on the window (`microphoneAccessGrantedHandler`), set once by
+the delegate and fired only from the window's own permission-status-refresh logic (which itself
+only runs after a button click or returning from System Settings) -- moving the *decision* of
+when the underlying call happens fully inside the component the user actually interacts with,
+not just the ordering of two independent call sites.
+
+## `NSWindow.frameAutosaveName`, set before the first layout pass, autosaves a frame nobody chose
+
+**The trap:** `WCSetupWindow`'s initializer set `self.frameAutosaveName = @"WCSetupWindow"`
+immediately (with a comment explaining the intent: remember where the user leaves the window),
+then called `buildRows` and `sizeToFitContent`, which resized the window from its initial
+`NSZeroRect` to its real fitted size via `setContentSize:`, then attempted
+`[self setFrameUsingName:...]` to restore any previously saved position, falling back to
+`[self center]` if none existed. On a genuinely first-ever launch (no prior saved frame), this
+should have centered the window. Confirmed by direct screenshot on a real screen: it did not --
+the window landed pinned to the screen's bottom-left corner, `(0, 0)`, every time.
+
+**What was actually true:** `frameAutosaveName` isn't just a name to pass to
+`setFrameUsingName:` later -- setting it turns on automatic save-on-move/resize immediately, for
+the rest of the window's life. Since it was set *before* `sizeToFitContent` ran,
+`setContentSize:`'s own resize (from zero to the real fitted size) was itself auto-saved to
+`defaults` right then -- capturing the window's frame at whatever origin it happened to have
+straight out of construction, `(0, 0)`, before anyone had ever positioned it. Moments later in the
+same method, `setFrameUsingName:` read that value straight back and "restored" it -- a
+self-fulfilling restore of a frame nobody, ever, actually chose. `restored` came back `YES` on
+every single first launch, so the `center` fallback never ran. Confirmed with temporary `NSLog`
+instrumentation around every step (`setContentSize:`, `setFrameUsingName:`, the centering call)
+before writing the real fix -- guessing from reading the code alone pointed at `-center`'s
+screen-association behavior, which was the wrong layer entirely.
+
+**How to apply:** don't set `frameAutosaveName` until *after* a window's initial position for
+this show has already been resolved one way or another (restored from a real prior session, or
+explicitly positioned) -- setting it any earlier makes every layout-time resize during
+construction eligible for auto-save, including ones that happened before the window was ever
+shown to anyone. If restoration needs to happen during that same initial layout (as it does here,
+to check for a real saved frame from an *earlier* session), read/write the autosave name as a
+private string constant during that phase, and only assign it to the live `frameAutosaveName`
+property once positioning is finished. When a saved position looks suspicious (an origin at
+exactly `(0, 0)`, or any window that's "somewhere, technically" but never where a user would
+expect), suspect the autosave timing before suspecting the centering call itself -- confirm with
+`NSLog` around the actual sequence of calls rather than reasoning about `NSWindow` behavior from
+memory, since positioning APIs like `-center` have real, non-obvious dependencies on window
+visibility state that aren't fully documented.

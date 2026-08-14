@@ -127,22 +127,50 @@ None of this is started. If you want to tackle one, open an issue first so effor
   apps; Option-clicking the status icon still revealing the Debug Logging row; and a full regression
   sweep of every other item already listed in this section, to confirm none of it silently broke
   from this structural change.
-- **Verify `BGMSetupWindow` (added 2026-08-13, "Setup & Permissions" — see CHANGELOG.md).**
-  Confirmed only by clean Debug+Release builds and 47/47 `BGMAppUnitTests` — **none of the
-  following has been seen on a real screen**: the window actually auto-shows on a genuinely fresh
-  install (not a reinstall over an existing one, which already has
-  `hasShownSetupWindowOnFirstLaunch` set from a previous run and will correctly skip it — needs a
-  full uninstall first to test the auto-show path honestly); the three rows' wrapped body text
-  doesn't clip or overflow at the window's actual fitted size; both status badges reflect real
-  permission state (not just the hardcoded `BGMSetupRowStatusNotGranted` they're constructed with
-  before the first `refreshPermissionStatuses` call); clicking a row's button actually opens the
-  right System Settings pane and the badge updates to "Granted" after returning to Wavecraft;
-  `frameAutosaveName`'s remembered position survives a quit/relaunch; and reopening via Preferences
-  → "Setup & Permissions…" shows live, not stale, status. Built specifically in response to real
-  confusion this session ("installed no app is running" — the app and its status item were both
-  actually running; a menu bar organizer, `Ice`, had the icon parked in a collapsed section) — the
-  third row's copy is a hypothesis about what would have prevented that confusion, not something
-  confirmed to actually help a confused user in the moment.
+- **Verify `WCSetupWindow` (added 2026-08-13, "Setup & Permissions" — see CHANGELOG.md).**
+  Update 2026-08-14: a real install-free Debug launch (built via `./build_and_install.sh -b -d`,
+  run directly from `BGMApp/build/Debug/Wavecraft.app` without installing the driver, so no sudo
+  needed) surfaced two real bugs, both fixed and both confirmed with real screenshots on a real
+  screen after the fix — see docs/LESSONS.md's two new entries for the full writeup: (1) the
+  system Microphone permission dialog was firing automatically the instant the window appeared,
+  racing the user's ability to even read it, because `WCAppDelegate` called
+  `requestMicrophoneAccess` itself right after showing the window instead of waiting for the
+  window's own "Grant Access" button — fixed with a `microphoneAccessGrantedHandler` completion
+  block the window fires only from its own button-click/permission-refresh path; (2) the window
+  was landing pinned to the screen's bottom-left corner `(0, 0)` on every first-ever show, not
+  centered, because `frameAutosaveName` was set before the window's initial layout pass, causing
+  its own `setContentSize:` resize to auto-save a never-positioned frame that `setFrameUsingName:`
+  then immediately "restored" — fixed by deferring `frameAutosaveName` until after the window's
+  initial position is actually resolved. Now confirmed on a real screen: the window auto-shows on
+  first launch, is genuinely centered, no system dialog appears before a button click, and both
+  status badges correctly show "Not Granted" on fresh state with no visible text clipping.
+  **Still not seen on a real screen**: clicking a row's button actually opens the right System
+  Settings pane and the badge updates to "Granted" after returning to Wavecraft (the completion
+  handler itself was only exercised via the already-granted-at-set-time path, not a live grant);
+  `frameAutosaveName`'s remembered position surviving a quit/relaunch *after* the user has actually
+  moved the window (only the fresh-launch/no-saved-frame path was tested); and reopening via
+  Preferences → "Setup & Permissions…" shows live, not stale, status. Built specifically in
+  response to real confusion this session ("installed no app is running" — the app and its status
+  item were both actually running; a menu bar organizer, `Ice`, had the icon parked in a collapsed
+  section) — independently reconfirmed 2026-08-14 that `Ice` is still running on this dev machine
+  and still does exactly this, so the third row's copy addresses a real, currently-reproducible
+  condition on this machine, though whether the copy itself actually resolves a real user's
+  confusion in the moment is still unconfirmed.
+- **`BGMAppUITests` fails locally, 3/3 tests, all with `Element StatusItem ... is not hittable`**
+  (found 2026-08-14 running `xcodebuild test` on the `Wavecraft` scheme, which runs both
+  `BGMAppUnitTests` and `BGMAppUITests` — `BGMAppUnitTests` itself is unaffected, 47/47 still
+  pass). Root cause confirmed directly: `Ice` (a menu bar organizer, already running on this dev
+  machine) collapses Wavecraft's status item into its hidden section, same as the real user
+  confusion `WCSetupWindow`'s third row exists for — the failing element's reported frame
+  (`x = -4180`) matches Ice's off-screen-park convention exactly. Not a regression from anything
+  changed 2026-08-14 (neither of that day's fixes touch `WCStatusBarItem` or status-item
+  visibility) — but also not independently confirmed to have been passing *before* that day's
+  changes, since no baseline run was captured first. Needs: (1) confirm on a machine without a
+  menu bar organizer running (or with Ice's "keep visible" list including Wavecraft) that this
+  suite passes cleanly, to fully rule out a real regression; (2) decide whether CI should guard
+  against exactly this (a runner with a menu bar organizer installed would hit the identical
+  failure) — e.g. detecting a running menu bar organizer and skipping/xfailing rather than a hard
+  failure.
 - **Verify the identity/rebrand pass (2026-08-13 — see CHANGELOG.md's "Changed" entry).** Confirmed
   structurally (the built binaries actually contain the new strings — checked with `strings`/
   `PlistBuddy` on a real compiled `.pkg`) and `BGMSetupWindowContentView`'s icon/amber-button

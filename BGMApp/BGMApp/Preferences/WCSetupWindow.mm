@@ -33,6 +33,11 @@
 
 #pragma clang assume_nonnull begin
 
+// Kept as a constant, rather than read back from self.frameAutosaveName, because
+// initWithUserDefaults: deliberately doesn't set that property until *after* the window's
+// initial position for this show has already been resolved -- see the comment there.
+static NSString* const kFrameAutosaveName = @"WCSetupWindow";
+
 @implementation WCSetupWindow {
     WCSetupWindowContentView* setupContentView;
     WCUserDefaults* userDefaults;
@@ -56,15 +61,24 @@
 
         self.title = @"Wavecraft Setup";
         self.releasedWhenClosed = NO;
-        // Remembers where the user leaves it, like any normal document window -- there's no
-        // "always reopen in the same spot below some anchor" reason not to, unlike the main panel.
-        self.frameAutosaveName = @"WCSetupWindow";
 
         setupContentView = [[WCSetupWindowContentView alloc] initWithFrame:NSZeroRect];
         self.contentView = setupContentView;
 
         [self buildRows];
         [self sizeToFitContent];
+
+        // Remembers where the user leaves it from here on, like any normal document window --
+        // there's no "always reopen in the same spot below some anchor" reason not to, unlike the
+        // main panel. Deliberately not set until *after* sizeToFitContent has already resolved
+        // the window's initial position: AppKit auto-saves the frame on every move/resize the
+        // moment this property is non-nil, and sizeToFitContent's own setContentSize: call is
+        // itself a resize. Set this any earlier and that resize would get auto-saved immediately,
+        // and setFrameUsingName: (called moments later, in the same method) would then "restore"
+        // that exact just-saved, never-actually-positioned frame right back -- which is why an
+        // earlier build of this window always landed at frame origin (0, 0) on a genuinely
+        // first-ever show, never centered, no matter what centering logic ran afterward.
+        self.frameAutosaveName = kFrameAutosaveName;
 
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                    selector:@selector(applicationDidBecomeActive:)
@@ -125,11 +139,54 @@
     NSSize contentSize = setupContentView.fittingSize;
     [self setContentSize:contentSize];
 
-    // Only frameAutosaveName restores a previous position; a first-ever show should still land
-    // somewhere reasonable.
-    if (![self setFrameUsingName:BGMNN(self.frameAutosaveName)]) {
-        [self center];
+    // Only a previously *saved* position restores -- and even then, only if that saved position
+    // is still somewhere a user could actually find it. A frame remembered from a display that's
+    // since been disconnected (or moved off every current screen for any other reason) would
+    // otherwise silently reopen off-screen, which looks identical to "didn't open at all" --
+    // exactly the confusion this window exists to prevent in the first place (see the class
+    // header). Uses the constant, not self.frameAutosaveName, because that property isn't set
+    // until after this method returns -- see the comment in the initializer.
+    BOOL restoredOnScreen = [self setFrameUsingName:kFrameAutosaveName] && [self isOnAnyScreen];
+    if (!restoredOnScreen) {
+        [self centerOnMainScreen];
     }
+}
+
+// Whether any part of the window's current frame actually overlaps a currently connected
+// screen's visible area, as opposed to a frame restored from frameAutosaveName that made sense
+// on a display configuration that's since changed.
+- (BOOL) isOnAnyScreen {
+    for (NSScreen* screen in NSScreen.screens) {
+        if (NSIntersectsRect(self.frame, screen.visibleFrame)) {
+            return YES;
+        }
+    }
+
+    return NO;
+}
+
+// Computes the centered origin directly, rather than calling NSWindow's own -center, purely so
+// this is easy to reason about and log if window positioning ever breaks again the way it did
+// once already (see the initializer's comment on frameAutosaveName's ordering -- the actual bug
+// there was a self-fulfilling "restore" of a never-positioned frame, not anything wrong with
+// -center itself, but this stays explicit rather than relying on -center's undocumented behavior
+// for a window that's never been on screen yet).
+- (void) centerOnMainScreen {
+    NSScreen* __nullable screen = NSScreen.mainScreen ?: NSScreen.screens.firstObject;
+
+    if (!screen) {
+        return;  // No screen at all -- shouldn't happen on a real Mac, nothing we can do anyway.
+    }
+
+    NSRect screenFrame = screen.visibleFrame;
+    NSRect frame = self.frame;
+
+    NSPoint newOrigin = NSMakePoint(
+        screenFrame.origin.x + (NSWidth(screenFrame) - NSWidth(frame)) / 2.0,
+        screenFrame.origin.y + (NSHeight(screenFrame) - NSHeight(frame)) / 2.0);
+    NSLog(@"DEBUG centerOnMainScreen: setting origin to %@", NSStringFromPoint(newOrigin));
+
+    [self setFrameOrigin:newOrigin];
 }
 
 #pragma mark Show
@@ -194,6 +251,7 @@
             case AVAuthorizationStatusAuthorized:
                 [WCSetupWindowContentView setStatus:BGMSetupRowStatusGranted onRow:microphoneRow];
                 microphoneRow.button.hidden = YES;
+                [self fireMicrophoneAccessGrantedHandlerIfAuthorizedNow];
                 break;
 
             case AVAuthorizationStatusNotDetermined:
@@ -217,6 +275,40 @@
         [WCSetupWindowContentView setStatus:BGMSetupRowStatusGranted onRow:microphoneRow];
         microphoneRow.button.hidden = YES;
     }
+}
+
+// Custom setter (not just @synthesize) because setting this needs to immediately check whether
+// access is already granted -- if it is, the status change that would normally trigger the
+// handler (see updateMicrophoneRow) already happened before this was ever set, e.g. because this
+// window's already been through Setup in an earlier session, or the user granted access from a
+// different build. Without this check, the handler would just sit here armed forever, since
+// nothing would ever re-trigger updateMicrophoneRow in that case.
+- (void) setMicrophoneAccessGrantedHandler:(void (^__nullable)(void))handler {
+    _microphoneAccessGrantedHandler = [handler copy];
+    [self fireMicrophoneAccessGrantedHandlerIfAuthorizedNow];
+}
+
+- (void) fireMicrophoneAccessGrantedHandlerIfAuthorizedNow {
+    if (!_microphoneAccessGrantedHandler) {
+        return;
+    }
+
+    BOOL authorized;
+
+    if (@available(macOS 10.14, *)) {
+        authorized = ([AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeAudio] ==
+                          AVAuthorizationStatusAuthorized);
+    } else {
+        authorized = YES;  // Not required before 10.14 -- nothing to grant.
+    }
+
+    if (!authorized) {
+        return;
+    }
+
+    void (^handler)(void) = _microphoneAccessGrantedHandler;
+    _microphoneAccessGrantedHandler = nil;  // Fire exactly once.
+    handler();
 }
 
 - (void) updateAccessibilityRow {
