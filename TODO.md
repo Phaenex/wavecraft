@@ -127,6 +127,13 @@ None of this is started. If you want to tackle one, open an issue first so effor
   apps; Option-clicking the status icon still revealing the Debug Logging row; and a full regression
   sweep of every other item already listed in this section, to confirm none of it silently broke
   from this structural change.
+  **Update 2026-08-14**: the panel has now actually been seen on a real screen for the first
+  time (a real user screenshot, not a build/test claim) — it does open and show. It also revealed
+  a real bug on sight: the master output volume row rendered on top of the Auto-pause row above
+  it (a fixed-height row container forcing a 47pt view into 22pt — see docs/LESSONS.md's "ported
+  XIB view" entry). Fixed, but **not yet reconfirmed on a real screen** — needs a fresh install to
+  check. Everything else in this entry's list is still exactly as unverified as before; seeing one
+  real bug on first contact is a reason for more scrutiny of the rest, not less.
 - **Verify `WCSetupWindow` (added 2026-08-13, "Setup & Permissions" — see CHANGELOG.md).**
   Update 2026-08-14: a real install-free Debug launch (built via `./build_and_install.sh -b -d`,
   run directly from `BGMApp/build/Debug/Wavecraft.app` without installing the driver, so no sudo

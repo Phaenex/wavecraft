@@ -132,6 +132,13 @@ static NSString* const kFrameAutosaveName = @"WCSetupWindow";
                    status:BGMSetupRowStatusNone
               buttonTitle:nil];
 
+    // Not gated on either permission actually being granted -- Accessibility is explicitly
+    // optional, and even Microphone being declined shouldn't trap someone in this window with no
+    // way out except the small traffic-light close button.
+    NSButton* doneButton = [setupContentView addDoneButtonWithTitle:@"Done"];
+    [doneButton setTarget:self];
+    [doneButton setAction:@selector(doneButtonClicked:)];
+
     [self refreshPermissionStatuses];
 }
 
@@ -322,6 +329,14 @@ static NSString* const kFrameAutosaveName = @"WCSetupWindow";
 }
 
 #pragma mark Actions
+
+// releasedWhenClosed is NO (see the initializer), so -close just hides the window -- same as the
+// native close button -- and it can be shown again later (e.g. Preferences -> "Setup &
+// Permissions…") without reconstructing it.
+- (void) doneButtonClicked:(id)sender {
+    #pragma unused (sender)
+    [self close];
+}
 
 // Requests access directly (macOS's own system dialog) when it's never been asked, or deep-links
 // to Settings when it has and was declined -- see updateMicrophoneRow for why those need to be

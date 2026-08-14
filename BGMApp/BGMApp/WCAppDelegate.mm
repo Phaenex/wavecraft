@@ -475,8 +475,14 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
 
     NSStackView* volumesStack = mainPanel.mainContentView.volumesStack;
 
+    // Not kBGMMainPanelRowHeight (22pt) -- unlike a flat menu-item row, outputVolumeView is the
+    // XIB's original two-line template (a label above the slider), 47pt tall by design. Forcing
+    // it into a 22pt container doesn't shrink it, it just overflows -- confirmed on a real screen,
+    // rendering on top of the row above it. Read from the view's own designed frame height, not a
+    // second hardcoded number, so this can't drift out of sync with the XIB again.
     [volumesStack addArrangedSubview:
-        [WCMainPanelContentView rowContainerWithControl:outputVolume.view height:kBGMMainPanelRowHeight]];
+        [WCMainPanelContentView rowContainerWithControl:outputVolume.view
+                                                    height:outputVolume.view.frame.size.height]];
 
     // Add the volume control for system (UI) sounds.
     BGMAudioDevice uiSoundsDevice = [audioDevices bgmDevice].GetUISoundsBGMDeviceInstance();

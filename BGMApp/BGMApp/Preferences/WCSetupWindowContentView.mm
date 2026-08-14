@@ -232,6 +232,37 @@ static NSColor* BGMBrandAmberColor(void) {
     return result;
 }
 
+- (NSButton*) addDoneButtonWithTitle:(NSString*)title {
+    CGFloat const rowContentWidth = kContentWidth - (kContentPadding * 2);
+
+    NSButton* button = [NSButton buttonWithTitle:title target:nil action:nil];
+    button.bezelStyle = NSBezelStyleRounded;
+    button.controlSize = NSControlSizeRegular;
+    // Return activates it, same as any dialog's primary action -- safe to make the window's
+    // default button since none of the other rows' buttons set a key equivalent of their own.
+    button.keyEquivalent = @"\r";
+    button.translatesAutoresizingMaskIntoConstraints = NO;
+
+    // A plain NSView wrapper, not wrapInRowContainer: -- that helper centers its control and fixes
+    // a row height meant for a single-line label/button; this button is taller (regular control
+    // size) and belongs at the trailing edge, not centered, so it reads as a dialog's action button
+    // rather than one more list row.
+    NSView* buttonRow = [[NSView alloc] initWithFrame:NSZeroRect];
+    buttonRow.translatesAutoresizingMaskIntoConstraints = NO;
+    [buttonRow addSubview:button];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [buttonRow.widthAnchor constraintEqualToConstant:rowContentWidth],
+        [button.trailingAnchor constraintEqualToAnchor:buttonRow.trailingAnchor],
+        [button.topAnchor constraintEqualToAnchor:buttonRow.topAnchor],
+        [button.bottomAnchor constraintEqualToAnchor:buttonRow.bottomAnchor],
+    ]];
+
+    [rowStack addArrangedSubview:buttonRow];
+
+    return button;
+}
+
 + (void) setStatus:(BGMSetupRowStatus)status onRow:(WCSetupWindowRow*)row {
     switch (status) {
         case BGMSetupRowStatusNone:

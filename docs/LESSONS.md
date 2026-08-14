@@ -1041,3 +1041,36 @@ assumed correct. The first version of that test also caught a second real bug in
 wrapper itself: killing only the immediate child PID left a grandchild process orphaned and still
 running when the child forked before hanging -- fixed by also killing children of the watched PID,
 not just the PID itself, before trusting the wrapper as done.
+
+## A ported XIB view forced into a fixed-height row container just overflows, doesn't shrink
+
+**The trap:** the `NSMenu` -> `NSPanel` rearchitecture (see the earlier "NSMenu custom-view
+controls" entry) ported several existing XIB view templates -- `outputVolumeView`,
+`systemSoundsView`, `appVolumeView` -- into the new panel's `NSStackView` rows, each wrapped via a
+shared `rowContainerWithControl:height:kBGMMainPanelRowHeight` helper (a fixed 22pt, matching a
+flat single-line menu-item row). Builds and unit tests stayed clean throughout -- nothing about
+this is checkable without actually looking at the rendered result. The first real look at the
+panel (a user screenshot) showed the Auto-pause row and the master output volume row rendering on
+top of each other, badly overlapping.
+
+**What was actually true:** `outputVolumeView` (checked directly in the XIB source) is 47pt tall
+by design -- a label positioned above the slider, not a single-line row. `systemSoundsView` is
+only 16pt, which is why *that* row looked fine in the same screenshot despite using the identical
+`kBGMMainPanelRowHeight` call -- it happened to fit inside 22pt with room to spare, the same code
+path just didn't happen to be visibly broken for it. `rowContainerWithControl:height:` constrains
+the *container*, not the inner view -- centering a 47pt view inside a 22pt box doesn't scale or
+clip it, it just lets roughly 12.5pt of it hang off each edge, overlapping whatever's next to it in
+the stack. No layout warning, no crash, no test failure -- constraints are satisfied; the box is
+exactly 22pt, precisely as instructed. It just doesn't look right.
+
+**How to apply:** when porting a fixed-size view (especially one designed for a different
+container, like an `NSMenuItem`'s auto-sizing row) into a new fixed-height wrapper, the wrapper's
+height needs to come from *that view's own actual size*, not a shared constant chosen for a
+different kind of row. Read it directly off the view (`view.frame.size.height`, for a
+`fixedFrame="YES"` XIB view whose frame is already its designed size once loaded) rather than
+introducing a second hardcoded number that has to be kept in sync by hand. More generally: a
+`NSStackView`/Auto Layout row that's the wrong height doesn't fail loudly -- it satisfies every
+constraint and still overlaps its neighbor, because centering and fixed-size wrapping don't imply
+clipping. This class of bug is invisible to `xcodebuild`, invisible to unit tests, and only ever
+shows up in a real screenshot -- exactly why the standing rule here is to actually look at new UI
+on a real screen before calling it done, not just confirm it compiles.

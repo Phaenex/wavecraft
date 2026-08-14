@@ -71,6 +71,13 @@ typedef NS_ENUM(NSInteger, BGMSetupRowStatus) {
 // after the user comes back from System Settings).
 + (void) setStatus:(BGMSetupRowStatus)status onRow:(WCSetupWindowRow*)row;
 
+// A prominent, right-aligned action button at the very bottom of the window -- a real dialog
+// button (rounded bezel, regular size), not one more flat menu-item-style row like the others.
+// This is the action that ends the whole flow, so it reads differently on purpose. Always call
+// this last, after every row has been added. Also becomes the window's default button (responds
+// to Return), matching how a dialog's primary action normally behaves.
+- (NSButton*) addDoneButtonWithTitle:(NSString*)title;
+
 @end
 
 #pragma clang assume_nonnull end

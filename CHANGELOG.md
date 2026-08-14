@@ -118,6 +118,10 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
   all — it went straight to Destination Select. Now explains what Wavecraft is, exactly what the
   installer sets up, and what to expect (an admin password prompt, a brief audio interruption from
   the `coreaudiod` restart, the new Setup & Permissions window right after).
+- **A "Done" button at the bottom of the Setup & Permissions window**, so there's an explicit way
+  to finish and close it beyond the small traffic-light button — not gated on either permission
+  actually being granted, since Accessibility is optional and even declining Microphone shouldn't
+  trap someone in the window.
 
 ### Changed
 
@@ -185,6 +189,13 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
 
 ### Fixed
 
+- The main panel's master output volume row rendered on top of the Auto-pause row above it —
+  confirmed on a real screen (the first time this panel had actually been looked at, not just
+  built). `outputVolumeView` is a 47pt-tall XIB template (label above the slider), but was being
+  forced into a fixed 22pt row container designed for flat, single-line rows — centering doesn't
+  shrink a view, so roughly 12.5pt of it overflowed each edge. Fixed by sizing the row from the
+  view's own actual frame height instead of the shared row-height constant. See
+  [docs/LESSONS.md](docs/LESSONS.md)'s "ported XIB view forced into a fixed-height row" entry.
 - A real `.pkg` install was silently installing into the old, pre-rename `/Applications/Background
   Music.app` folder instead of creating `/Applications/Wavecraft.app` — confirmed via the running
   process's actual executable path, not assumed. Root cause: `pkg/pkgbuild.plist`'s relocatable
