@@ -131,11 +131,24 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
   all follow. The CoreAudio device's own display name — what shows in System Settings > Sound and
   Audio MIDI Setup, arguably the single most-seen piece of identity in the whole app — is now
   "Wavecraft" too (`WC_Device.h`'s `kDeviceName`). Deliberately unchanged: the bundle identifiers
-  (`com.bearisdriving.BGM.*`), the `.app` folder/executable name, and the device's persistent UID
-  (`kBGMDeviceUID`) — renaming any of those would make macOS treat existing installs as a different
-  app (losing granted permissions) for no user-visible benefit. See CLAUDE.md's "Verifying after
-  install" section for why its own troubleshooting commands now intentionally grep for two
-  different names on adjacent lines.
+  (`com.bearisdriving.BGM.*`) and the device's persistent UID (`kBGMDeviceUID`) — renaming either
+  would make macOS treat existing installs as a different app (losing granted permissions) for no
+  user-visible benefit. (The `.app` folder/executable name mentioned here as unchanged when this was
+  first written was itself renamed a few commits later — see the next entry.)
+- **The `.app` bundle, its executable, and the Xcode scheme are now genuinely "Wavecraft"** too
+  (`Background Music.app` → `Wavecraft.app`), not just the display name from the entry above.
+  Bundle identifier stays `com.bearisdriving.BGM.App` either way. Large blast radius for one rename:
+  AppleScript addresses an app by its display name (exactly what changed), so every
+  `tell application "Background Music"` across scripts and docs needed to move in lockstep or start
+  silently addressing an app that no longer exists under that name; `ps`/`killall` process-name
+  checks needed the same treatment, since unlike the display-name-only change above, the *real*
+  executable name changed this time. Caught and fixed along the way: two device-detection checks
+  (`install_prebuilt.sh`, `setup.sh`) with no fallback that would have hard-failed every future
+  install/setup run, a missed device-name constant from the entry above
+  (`WC_NullDevice.h`'s `kNullDeviceName`), and `pkg/pkgbuild.plist`'s `RootRelativeBundlePath` —
+  the property list `pkgbuild` itself reads to locate the app component, invisible to every
+  grep built from "where would the old name show up in scripts and docs," only caught by actually
+  running `package.sh` end to end. See docs/LESSONS.md for both.
 - **The `BGM` class/file prefix throughout the codebase is now `WC`** (`BGMAppDelegate` ->
   `WCAppDelegate`, `BGM_Device` -> `WC_Device`, and 105 others) — the code's own internal identity
   now matches "Wavecraft" the same way the user-facing strings above do. Scoped deliberately to

@@ -791,3 +791,34 @@ was caught by an actual build's "file not found" compile error, didn't exist und
 half doesn't know about file names, and the file half only matches whole names. `grep` for the
 renamed symbol as a *prefix* of any remaining file name (not just an exact match) after the main
 pass, to catch these before a build does.
+
+## A rename's own build-config plist can be invisible to every search except an actual build
+
+**The trap:** renaming the app itself (`Background Music.app` -> `Wavecraft.app`, via the Xcode
+target's `PRODUCT_NAME`) meant finding and fixing every script/doc that hardcoded the old path or
+scheme name -- done thoroughly, including three separate full-tree greps at different points that
+each caught something the previous one missed (AppleScript `tell application` targets, `ps`/
+`killall` process-name checks, a device-detection check with no fallback that would have hard-failed
+every future install). After all of that, `package.sh` was run end-to-end anyway, on the assumption
+it would just confirm what already looked complete.
+
+**What was actually true:** `pkg/pkgbuild.plist` -- the property list `pkgbuild --component-plist`
+reads to know where each bundle actually lives inside the package root
+(`RootRelativeBundlePath = Applications/Background Music.app`) -- still had the old path, and none
+of the greps had caught it. Not because it was hard to find (`grep -rl "Background Music.app"`
+would have caught it in under a second), but because it was never *looked for* -- every search this
+pass ran was built from "where would the old name show up in scripts/docs/comments," a mental model
+built by reading the .sh/.md/.mm surface area, and a `.plist` consumed only by `pkgbuild` itself
+sits outside that model entirely. Left unfixed, this wouldn't have errored -- `pkgbuild` would have
+either silently packaged nothing at that path or failed with a `pkgbuild` error unrelated-looking to
+the actual rename, discovered only by someone building a release, possibly much later than this
+session.
+
+**How to apply:** for any rename with real build/install tooling behind it, enumerate every file
+`pkgbuild`/`productbuild`/the build system actually *reads paths from* (component plists, entitlements,
+`Info.plist` templates, provisioning-adjacent config) as its own explicit checklist item, separate
+from "grep the scripts and docs for the old string" -- these files are easy to forget precisely
+because they're rarely opened by hand and don't show up in a mental model built from the
+human-facing surface area. Then actually run the full downstream pipeline (not just build the
+renamed target) before calling a rename like this complete -- `package.sh` end-to-end is what
+surfaced this, not a broader or smarter grep.

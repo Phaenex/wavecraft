@@ -167,6 +167,18 @@ None of this is started. If you want to tackle one, open an issue first so effor
   "the unit tests pass" and "audio actually plays correctly through a freshly rebuilt driver" are
   different claims, and this session already has one example (docs/LESSONS.md's device-wide crash
   entry) of a defect that unit tests didn't catch but a real install did.
+- **Verify `Wavecraft.app` (2026-08-13) with a real install and real clicks, not just a build.**
+  Confirmed structurally: `package.sh` end to end produced a `.pkg` whose payload is genuinely at
+  `Applications/Wavecraft.app` (checked via `pkgutil --expand-full`, not assumed), the executable
+  inside is named `Wavecraft`, `CFBundleIdentifier` is unchanged, and every `-scheme`/`tell
+  application`/`ps` reference this pass could find was updated and re-verified with a fresh
+  full-tree grep. What that can't confirm: that a real install actually opens without a Gatekeeper
+  surprise specific to the new name, that AppleScript scripts (`docs/GUIDE.md`'s examples,
+  `BGMAppUITests.mm` if it's ever actually run — it's skipped on GitHub Actions) really do address
+  "Wavecraft" successfully rather than silently failing to find the app, and that
+  `_uninstall-non-interactive.sh`'s dual-path check (new `Wavecraft` fallback dir, old `Background
+  Music` one) actually cleans up an install that used the *old* fallback path — that specific case
+  needs an install made before this rename to test against, which doesn't exist on this machine.
 
 ## Fairly quick
 
