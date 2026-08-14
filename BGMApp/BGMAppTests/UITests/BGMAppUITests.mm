@@ -25,7 +25,7 @@
 // Local Includes
 #import "BGM_TestUtils.h"
 #import "BGM_Types.h"
-#import "BGMBackgroundMusicDevice.h"
+#import "WCBackgroundMusicDevice.h"
 
 // Scripting Bridge Includes
 #import "BGMApp.h"
@@ -144,7 +144,7 @@
 
     // sbApp lets us use AppleScript to query BGMApp and check the test has made the changes to its
     // settings we expect.
-    BGMAppApplication* sbApp = [SBApplication applicationWithBundleIdentifier:@kBGMAppBundleID];
+    WCAppApplication* sbApp = [SBApplication applicationWithBundleIdentifier:@kBGMAppBundleID];
 
     // Get macOS to show the "'Xcode' wants to control 'Background Music'" dialog before we start
     // the test so it doesn't interrupt it.
@@ -154,7 +154,7 @@
     [icon click];
 
     // Get the list of output devices from the main menu.
-    // BGMOutputDeviceMenuSection::createMenuItemForDevice gives every output device menu item the
+    // WCOutputDeviceMenuSection::createMenuItemForDevice gives every output device menu item the
     // accessibility identifier "output-device" so we can find all of them here.
     NSArray<XCUIElement*>* outputDeviceMenuItems =
         [menuItems matchingIdentifier:@"output-device"].allElementsBoundByIndex;
@@ -175,7 +175,7 @@
             [item click];
 
             // Assert that the device we clicked is the selected device now.
-            for (BGMAppOutputDevice* device in [sbApp outputDevices]) {
+            for (WCAppOutputDevice* device in [sbApp outputDevices]) {
                 // TODO: This seems a bit fragile. Would it still work with long device names?
                 if ([device.name isEqualToString:[item title]]) {
                     XCTAssert(device.selected);
@@ -224,7 +224,7 @@
     // BGMDevice's volume should be set to its max, or as close as XCTest was able to get the
     // slider. Probably shouldn't be comparing floats for equality like this, but it's working fine
     // so far.
-    BGMBackgroundMusicDevice bgmDevice;
+    WCBackgroundMusicDevice bgmDevice;
     XCTAssertEqual(slider.normalizedSliderPosition,
                    bgmDevice.GetVolumeControlScalarValue(scope, channel));
 

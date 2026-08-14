@@ -12,7 +12,7 @@
                plural="output devices">
             <synonym name="audio device"/>
 
-            <cocoa class="BGMASOutputDevice"/>
+            <cocoa class="WCASOutputDevice"/>
 
             <property name="name"
                       code="pnam"
@@ -38,7 +38,7 @@
                plural="audio applications">
             <synonym name="audio app"/>
 
-            <cocoa class="BGMASApplication"/>
+            <cocoa class="WCASApplication"/>
 
             <property name="name"
                       code="pnam"

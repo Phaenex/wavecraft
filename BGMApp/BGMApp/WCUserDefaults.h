@@ -1,0 +1,132 @@
+// This file is part of Background Music.
+//
+// Background Music is free software: you can redistribute it and/or
+// modify it under the terms of the GNU General Public License as
+// published by the Free Software Foundation, either version 2 of the
+// License, or (at your option) any later version.
+//
+// Background Music is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Background Music. If not, see <http://www.gnu.org/licenses/>.
+
+//
+//  WCUserDefaults.h
+//  BGMApp
+//
+//  Copyright © 2016-2019 Kyle Neideck
+//
+//  A simple wrapper around our use of NSUserDefaults. Used to store the preferences/state that only
+//  apply to BGMApp. The others are stored by BGMDriver.
+//
+//  Private data will be stored in the user's keychain instead of user defaults.
+//
+
+// Local Includes
+#import "WCHotkeys.h"
+#import "WCStatusBarItem.h"
+
+// System Includes
+#import <Cocoa/Cocoa.h>
+
+
+#pragma clang assume_nonnull begin
+
+@interface WCUserDefaults : NSObject
+
+// If inDefaults is nil, settings are not loaded from or saved to disk, which is useful for testing.
+- (instancetype) initWithDefaults:(NSUserDefaults* __nullable)inDefaults;
+
+// The musicPlayerID (see WCMusicPlayer.h), as a string, of the music player selected by the user.
+// Must be either null or a string that can be parsed by NSUUID.
+@property NSString* __nullable selectedMusicPlayerID;
+
+@property BOOL autoPauseMusicEnabled;
+
+// Whether Do Not Disturb (mute every app except doNotDisturbPriorityAppBundleID) is on. See
+// WCDoNotDisturb.
+@property BOOL doNotDisturbEnabled;
+
+// The one app allowed to stay audible while Do Not Disturb is on. nil means none chosen yet --
+// enabling Do Not Disturb with no priority app set mutes every running app.
+@property NSString* __nullable doNotDisturbPriorityAppBundleID;
+
+// Bundle ID -> the volume (an NSNumber wrapping an SInt32 in
+// kAppRelativeVolumeMinRawValue...kAppRelativeVolumeMaxRawValue) to restore that app to once
+// Do Not Disturb stops muting it. Persisted (not just kept in memory) so that a Wavecraft
+// relaunch while Do Not Disturb is on and an app is already muted doesn't lose the app's real
+// pre-mute volume -- without this, re-muting on launch would capture the app's *current*
+// (already-muted) volume as if it were the original, permanently replacing it. See
+// WCDoNotDisturb.
+@property NSDictionary<NSString*, NSNumber*>* doNotDisturbMutedAppVolumes;
+
+// The UIDs of the output devices most recently selected by the user. The most-recently selected
+// device is at index 0. See WCPreferredOutputDevices.
+@property NSArray<NSString*>* preferredDeviceUIDs;
+
+// Per-app output routing overrides -- app bundle ID -> the UIDs of the output device(s) its audio
+// should be routed to instead of BGMDevice's default output (more than one plays the same app's
+// audio through every device in the array at once). Apps with no entry here aren't overridden; an
+// entry's array is never empty (WCAppOutputRoutingController removes the entry entirely instead
+// of leaving an empty array). See WCAppOutputRoutingController and WCTapRoute.
+@property NSDictionary<NSString*, NSArray<NSString*>*>* outputRouteDeviceUIDsByBundleID;
+
+// The (type of) icon to show in the button in the status bar. (The button the user clicks to open
+// BGMApp's main menu.)
+@property BGMStatusBarIcon statusBarIcon;
+
+// The auth code we're required to send when connecting to GPMDP. Stored in the keychain. Reading
+// this property is thread-safe, but writing it isn't.
+//
+// Returns nil if no code is found or if reading fails. If writing fails, an error is logged, but no
+// exception is thrown.
+@property NSString* __nullable googlePlayMusicDesktopPlayerPermanentAuthCode;
+
+// Auto-pause delay settings in milliseconds. These control how long to wait before pausing/unpausing
+// music when other audio starts/stops playing.
+@property NSUInteger pauseDelayMS;
+@property NSUInteger maxUnpauseDelayMS;
+
+// True once the user has seen the one-time explanation of why Wavecraft is about to ask for
+// "Microphone" access (see WCAppDelegate). Set right before that dialog is shown, not after --
+// if this is somehow shown twice (e.g. the app crashes and relaunches immediately after), that's
+// a much smaller problem than skipping it if it was never actually seen.
+@property BOOL hasShownMicrophonePermissionExplanation;
+
+// Whether global keyboard shortcuts (system output volume, frontmost app's volume) are enabled.
+// Off by default -- unlike Microphone access, Accessibility permission (needed for global hotkeys)
+// isn't required for Wavecraft's core function, so it's opt-in rather than requested at launch.
+// See WCHotkeys.
+@property BOOL hotkeysEnabled;
+
+// Same one-time-explanation pattern as hasShownMicrophonePermissionExplanation, for the
+// Accessibility permission prompt hotkeys need.
+@property BOOL hasShownHotkeysAccessibilityExplanation;
+
+// The CFBundleShortVersionString WCSetupWindow (the "what Wavecraft needs from your Mac, and
+// why" screen) was last auto-shown for -- nil if never. Deliberately keyed by version rather than
+// a one-time BOOL flag: a fresh install of a *different* build (which, for this project's
+// SNAPSHOT versioning, is any build off a different commit -- see set-version.sh) should show it
+// again, since a version bump is exactly when new permission requirements are most likely to have
+// been added. Compared against the running app's own version in WCSetupWindow; not meant to be
+// read/written directly outside that comparison.
+@property NSString* __nullable lastShownSetupWindowVersion;
+
+// The recorded key + modifier-flags combination bound to a hotkey action -- fully user-rebindable
+// to any key, not limited to a fixed set of modifier presets. Returns kBGMHotkeyBindingUnbound for
+// an action that's never been bound to anything (shouldn't normally happen -- every action has a
+// built-in default -- but a corrupted or hand-edited defaults plist could produce it).
+- (BGMHotkeyBinding) hotkeyBindingForAction:(BGMHotkeyAction)action;
+- (void) setHotkeyBinding:(BGMHotkeyBinding)binding forAction:(BGMHotkeyAction)action;
+
+// How much each hotkey press changes the volume by. See WCHotkeys.BGMHotkeyStepSize for the
+// values.
+@property NSInteger hotkeyStepSize;
+
+@end
+
+#pragma clang assume_nonnull end
+

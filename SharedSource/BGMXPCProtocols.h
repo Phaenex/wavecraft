@@ -32,7 +32,7 @@
 static NSString* kBGMXPCHelperMachServiceName = @kBGMXPCHelperBundleID;
 
 // The protocol that BGMXPCHelper will vend as its XPC API.
-@protocol BGMXPCHelperXPCProtocol
+@protocol WCXPCHelperXPCProtocol
 
 // Tells BGMXPCHelper that the caller is BGMApp and passes a listener endpoint that BGMXPCHelper can use to create connections to BGMApp.
 // BGMXPCHelper may also pass the endpoint on to BGMDriver so it can do the same.
@@ -59,7 +59,7 @@ static NSString* kBGMXPCHelperMachServiceName = @kBGMXPCHelperBundleID;
 
 
 // The protocol that BGMApp will vend as its XPC API.
-@protocol BGMAppXPCProtocol
+@protocol WCAppXPCProtocol
 
 - (void) startPlayThroughSyncWithReply:(void (^)(NSError*))reply forUISoundsDevice:(BOOL)isUI;
 

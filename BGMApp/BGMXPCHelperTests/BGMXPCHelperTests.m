@@ -45,7 +45,7 @@
     connection = [[NSXPCConnection alloc] initWithMachServiceName:kBGMXPCHelperMachServiceName
                                                           options:NSXPCConnectionPrivileged];
     
-    connection.remoteObjectInterface = [NSXPCInterface interfaceWithProtocol:@protocol(BGMXPCHelperXPCProtocol)];
+    connection.remoteObjectInterface = [NSXPCInterface interfaceWithProtocol:@protocol(WCXPCHelperXPCProtocol)];
     [connection resume];
 }
 

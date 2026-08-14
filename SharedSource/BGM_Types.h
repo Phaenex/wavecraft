@@ -171,11 +171,11 @@ enum BGMDeviceAudibleState : SInt32
 #define kBGMAppEQKey_BundleID               "bid"
 // A CFArray of exactly kBGMAppEQNumBands CFNumber<Float64> values, one gain in dB per band, each
 // clamped to [kBGMAppEQMinGainDB, kBGMAppEQMaxGainDB]. Band center frequencies are fixed -- see
-// BGM_AppEQ::kBandCenterFreqs in BGM_Biquad.h.
+// WC_AppEQ::kBandCenterFreqs in WC_Biquad.h.
 #define kBGMAppEQKey_BandGains              "bands"
 
-// Independent of BGM_AppEQ::kNumBands (BGM_Biquad.h) -- the two have to be kept equal by hand.
-// BGM_Device.cpp has a static_assert enforcing that.
+// Independent of WC_AppEQ::kNumBands (WC_Biquad.h) -- the two have to be kept equal by hand.
+// WC_Device.cpp has a static_assert enforcing that.
 #define kBGMAppEQNumBands       10
 #define kBGMAppEQMinGainDB      -12.0
 #define kBGMAppEQMaxGainDB      12.0
@@ -269,29 +269,29 @@ enum {
 
 #if defined(__cplusplus)
 
-class BGM_InvalidClientException : public std::runtime_error {
+class WC_InvalidClientException : public std::runtime_error {
 public:
-    BGM_InvalidClientException() : std::runtime_error("InvalidClient") { }
+    WC_InvalidClientException() : std::runtime_error("InvalidClient") { }
 };
 
-class BGM_InvalidClientPIDException : public std::runtime_error {
+class WC_InvalidClientPIDException : public std::runtime_error {
 public:
-    BGM_InvalidClientPIDException() : std::runtime_error("InvalidClientPID") { }
+    WC_InvalidClientPIDException() : std::runtime_error("InvalidClientPID") { }
 };
 
-class BGM_InvalidClientRelativeVolumeException : public std::runtime_error {
+class WC_InvalidClientRelativeVolumeException : public std::runtime_error {
 public:
-    BGM_InvalidClientRelativeVolumeException() : std::runtime_error("InvalidClientRelativeVolume") { }
+    WC_InvalidClientRelativeVolumeException() : std::runtime_error("InvalidClientRelativeVolume") { }
 };
 
-class BGM_InvalidClientPanPositionException : public std::runtime_error {
+class WC_InvalidClientPanPositionException : public std::runtime_error {
 public:
-    BGM_InvalidClientPanPositionException() : std::runtime_error("InvalidClientPanPosition") { }
+    WC_InvalidClientPanPositionException() : std::runtime_error("InvalidClientPanPosition") { }
 };
 
-class BGM_DeviceNotSetException : public std::runtime_error {
+class WC_DeviceNotSetException : public std::runtime_error {
 public:
-    BGM_DeviceNotSetException() : std::runtime_error("DeviceNotSet") { }
+    WC_DeviceNotSetException() : std::runtime_error("DeviceNotSet") { }
 };
 
 #endif

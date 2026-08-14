@@ -45,7 +45,7 @@
 
 // Local Includes
 #import "BGMXPCProtocols.h"
-#import "BGMXPCListenerDelegate.h"
+#import "WCXPCListenerDelegate.h"
 
 // PublicUtility Includes
 #include "CADebugMacros.h"
@@ -64,7 +64,7 @@ int main(int argc, const char* __nullable argv[]) {
     // Set up the one NSXPCListener for this service. It will handle all incoming connections. This checks our service in with
     // the bootstrap service.
     NSXPCListener* listener = [[NSXPCListener alloc] initWithMachServiceName:kBGMXPCHelperMachServiceName];
-    BGMXPCListenerDelegate* delegate = [BGMXPCListenerDelegate new];
+    WCXPCListenerDelegate* delegate = [WCXPCListenerDelegate new];
     listener.delegate = delegate;
     
     // Start receiving requests.

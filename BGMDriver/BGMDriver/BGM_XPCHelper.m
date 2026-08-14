@@ -50,7 +50,7 @@ static NSXPCConnection* CreateXPCHelperConnection(void)
                                                                               options:NSXPCConnectionPrivileged];
     
     if (theConnection) {
-        theConnection.remoteObjectInterface = [NSXPCInterface interfaceWithProtocol:@protocol(BGMXPCHelperXPCProtocol)];
+        theConnection.remoteObjectInterface = [NSXPCInterface interfaceWithProtocol:@protocol(WCXPCHelperXPCProtocol)];
         [theConnection resume];
     } else {
         @throw(@"BGM_XPCHelper::CreateXPCHelperConnection: initWithMachServiceName returned nil");

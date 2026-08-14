@@ -7,42 +7,42 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		19FE742AEBE30B21C4CF9285 /* BGM_Control.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 19FE7BC3396C4E50D21E1BC8 /* BGM_Control.cpp */; };
-		19FE761291BF07AEA278F25C /* BGM_MuteControl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 19FE7E6DC2A1B61211D74782 /* BGM_MuteControl.cpp */; };
-		19FE766482B57D852CCF6F0A /* BGM_MuteControl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 19FE7E6DC2A1B61211D74782 /* BGM_MuteControl.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_MuteControl.cpp"; }; };
-		19FE77D40F15EA060B462D83 /* BGM_Control.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 19FE7BC3396C4E50D21E1BC8 /* BGM_Control.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_Control.cpp"; }; };
-		1C0CB6B91C642C600084C15A /* BGM_Client.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C0CB6B01C642C600084C15A /* BGM_Client.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_Client.cpp"; }; };
-		1C0CB6BA1C642C600084C15A /* BGM_ClientMap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C0CB6B21C642C600084C15A /* BGM_ClientMap.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_ClientMap.cpp"; }; };
-		1C0CB6BB1C642C600084C15A /* BGM_Clients.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C0CB6B41C642C600084C15A /* BGM_Clients.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_Clients.cpp"; }; };
+		19FE742AEBE30B21C4CF9285 /* WC_Control.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 19FE7BC3396C4E50D21E1BC8 /* WC_Control.cpp */; };
+		19FE761291BF07AEA278F25C /* WC_MuteControl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 19FE7E6DC2A1B61211D74782 /* WC_MuteControl.cpp */; };
+		19FE766482B57D852CCF6F0A /* WC_MuteControl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 19FE7E6DC2A1B61211D74782 /* WC_MuteControl.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_MuteControl.cpp"; }; };
+		19FE77D40F15EA060B462D83 /* WC_Control.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 19FE7BC3396C4E50D21E1BC8 /* WC_Control.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_Control.cpp"; }; };
+		1C0CB6B91C642C600084C15A /* WC_Client.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C0CB6B01C642C600084C15A /* WC_Client.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_Client.cpp"; }; };
+		1C0CB6BA1C642C600084C15A /* WC_ClientMap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C0CB6B21C642C600084C15A /* WC_ClientMap.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_ClientMap.cpp"; }; };
+		1C0CB6BB1C642C600084C15A /* WC_Clients.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C0CB6B41C642C600084C15A /* WC_Clients.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_Clients.cpp"; }; };
 		1C30A69F1C1E98F000C05AA5 /* CAMutex.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CB8B3841BBCEFE8000E2DD1 /* CAMutex.cpp */; };
-		1C38210E1C4A163A00A0C8C6 /* BGM_TaskQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C38210C1C4A163A00A0C8C6 /* BGM_TaskQueue.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_TaskQueue.cpp"; }; };
-		1C3DB4871BE063C500EC8160 /* BGM_DeviceTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1C3DB4861BE063C500EC8160 /* BGM_DeviceTests.mm */; };
+		1C38210E1C4A163A00A0C8C6 /* WC_TaskQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C38210C1C4A163A00A0C8C6 /* WC_TaskQueue.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_TaskQueue.cpp"; }; };
+		1C3DB4871BE063C500EC8160 /* WC_DeviceTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1C3DB4861BE063C500EC8160 /* WC_DeviceTests.mm */; };
 		1C6181A72388FC8A0068C4D3 /* CARingBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C6181A52388FC8A0068C4D3 /* CARingBuffer.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=libPublicUtility-CARingBuffer.cpp"; }; };
-		1C7010751F05ED5100D8CCDC /* BGM_AudibleState.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C7010731F05ED5100D8CCDC /* BGM_AudibleState.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_AudibleState.cpp"; }; };
-		1C7010761F05ED5100D8CCDC /* BGM_AudibleState.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C7010731F05ED5100D8CCDC /* BGM_AudibleState.cpp */; };
-		1C7010791F07A0BA00D8CCDC /* BGM_VolumeControl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C7010771F07A0BA00D8CCDC /* BGM_VolumeControl.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_VolumeControl.cpp"; }; };
-		1C70107A1F07A0BA00D8CCDC /* BGM_VolumeControl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C7010771F07A0BA00D8CCDC /* BGM_VolumeControl.cpp */; };
+		1C7010751F05ED5100D8CCDC /* WC_AudibleState.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C7010731F05ED5100D8CCDC /* WC_AudibleState.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_AudibleState.cpp"; }; };
+		1C7010761F05ED5100D8CCDC /* WC_AudibleState.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C7010731F05ED5100D8CCDC /* WC_AudibleState.cpp */; };
+		1C7010791F07A0BA00D8CCDC /* WC_VolumeControl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C7010771F07A0BA00D8CCDC /* WC_VolumeControl.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_VolumeControl.cpp"; }; };
+		1C70107A1F07A0BA00D8CCDC /* WC_VolumeControl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C7010771F07A0BA00D8CCDC /* WC_VolumeControl.cpp */; };
 		1C780FEF1FEE78E800497FAD /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C780FEE1FEE78E800497FAD /* Accelerate.framework */; };
 		1C780FF41FF275F300497FAD /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C780FEE1FEE78E800497FAD /* Accelerate.framework */; };
-		1C8034DD1BDD073B00668E00 /* BGM_ClientsTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1C8034DC1BDD073B00668E00 /* BGM_ClientsTests.mm */; };
-		1CA2A9E21E8D1D08007A76A4 /* BGM_Stream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CA2A9E01E8D1D08007A76A4 /* BGM_Stream.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_Stream.cpp"; }; };
+		1C8034DD1BDD073B00668E00 /* WC_ClientsTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1C8034DC1BDD073B00668E00 /* WC_ClientsTests.mm */; };
+		1CA2A9E21E8D1D08007A76A4 /* WC_Stream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CA2A9E01E8D1D08007A76A4 /* WC_Stream.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_Stream.cpp"; }; };
 		1CB8B36E1BBBD541000E2DD1 /* BGM_PlugInInterface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CB8B36D1BBBD541000E2DD1 /* BGM_PlugInInterface.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_PlugInInterface.cpp"; }; };
 		1CB8B3761BBBD924000E2DD1 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1CB8B3741BBBD924000E2DD1 /* CoreAudio.framework */; };
 		1CB8B3771BBBD924000E2DD1 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1CB8B3751BBBD924000E2DD1 /* CoreFoundation.framework */; };
-		1CB8B37D1BBCCF62000E2DD1 /* BGM_PlugIn.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CB8B37B1BBCCF62000E2DD1 /* BGM_PlugIn.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_PlugIn.cpp"; }; };
-		1CB8B3801BBCCF87000E2DD1 /* BGM_Device.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CB8B37E1BBCCF87000E2DD1 /* BGM_Device.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_Device.cpp"; }; };
-		1CB8B3831BBCE7B5000E2DD1 /* BGM_Object.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CB8B3811BBCE7B5000E2DD1 /* BGM_Object.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_Object.cpp"; }; };
+		1CB8B37D1BBCCF62000E2DD1 /* WC_PlugIn.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CB8B37B1BBCCF62000E2DD1 /* WC_PlugIn.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_PlugIn.cpp"; }; };
+		1CB8B3801BBCCF87000E2DD1 /* WC_Device.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CB8B37E1BBCCF87000E2DD1 /* WC_Device.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_Device.cpp"; }; };
+		1CB8B3831BBCE7B5000E2DD1 /* WC_Object.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CB8B3811BBCE7B5000E2DD1 /* WC_Object.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_Object.cpp"; }; };
 		1CBB322C1BDD3A3000C9BD55 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1CB8B3741BBBD924000E2DD1 /* CoreAudio.framework */; };
 		1CC1DF8D1BE5705700FB8FE4 /* CACFDictionary.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CE3E68C1BE263CA00167F5D /* CACFDictionary.cpp */; };
 		1CC1DF8E1BE5706C00FB8FE4 /* CACFArray.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CE3E68F1BE2683900167F5D /* CACFArray.cpp */; };
 		1CC1DF931BE7B79500FB8FE4 /* CADebugger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CC1DF871BE558B000FB8FE4 /* CADebugger.cpp */; };
 		1CC1DF941BE7B79500FB8FE4 /* CAVolumeCurve.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CB8B38C1BBCF4A9000E2DD1 /* CAVolumeCurve.cpp */; };
 		1CC1DF9E1BE94AA200FB8FE4 /* DeviceIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 1CC1DF9D1BE94AA200FB8FE4 /* DeviceIcon.icns */; };
-		1CD95B121E93AA5200EB8EF0 /* BGM_AbstractDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CDF3ABD1E8644C20001E9B7 /* BGM_AbstractDevice.cpp */; };
-		1CD95B131E93AA5200EB8EF0 /* BGM_NullDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CDF3ABA1E863B980001E9B7 /* BGM_NullDevice.cpp */; };
-		1CD95B141E93AA5200EB8EF0 /* BGM_Stream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CA2A9E01E8D1D08007A76A4 /* BGM_Stream.cpp */; };
-		1CDF3ABC1E863B980001E9B7 /* BGM_NullDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CDF3ABA1E863B980001E9B7 /* BGM_NullDevice.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_NullDevice.cpp"; }; };
-		1CDF3ABF1E8644C20001E9B7 /* BGM_AbstractDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CDF3ABD1E8644C20001E9B7 /* BGM_AbstractDevice.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_AbstractDevice.cpp"; }; };
+		1CD95B121E93AA5200EB8EF0 /* WC_AbstractDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CDF3ABD1E8644C20001E9B7 /* WC_AbstractDevice.cpp */; };
+		1CD95B131E93AA5200EB8EF0 /* WC_NullDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CDF3ABA1E863B980001E9B7 /* WC_NullDevice.cpp */; };
+		1CD95B141E93AA5200EB8EF0 /* WC_Stream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CA2A9E01E8D1D08007A76A4 /* WC_Stream.cpp */; };
+		1CDF3ABC1E863B980001E9B7 /* WC_NullDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CDF3ABA1E863B980001E9B7 /* WC_NullDevice.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_NullDevice.cpp"; }; };
+		1CDF3ABF1E8644C20001E9B7 /* WC_AbstractDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CDF3ABD1E8644C20001E9B7 /* WC_AbstractDevice.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_AbstractDevice.cpp"; }; };
 		1CE03A4B238A5BF40036908D /* CABitOperations.h in Headers */ = {isa = PBXBuildFile; fileRef = 1CE03A4A238A5BF40036908D /* CABitOperations.h */; };
 		1CE03A4C23928B370036908D /* CARingBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C6181A52388FC8A0068C4D3 /* CARingBuffer.cpp */; };
 		27379B821C76D62D0084A24C /* CADebugMacros.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CB8B3701BBBD8A4000E2DD1 /* CADebugMacros.cpp */; };
@@ -64,67 +64,67 @@
 		275343BD1DE9B44900DF3858 /* BGM_Utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 275343BC1DE9B44900DF3858 /* BGM_Utils.cpp */; settings = {COMPILER_FLAGS = "-frandom-seed=BGMDriver-BGM_Utils.cpp"; }; };
 		277170101CA0CFC300AB34B4 /* BGM_PlugInInterface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CB8B36D1BBBD541000E2DD1 /* BGM_PlugInInterface.cpp */; };
 		277170111CA0CFC300AB34B4 /* CACFNumber.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C305D9B1BE294B5004EBB91 /* CACFNumber.cpp */; };
-		277EE6591C7269910037F1EE /* BGM_ClientMapTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = 277EE6581C7269910037F1EE /* BGM_ClientMapTests.mm */; };
-		277EE65A1C728C630037F1EE /* BGM_Client.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C0CB6B01C642C600084C15A /* BGM_Client.cpp */; };
-		277EE65B1C728C630037F1EE /* BGM_ClientMap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C0CB6B21C642C600084C15A /* BGM_ClientMap.cpp */; };
-		277EE65C1C728C630037F1EE /* BGM_Clients.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C0CB6B41C642C600084C15A /* BGM_Clients.cpp */; };
-		277EE65D1C728C630037F1EE /* BGM_TaskQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C38210C1C4A163A00A0C8C6 /* BGM_TaskQueue.cpp */; };
-		277EE65E1C728C9D0037F1EE /* BGM_PlugIn.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CB8B37B1BBCCF62000E2DD1 /* BGM_PlugIn.cpp */; };
+		277EE6591C7269910037F1EE /* WC_ClientMapTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = 277EE6581C7269910037F1EE /* WC_ClientMapTests.mm */; };
+		277EE65A1C728C630037F1EE /* WC_Client.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C0CB6B01C642C600084C15A /* WC_Client.cpp */; };
+		277EE65B1C728C630037F1EE /* WC_ClientMap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C0CB6B21C642C600084C15A /* WC_ClientMap.cpp */; };
+		277EE65C1C728C630037F1EE /* WC_Clients.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C0CB6B41C642C600084C15A /* WC_Clients.cpp */; };
+		277EE65D1C728C630037F1EE /* WC_TaskQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C38210C1C4A163A00A0C8C6 /* WC_TaskQueue.cpp */; };
+		277EE65E1C728C9D0037F1EE /* WC_PlugIn.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CB8B37B1BBCCF62000E2DD1 /* WC_PlugIn.cpp */; };
 		277EE65F1C728C9D0037F1EE /* CAPThread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C38210F1C4A18DE00A0C8C6 /* CAPThread.cpp */; };
-		277EE6601C728CA70037F1EE /* BGM_Device.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CB8B37E1BBCCF87000E2DD1 /* BGM_Device.cpp */; };
-		277EE6611C728CAE0037F1EE /* BGM_Object.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CB8B3811BBCE7B5000E2DD1 /* BGM_Object.cpp */; };
+		277EE6601C728CA70037F1EE /* WC_Device.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CB8B37E1BBCCF87000E2DD1 /* WC_Device.cpp */; };
+		277EE6611C728CAE0037F1EE /* WC_Object.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CB8B3811BBCE7B5000E2DD1 /* WC_Object.cpp */; };
 		277EE6631C728CC70037F1EE /* CADispatchQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CB8B3931BBD2418000E2DD1 /* CADispatchQueue.cpp */; };
 		277EE6641C728CDB0037F1EE /* CACFString.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CB8B38A1BBCF4A9000E2DD1 /* CACFString.cpp */; };
 		277EE6651C728CDB0037F1EE /* CAHostTimeBase.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1CB8B3871BBCF08A000E2DD1 /* CAHostTimeBase.cpp */; };
 		2795973E1C9847CF00A002FB /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2795973D1C9847CF00A002FB /* Foundation.framework */; };
 		27D643C31C9FBE1600737F6E /* BGM_XPCHelper.m in Sources */ = {isa = PBXBuildFile; fileRef = 27381A141C8EF50F00DF167C /* BGM_XPCHelper.m */; };
 		27E6B5F01E01966A00EC0AAB /* BGM_Utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 275343BC1DE9B44900DF3858 /* BGM_Utils.cpp */; };
-		39D5BF4FFE93E04967FFD42D /* BGM_Biquad.h in Sources */ = {isa = PBXBuildFile; fileRef = 990B144116393F9CAA26AA93 /* BGM_Biquad.h */; };
-		47993B813B8D8D7E0A9F33AB /* BGM_Biquad.h in Sources */ = {isa = PBXBuildFile; fileRef = 990B144116393F9CAA26AA93 /* BGM_Biquad.h */; };
-		5A6E637F450AE533CBB980BD /* BGM_Biquad.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BAD7B72F7A8C84160CD36A52 /* BGM_Biquad.cpp */; };
-		5AE26B6F00FC51CD43CD5829 /* BGM_BiquadTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = C555A317993BC9D4C24640CF /* BGM_BiquadTests.mm */; };
-		96C4CC19D90757A097BA381C /* BGM_Biquad.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BAD7B72F7A8C84160CD36A52 /* BGM_Biquad.cpp */; };
+		39D5BF4FFE93E04967FFD42D /* WC_Biquad.h in Sources */ = {isa = PBXBuildFile; fileRef = 990B144116393F9CAA26AA93 /* WC_Biquad.h */; };
+		47993B813B8D8D7E0A9F33AB /* WC_Biquad.h in Sources */ = {isa = PBXBuildFile; fileRef = 990B144116393F9CAA26AA93 /* WC_Biquad.h */; };
+		5A6E637F450AE533CBB980BD /* WC_Biquad.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BAD7B72F7A8C84160CD36A52 /* WC_Biquad.cpp */; };
+		5AE26B6F00FC51CD43CD5829 /* WC_BiquadTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = C555A317993BC9D4C24640CF /* WC_BiquadTests.mm */; };
+		96C4CC19D90757A097BA381C /* WC_Biquad.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BAD7B72F7A8C84160CD36A52 /* WC_Biquad.cpp */; };
 		BDEB1066000000000000C1FE /* BGMDebugLogging.c in Sources */ = {isa = PBXBuildFile; fileRef = BDEB1066000000000000C0FE /* BGMDebugLogging.c */; };
 		BDEB1066000000000000C2FE /* BGMDebugLogging.c in Sources */ = {isa = PBXBuildFile; fileRef = BDEB1066000000000000C0FE /* BGMDebugLogging.c */; settings = {COMPILER_FLAGS = "-frandom-seed=libPublicUtility-BGMDebugLogging.c"; }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		0FE173942F5ED91500EBB922 /* BGMThreadSafetyAnalysis.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BGMThreadSafetyAnalysis.h; path = ../SharedSource/BGMThreadSafetyAnalysis.h; sourceTree = SOURCE_ROOT; };
-		19FE7431C588F36F4F1E70BB /* BGM_MuteControl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BGM_MuteControl.h; sourceTree = "<group>"; };
-		19FE7B8CE9148B3D8D7517C6 /* BGM_Control.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BGM_Control.h; sourceTree = "<group>"; };
-		19FE7BC3396C4E50D21E1BC8 /* BGM_Control.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BGM_Control.cpp; sourceTree = "<group>"; };
-		19FE7E6DC2A1B61211D74782 /* BGM_MuteControl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BGM_MuteControl.cpp; sourceTree = "<group>"; };
+		19FE7431C588F36F4F1E70BB /* WC_MuteControl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WC_MuteControl.h; sourceTree = "<group>"; };
+		19FE7B8CE9148B3D8D7517C6 /* WC_Control.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WC_Control.h; sourceTree = "<group>"; };
+		19FE7BC3396C4E50D21E1BC8 /* WC_Control.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WC_Control.cpp; sourceTree = "<group>"; };
+		19FE7E6DC2A1B61211D74782 /* WC_MuteControl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WC_MuteControl.cpp; sourceTree = "<group>"; };
 		1C09150523F010E8001EB0E1 /* set-version.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "set-version.sh"; sourceTree = "<group>"; };
 		1C0CB6A61C4E06C00084C15A /* CAAtomicStack.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CAAtomicStack.h; path = PublicUtility/CAAtomicStack.h; sourceTree = "<group>"; };
 		1C0CB6A71C4E06F70084C15A /* CAAtomic.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CAAtomic.h; path = PublicUtility/CAAtomic.h; sourceTree = "<group>"; };
 		1C0CB6A91C50A3AF0084C15A /* CAAutoDisposer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CAAutoDisposer.h; path = PublicUtility/CAAutoDisposer.h; sourceTree = "<group>"; };
-		1C0CB6B01C642C600084C15A /* BGM_Client.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BGM_Client.cpp; sourceTree = "<group>"; };
-		1C0CB6B11C642C600084C15A /* BGM_Client.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BGM_Client.h; sourceTree = "<group>"; };
-		1C0CB6B21C642C600084C15A /* BGM_ClientMap.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BGM_ClientMap.cpp; sourceTree = "<group>"; };
-		1C0CB6B31C642C600084C15A /* BGM_ClientMap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BGM_ClientMap.h; sourceTree = "<group>"; };
-		1C0CB6B41C642C600084C15A /* BGM_Clients.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BGM_Clients.cpp; sourceTree = "<group>"; };
-		1C0CB6B51C642C600084C15A /* BGM_Clients.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BGM_Clients.h; sourceTree = "<group>"; };
-		1C0CB6B81C642C600084C15A /* BGM_ClientTasks.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BGM_ClientTasks.h; sourceTree = "<group>"; };
+		1C0CB6B01C642C600084C15A /* WC_Client.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WC_Client.cpp; sourceTree = "<group>"; };
+		1C0CB6B11C642C600084C15A /* WC_Client.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WC_Client.h; sourceTree = "<group>"; };
+		1C0CB6B21C642C600084C15A /* WC_ClientMap.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WC_ClientMap.cpp; sourceTree = "<group>"; };
+		1C0CB6B31C642C600084C15A /* WC_ClientMap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WC_ClientMap.h; sourceTree = "<group>"; };
+		1C0CB6B41C642C600084C15A /* WC_Clients.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WC_Clients.cpp; sourceTree = "<group>"; };
+		1C0CB6B51C642C600084C15A /* WC_Clients.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WC_Clients.h; sourceTree = "<group>"; };
+		1C0CB6B81C642C600084C15A /* WC_ClientTasks.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WC_ClientTasks.h; sourceTree = "<group>"; };
 		1C305D9B1BE294B5004EBB91 /* CACFNumber.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CACFNumber.cpp; path = PublicUtility/CACFNumber.cpp; sourceTree = "<group>"; };
 		1C305D9C1BE294B5004EBB91 /* CACFNumber.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CACFNumber.h; path = PublicUtility/CACFNumber.h; sourceTree = "<group>"; };
 		1C37B3681E9B8D3C000DF98F /* CAPropertyAddress.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CAPropertyAddress.h; path = PublicUtility/CAPropertyAddress.h; sourceTree = "<group>"; };
-		1C38210C1C4A163A00A0C8C6 /* BGM_TaskQueue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BGM_TaskQueue.cpp; sourceTree = "<group>"; };
-		1C38210D1C4A163A00A0C8C6 /* BGM_TaskQueue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BGM_TaskQueue.h; sourceTree = "<group>"; };
+		1C38210C1C4A163A00A0C8C6 /* WC_TaskQueue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WC_TaskQueue.cpp; sourceTree = "<group>"; };
+		1C38210D1C4A163A00A0C8C6 /* WC_TaskQueue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WC_TaskQueue.h; sourceTree = "<group>"; };
 		1C38210F1C4A18DE00A0C8C6 /* CAPThread.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CAPThread.cpp; path = PublicUtility/CAPThread.cpp; sourceTree = "<group>"; };
 		1C3821101C4A18DE00A0C8C6 /* CAPThread.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CAPThread.h; path = PublicUtility/CAPThread.h; sourceTree = "<group>"; };
-		1C3DB4861BE063C500EC8160 /* BGM_DeviceTests.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = BGM_DeviceTests.mm; sourceTree = "<group>"; };
+		1C3DB4861BE063C500EC8160 /* WC_DeviceTests.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = WC_DeviceTests.mm; sourceTree = "<group>"; };
 		1C6181A42388FC8A0068C4D3 /* CARingBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CARingBuffer.h; path = PublicUtility/CARingBuffer.h; sourceTree = "<group>"; };
 		1C6181A52388FC8A0068C4D3 /* CARingBuffer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CARingBuffer.cpp; path = PublicUtility/CARingBuffer.cpp; sourceTree = "<group>"; };
-		1C7010731F05ED5100D8CCDC /* BGM_AudibleState.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BGM_AudibleState.cpp; sourceTree = "<group>"; };
-		1C7010741F05ED5100D8CCDC /* BGM_AudibleState.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BGM_AudibleState.h; sourceTree = "<group>"; };
-		1C7010771F07A0BA00D8CCDC /* BGM_VolumeControl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BGM_VolumeControl.cpp; sourceTree = "<group>"; };
-		1C7010781F07A0BA00D8CCDC /* BGM_VolumeControl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BGM_VolumeControl.h; sourceTree = "<group>"; };
+		1C7010731F05ED5100D8CCDC /* WC_AudibleState.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WC_AudibleState.cpp; sourceTree = "<group>"; };
+		1C7010741F05ED5100D8CCDC /* WC_AudibleState.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WC_AudibleState.h; sourceTree = "<group>"; };
+		1C7010771F07A0BA00D8CCDC /* WC_VolumeControl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WC_VolumeControl.cpp; sourceTree = "<group>"; };
+		1C7010781F07A0BA00D8CCDC /* WC_VolumeControl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WC_VolumeControl.h; sourceTree = "<group>"; };
 		1C780FEE1FEE78E800497FAD /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		1C8034DA1BDD073B00668E00 /* BGMDriverTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BGMDriverTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		1C8034DC1BDD073B00668E00 /* BGM_ClientsTests.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = BGM_ClientsTests.mm; sourceTree = "<group>"; };
+		1C8034DC1BDD073B00668E00 /* WC_ClientsTests.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = WC_ClientsTests.mm; sourceTree = "<group>"; };
 		1C8034DE1BDD073B00668E00 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		1CA2A9E01E8D1D08007A76A4 /* BGM_Stream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BGM_Stream.cpp; sourceTree = "<group>"; };
-		1CA2A9E11E8D1D08007A76A4 /* BGM_Stream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BGM_Stream.h; sourceTree = "<group>"; };
+		1CA2A9E01E8D1D08007A76A4 /* WC_Stream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WC_Stream.cpp; sourceTree = "<group>"; };
+		1CA2A9E11E8D1D08007A76A4 /* WC_Stream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WC_Stream.h; sourceTree = "<group>"; };
 		1CB8B3641BBBB78D000E2DD1 /* Background Music Device.driver */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Background Music Device.driver"; sourceTree = BUILT_PRODUCTS_DIR; };
 		1CB8B3681BBBB78D000E2DD1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1CB8B36D1BBBD541000E2DD1 /* BGM_PlugInInterface.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BGM_PlugInInterface.cpp; sourceTree = "<group>"; };
@@ -135,12 +135,12 @@
 		1CB8B3751BBBD924000E2DD1 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		1CB8B3781BBBDFA2000E2DD1 /* CADebugPrintf.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CADebugPrintf.cpp; path = PublicUtility/CADebugPrintf.cpp; sourceTree = "<group>"; };
 		1CB8B3791BBBDFA2000E2DD1 /* CADebugPrintf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CADebugPrintf.h; path = PublicUtility/CADebugPrintf.h; sourceTree = "<group>"; };
-		1CB8B37B1BBCCF62000E2DD1 /* BGM_PlugIn.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BGM_PlugIn.cpp; sourceTree = "<group>"; };
-		1CB8B37C1BBCCF62000E2DD1 /* BGM_PlugIn.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BGM_PlugIn.h; sourceTree = "<group>"; };
-		1CB8B37E1BBCCF87000E2DD1 /* BGM_Device.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BGM_Device.cpp; sourceTree = "<group>"; };
-		1CB8B37F1BBCCF87000E2DD1 /* BGM_Device.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BGM_Device.h; sourceTree = "<group>"; };
-		1CB8B3811BBCE7B5000E2DD1 /* BGM_Object.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BGM_Object.cpp; sourceTree = "<group>"; };
-		1CB8B3821BBCE7B5000E2DD1 /* BGM_Object.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BGM_Object.h; sourceTree = "<group>"; };
+		1CB8B37B1BBCCF62000E2DD1 /* WC_PlugIn.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WC_PlugIn.cpp; sourceTree = "<group>"; };
+		1CB8B37C1BBCCF62000E2DD1 /* WC_PlugIn.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WC_PlugIn.h; sourceTree = "<group>"; };
+		1CB8B37E1BBCCF87000E2DD1 /* WC_Device.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WC_Device.cpp; sourceTree = "<group>"; };
+		1CB8B37F1BBCCF87000E2DD1 /* WC_Device.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WC_Device.h; sourceTree = "<group>"; };
+		1CB8B3811BBCE7B5000E2DD1 /* WC_Object.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WC_Object.cpp; sourceTree = "<group>"; };
+		1CB8B3821BBCE7B5000E2DD1 /* WC_Object.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WC_Object.h; sourceTree = "<group>"; };
 		1CB8B3841BBCEFE8000E2DD1 /* CAMutex.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CAMutex.cpp; path = PublicUtility/CAMutex.cpp; sourceTree = "<group>"; };
 		1CB8B3851BBCEFE8000E2DD1 /* CAMutex.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CAMutex.h; path = PublicUtility/CAMutex.h; sourceTree = "<group>"; };
 		1CB8B3871BBCF08A000E2DD1 /* CAHostTimeBase.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CAHostTimeBase.cpp; path = PublicUtility/CAHostTimeBase.cpp; sourceTree = "<group>"; };
@@ -155,10 +155,10 @@
 		1CC1DF881BE558B000FB8FE4 /* CADebugger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CADebugger.h; path = PublicUtility/CADebugger.h; sourceTree = "<group>"; };
 		1CC1DF991BE865C000FB8FE4 /* quick_install.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = quick_install.sh; sourceTree = "<group>"; };
 		1CC1DF9D1BE94AA200FB8FE4 /* DeviceIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = DeviceIcon.icns; sourceTree = "<group>"; };
-		1CDF3ABA1E863B980001E9B7 /* BGM_NullDevice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BGM_NullDevice.cpp; sourceTree = "<group>"; };
-		1CDF3ABB1E863B980001E9B7 /* BGM_NullDevice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BGM_NullDevice.h; sourceTree = "<group>"; };
-		1CDF3ABD1E8644C20001E9B7 /* BGM_AbstractDevice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BGM_AbstractDevice.cpp; sourceTree = "<group>"; };
-		1CDF3ABE1E8644C20001E9B7 /* BGM_AbstractDevice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BGM_AbstractDevice.h; sourceTree = "<group>"; };
+		1CDF3ABA1E863B980001E9B7 /* WC_NullDevice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WC_NullDevice.cpp; sourceTree = "<group>"; };
+		1CDF3ABB1E863B980001E9B7 /* WC_NullDevice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WC_NullDevice.h; sourceTree = "<group>"; };
+		1CDF3ABD1E8644C20001E9B7 /* WC_AbstractDevice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WC_AbstractDevice.cpp; sourceTree = "<group>"; };
+		1CDF3ABE1E8644C20001E9B7 /* WC_AbstractDevice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WC_AbstractDevice.h; sourceTree = "<group>"; };
 		1CE03A4A238A5BF40036908D /* CABitOperations.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CABitOperations.h; path = PublicUtility/CABitOperations.h; sourceTree = "<group>"; };
 		1CE3E68C1BE263CA00167F5D /* CACFDictionary.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CACFDictionary.cpp; path = PublicUtility/CACFDictionary.cpp; sourceTree = "<group>"; };
 		1CE3E68D1BE263CA00167F5D /* CACFDictionary.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CACFDictionary.h; path = PublicUtility/CACFDictionary.h; sourceTree = "<group>"; };
@@ -169,16 +169,16 @@
 		2743C9C61D7EF84B0089613B /* libPublicUtility.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libPublicUtility.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		275343BC1DE9B44900DF3858 /* BGM_Utils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BGM_Utils.cpp; path = ../SharedSource/BGM_Utils.cpp; sourceTree = "<group>"; };
 		2771700E1CA0C16200AB34B4 /* BGM_Utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BGM_Utils.h; path = ../SharedSource/BGM_Utils.h; sourceTree = "<group>"; };
-		277EE6581C7269910037F1EE /* BGM_ClientMapTests.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = BGM_ClientMapTests.mm; sourceTree = "<group>"; };
+		277EE6581C7269910037F1EE /* WC_ClientMapTests.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = WC_ClientMapTests.mm; sourceTree = "<group>"; };
 		2795973D1C9847CF00A002FB /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		27D643B71C9FABF600737F6E /* BGM_Types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BGM_Types.h; path = ../SharedSource/BGM_Types.h; sourceTree = "<group>"; };
 		27D643B81C9FABF600737F6E /* BGMXPCProtocols.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BGMXPCProtocols.h; path = ../SharedSource/BGMXPCProtocols.h; sourceTree = "<group>"; };
 		27D643C21C9FBC5800737F6E /* BGM_TestUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BGM_TestUtils.h; path = ../SharedSource/BGM_TestUtils.h; sourceTree = "<group>"; };
-		990B144116393F9CAA26AA93 /* BGM_Biquad.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = BGM_Biquad.h; sourceTree = "<group>"; };
-		BAD7B72F7A8C84160CD36A52 /* BGM_Biquad.cpp */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.cpp.cpp; path = BGM_Biquad.cpp; sourceTree = "<group>"; };
+		990B144116393F9CAA26AA93 /* WC_Biquad.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = WC_Biquad.h; sourceTree = "<group>"; };
+		BAD7B72F7A8C84160CD36A52 /* WC_Biquad.cpp */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.cpp.cpp; path = WC_Biquad.cpp; sourceTree = "<group>"; };
 		BDEB1066000000000000A0FE /* BGMDebugLogging.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BGMDebugLogging.h; path = PublicUtility/BGMDebugLogging.h; sourceTree = "<group>"; };
 		BDEB1066000000000000C0FE /* BGMDebugLogging.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = BGMDebugLogging.c; path = PublicUtility/BGMDebugLogging.c; sourceTree = "<group>"; };
-		C555A317993BC9D4C24640CF /* BGM_BiquadTests.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = BGM_BiquadTests.mm; sourceTree = "<group>"; };
+		C555A317993BC9D4C24640CF /* WC_BiquadTests.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = WC_BiquadTests.mm; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -225,15 +225,15 @@
 		1C0CB6AF1C642C600084C15A /* DeviceClients */ = {
 			isa = PBXGroup;
 			children = (
-				1C0CB6B11C642C600084C15A /* BGM_Client.h */,
-				1C0CB6B01C642C600084C15A /* BGM_Client.cpp */,
-				1C0CB6B31C642C600084C15A /* BGM_ClientMap.h */,
-				1C0CB6B21C642C600084C15A /* BGM_ClientMap.cpp */,
-				1C0CB6B51C642C600084C15A /* BGM_Clients.h */,
-				1C0CB6B41C642C600084C15A /* BGM_Clients.cpp */,
-				1C0CB6B81C642C600084C15A /* BGM_ClientTasks.h */,
-				990B144116393F9CAA26AA93 /* BGM_Biquad.h */,
-				BAD7B72F7A8C84160CD36A52 /* BGM_Biquad.cpp */,
+				1C0CB6B11C642C600084C15A /* WC_Client.h */,
+				1C0CB6B01C642C600084C15A /* WC_Client.cpp */,
+				1C0CB6B31C642C600084C15A /* WC_ClientMap.h */,
+				1C0CB6B21C642C600084C15A /* WC_ClientMap.cpp */,
+				1C0CB6B51C642C600084C15A /* WC_Clients.h */,
+				1C0CB6B41C642C600084C15A /* WC_Clients.cpp */,
+				1C0CB6B81C642C600084C15A /* WC_ClientTasks.h */,
+				990B144116393F9CAA26AA93 /* WC_Biquad.h */,
+				BAD7B72F7A8C84160CD36A52 /* WC_Biquad.cpp */,
 			);
 			path = DeviceClients;
 			sourceTree = "<group>";
@@ -241,11 +241,11 @@
 		1C8034DB1BDD073B00668E00 /* BGMDriverTests */ = {
 			isa = PBXGroup;
 			children = (
-				1C8034DC1BDD073B00668E00 /* BGM_ClientsTests.mm */,
-				277EE6581C7269910037F1EE /* BGM_ClientMapTests.mm */,
-				1C3DB4861BE063C500EC8160 /* BGM_DeviceTests.mm */,
+				1C8034DC1BDD073B00668E00 /* WC_ClientsTests.mm */,
+				277EE6581C7269910037F1EE /* WC_ClientMapTests.mm */,
+				1C3DB4861BE063C500EC8160 /* WC_DeviceTests.mm */,
 				1C8034DE1BDD073B00668E00 /* Info.plist */,
-				C555A317993BC9D4C24640CF /* BGM_BiquadTests.mm */,
+				C555A317993BC9D4C24640CF /* WC_BiquadTests.mm */,
 			);
 			path = BGMDriverTests;
 			sourceTree = SOURCE_ROOT;
@@ -276,29 +276,29 @@
 			isa = PBXGroup;
 			children = (
 				1CB8B36D1BBBD541000E2DD1 /* BGM_PlugInInterface.cpp */,
-				1CB8B37C1BBCCF62000E2DD1 /* BGM_PlugIn.h */,
-				1CB8B37B1BBCCF62000E2DD1 /* BGM_PlugIn.cpp */,
-				1CB8B3821BBCE7B5000E2DD1 /* BGM_Object.h */,
-				1CB8B3811BBCE7B5000E2DD1 /* BGM_Object.cpp */,
-				1CDF3ABE1E8644C20001E9B7 /* BGM_AbstractDevice.h */,
-				1CDF3ABD1E8644C20001E9B7 /* BGM_AbstractDevice.cpp */,
-				1CB8B37F1BBCCF87000E2DD1 /* BGM_Device.h */,
-				1CB8B37E1BBCCF87000E2DD1 /* BGM_Device.cpp */,
-				1C7010741F05ED5100D8CCDC /* BGM_AudibleState.h */,
-				1C7010731F05ED5100D8CCDC /* BGM_AudibleState.cpp */,
-				1CDF3ABB1E863B980001E9B7 /* BGM_NullDevice.h */,
-				1CDF3ABA1E863B980001E9B7 /* BGM_NullDevice.cpp */,
-				1CA2A9E11E8D1D08007A76A4 /* BGM_Stream.h */,
-				1CA2A9E01E8D1D08007A76A4 /* BGM_Stream.cpp */,
-				19FE7B8CE9148B3D8D7517C6 /* BGM_Control.h */,
-				19FE7BC3396C4E50D21E1BC8 /* BGM_Control.cpp */,
-				1C7010781F07A0BA00D8CCDC /* BGM_VolumeControl.h */,
-				1C7010771F07A0BA00D8CCDC /* BGM_VolumeControl.cpp */,
-				19FE7431C588F36F4F1E70BB /* BGM_MuteControl.h */,
-				19FE7E6DC2A1B61211D74782 /* BGM_MuteControl.cpp */,
+				1CB8B37C1BBCCF62000E2DD1 /* WC_PlugIn.h */,
+				1CB8B37B1BBCCF62000E2DD1 /* WC_PlugIn.cpp */,
+				1CB8B3821BBCE7B5000E2DD1 /* WC_Object.h */,
+				1CB8B3811BBCE7B5000E2DD1 /* WC_Object.cpp */,
+				1CDF3ABE1E8644C20001E9B7 /* WC_AbstractDevice.h */,
+				1CDF3ABD1E8644C20001E9B7 /* WC_AbstractDevice.cpp */,
+				1CB8B37F1BBCCF87000E2DD1 /* WC_Device.h */,
+				1CB8B37E1BBCCF87000E2DD1 /* WC_Device.cpp */,
+				1C7010741F05ED5100D8CCDC /* WC_AudibleState.h */,
+				1C7010731F05ED5100D8CCDC /* WC_AudibleState.cpp */,
+				1CDF3ABB1E863B980001E9B7 /* WC_NullDevice.h */,
+				1CDF3ABA1E863B980001E9B7 /* WC_NullDevice.cpp */,
+				1CA2A9E11E8D1D08007A76A4 /* WC_Stream.h */,
+				1CA2A9E01E8D1D08007A76A4 /* WC_Stream.cpp */,
+				19FE7B8CE9148B3D8D7517C6 /* WC_Control.h */,
+				19FE7BC3396C4E50D21E1BC8 /* WC_Control.cpp */,
+				1C7010781F07A0BA00D8CCDC /* WC_VolumeControl.h */,
+				1C7010771F07A0BA00D8CCDC /* WC_VolumeControl.cpp */,
+				19FE7431C588F36F4F1E70BB /* WC_MuteControl.h */,
+				19FE7E6DC2A1B61211D74782 /* WC_MuteControl.cpp */,
 				1C0CB6AF1C642C600084C15A /* DeviceClients */,
-				1C38210D1C4A163A00A0C8C6 /* BGM_TaskQueue.h */,
-				1C38210C1C4A163A00A0C8C6 /* BGM_TaskQueue.cpp */,
+				1C38210D1C4A163A00A0C8C6 /* WC_TaskQueue.h */,
+				1C38210C1C4A163A00A0C8C6 /* WC_TaskQueue.cpp */,
 				27381A151C8EF50F00DF167C /* BGM_XPCHelper.h */,
 				27381A141C8EF50F00DF167C /* BGM_XPCHelper.m */,
 				1CB8B3671BBBB78D000E2DD1 /* Supporting Files */,
@@ -535,13 +535,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				1CE03A4C23928B370036908D /* CARingBuffer.cpp in Sources */,
-				1CD95B121E93AA5200EB8EF0 /* BGM_AbstractDevice.cpp in Sources */,
-				1CD95B131E93AA5200EB8EF0 /* BGM_NullDevice.cpp in Sources */,
-				1CD95B141E93AA5200EB8EF0 /* BGM_Stream.cpp in Sources */,
+				1CD95B121E93AA5200EB8EF0 /* WC_AbstractDevice.cpp in Sources */,
+				1CD95B131E93AA5200EB8EF0 /* WC_NullDevice.cpp in Sources */,
+				1CD95B141E93AA5200EB8EF0 /* WC_Stream.cpp in Sources */,
 				27E6B5F01E01966A00EC0AAB /* BGM_Utils.cpp in Sources */,
 				277170101CA0CFC300AB34B4 /* BGM_PlugInInterface.cpp in Sources */,
 				277170111CA0CFC300AB34B4 /* CACFNumber.cpp in Sources */,
-				1C7010761F05ED5100D8CCDC /* BGM_AudibleState.cpp in Sources */,
+				1C7010761F05ED5100D8CCDC /* WC_AudibleState.cpp in Sources */,
 				27D643C31C9FBE1600737F6E /* BGM_XPCHelper.m in Sources */,
 				27379B821C76D62D0084A24C /* CADebugMacros.cpp in Sources */,
 				27379B831C76D62D0084A24C /* CADebugPrintf.cpp in Sources */,
@@ -549,28 +549,28 @@
 				277EE6641C728CDB0037F1EE /* CACFString.cpp in Sources */,
 				277EE6651C728CDB0037F1EE /* CAHostTimeBase.cpp in Sources */,
 				277EE6631C728CC70037F1EE /* CADispatchQueue.cpp in Sources */,
-				277EE6611C728CAE0037F1EE /* BGM_Object.cpp in Sources */,
-				277EE6601C728CA70037F1EE /* BGM_Device.cpp in Sources */,
-				277EE65E1C728C9D0037F1EE /* BGM_PlugIn.cpp in Sources */,
+				277EE6611C728CAE0037F1EE /* WC_Object.cpp in Sources */,
+				277EE6601C728CA70037F1EE /* WC_Device.cpp in Sources */,
+				277EE65E1C728C9D0037F1EE /* WC_PlugIn.cpp in Sources */,
 				277EE65F1C728C9D0037F1EE /* CAPThread.cpp in Sources */,
-				277EE65A1C728C630037F1EE /* BGM_Client.cpp in Sources */,
-				1C70107A1F07A0BA00D8CCDC /* BGM_VolumeControl.cpp in Sources */,
-				277EE65B1C728C630037F1EE /* BGM_ClientMap.cpp in Sources */,
-				277EE65C1C728C630037F1EE /* BGM_Clients.cpp in Sources */,
-				277EE65D1C728C630037F1EE /* BGM_TaskQueue.cpp in Sources */,
+				277EE65A1C728C630037F1EE /* WC_Client.cpp in Sources */,
+				1C70107A1F07A0BA00D8CCDC /* WC_VolumeControl.cpp in Sources */,
+				277EE65B1C728C630037F1EE /* WC_ClientMap.cpp in Sources */,
+				277EE65C1C728C630037F1EE /* WC_Clients.cpp in Sources */,
+				277EE65D1C728C630037F1EE /* WC_TaskQueue.cpp in Sources */,
 				1C30A69F1C1E98F000C05AA5 /* CAMutex.cpp in Sources */,
 				1CC1DF931BE7B79500FB8FE4 /* CADebugger.cpp in Sources */,
 				1CC1DF941BE7B79500FB8FE4 /* CAVolumeCurve.cpp in Sources */,
 				1CC1DF8E1BE5706C00FB8FE4 /* CACFArray.cpp in Sources */,
-				277EE6591C7269910037F1EE /* BGM_ClientMapTests.mm in Sources */,
+				277EE6591C7269910037F1EE /* WC_ClientMapTests.mm in Sources */,
 				1CC1DF8D1BE5705700FB8FE4 /* CACFDictionary.cpp in Sources */,
-				1C3DB4871BE063C500EC8160 /* BGM_DeviceTests.mm in Sources */,
-				1C8034DD1BDD073B00668E00 /* BGM_ClientsTests.mm in Sources */,
-				19FE761291BF07AEA278F25C /* BGM_MuteControl.cpp in Sources */,
-				19FE742AEBE30B21C4CF9285 /* BGM_Control.cpp in Sources */,
-				39D5BF4FFE93E04967FFD42D /* BGM_Biquad.h in Sources */,
-				5AE26B6F00FC51CD43CD5829 /* BGM_BiquadTests.mm in Sources */,
-				5A6E637F450AE533CBB980BD /* BGM_Biquad.cpp in Sources */,
+				1C3DB4871BE063C500EC8160 /* WC_DeviceTests.mm in Sources */,
+				1C8034DD1BDD073B00668E00 /* WC_ClientsTests.mm in Sources */,
+				19FE761291BF07AEA278F25C /* WC_MuteControl.cpp in Sources */,
+				19FE742AEBE30B21C4CF9285 /* WC_Control.cpp in Sources */,
+				39D5BF4FFE93E04967FFD42D /* WC_Biquad.h in Sources */,
+				5AE26B6F00FC51CD43CD5829 /* WC_BiquadTests.mm in Sources */,
+				5A6E637F450AE533CBB980BD /* WC_Biquad.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -578,25 +578,25 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1CA2A9E21E8D1D08007A76A4 /* BGM_Stream.cpp in Sources */,
-				1C7010751F05ED5100D8CCDC /* BGM_AudibleState.cpp in Sources */,
-				1CB8B3801BBCCF87000E2DD1 /* BGM_Device.cpp in Sources */,
-				1C0CB6B91C642C600084C15A /* BGM_Client.cpp in Sources */,
+				1CA2A9E21E8D1D08007A76A4 /* WC_Stream.cpp in Sources */,
+				1C7010751F05ED5100D8CCDC /* WC_AudibleState.cpp in Sources */,
+				1CB8B3801BBCCF87000E2DD1 /* WC_Device.cpp in Sources */,
+				1C0CB6B91C642C600084C15A /* WC_Client.cpp in Sources */,
 				1CB8B36E1BBBD541000E2DD1 /* BGM_PlugInInterface.cpp in Sources */,
-				1CB8B37D1BBCCF62000E2DD1 /* BGM_PlugIn.cpp in Sources */,
+				1CB8B37D1BBCCF62000E2DD1 /* WC_PlugIn.cpp in Sources */,
 				27381A161C8EF50F00DF167C /* BGM_XPCHelper.m in Sources */,
-				1CDF3ABF1E8644C20001E9B7 /* BGM_AbstractDevice.cpp in Sources */,
-				1C7010791F07A0BA00D8CCDC /* BGM_VolumeControl.cpp in Sources */,
-				1C0CB6BA1C642C600084C15A /* BGM_ClientMap.cpp in Sources */,
-				1CB8B3831BBCE7B5000E2DD1 /* BGM_Object.cpp in Sources */,
+				1CDF3ABF1E8644C20001E9B7 /* WC_AbstractDevice.cpp in Sources */,
+				1C7010791F07A0BA00D8CCDC /* WC_VolumeControl.cpp in Sources */,
+				1C0CB6BA1C642C600084C15A /* WC_ClientMap.cpp in Sources */,
+				1CB8B3831BBCE7B5000E2DD1 /* WC_Object.cpp in Sources */,
 				275343BD1DE9B44900DF3858 /* BGM_Utils.cpp in Sources */,
-				1C38210E1C4A163A00A0C8C6 /* BGM_TaskQueue.cpp in Sources */,
-				1C0CB6BB1C642C600084C15A /* BGM_Clients.cpp in Sources */,
-				1CDF3ABC1E863B980001E9B7 /* BGM_NullDevice.cpp in Sources */,
-				19FE766482B57D852CCF6F0A /* BGM_MuteControl.cpp in Sources */,
-				19FE77D40F15EA060B462D83 /* BGM_Control.cpp in Sources */,
-				47993B813B8D8D7E0A9F33AB /* BGM_Biquad.h in Sources */,
-				96C4CC19D90757A097BA381C /* BGM_Biquad.cpp in Sources */,
+				1C38210E1C4A163A00A0C8C6 /* WC_TaskQueue.cpp in Sources */,
+				1C0CB6BB1C642C600084C15A /* WC_Clients.cpp in Sources */,
+				1CDF3ABC1E863B980001E9B7 /* WC_NullDevice.cpp in Sources */,
+				19FE766482B57D852CCF6F0A /* WC_MuteControl.cpp in Sources */,
+				19FE77D40F15EA060B462D83 /* WC_Control.cpp in Sources */,
+				47993B813B8D8D7E0A9F33AB /* WC_Biquad.h in Sources */,
+				96C4CC19D90757A097BA381C /* WC_Biquad.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

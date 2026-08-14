@@ -1,0 +1,51 @@
+// This file is part of Background Music.
+//
+// Background Music is free software: you can redistribute it and/or
+// modify it under the terms of the GNU General Public License as
+// published by the Free Software Foundation, either version 2 of the
+// License, or (at your option) any later version.
+//
+// Background Music is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Background Music. If not, see <http://www.gnu.org/licenses/>.
+
+//
+//  WCASOutputDevice.h
+//  BGMApp
+//
+//  Copyright © 2017 Kyle Neideck
+//
+//  An AppleScript class for the output devices that can be selected in the preferences menu.
+//
+
+// Local Includes
+#import "WCAudioDeviceManager.h"
+
+// System Includes
+#import <Foundation/Foundation.h>
+
+
+#pragma clang assume_nonnull begin
+
+@interface WCASOutputDevice : NSObject
+
+- (instancetype) initWithAudioObjectID:(AudioObjectID)objID
+                          audioDevices:(WCAudioDeviceManager*)devices
+                       parentSpecifier:(NSScriptObjectSpecifier* __nullable)parentSpecifier;
+
+@property (readonly) NSString* name;
+@property BOOL selected;  // is this the device to be used for audio output?
+
+// The device's UID -- not exposed to scripts via the sdef (there's no property for it), but
+// needed internally by WCASApplication's output-device property to resolve this object back to
+// the UID WCAppOutputRoutingController's API is keyed on.
+@property (readonly) NSString* __nullable uid;
+
+@end
+
+#pragma clang assume_nonnull end
+

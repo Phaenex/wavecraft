@@ -80,7 +80,7 @@
 #if __has_feature(objc_generics)
 
 // This trick is from https://gist.github.com/robb/d55b72d62d32deaee5fa
-@interface BGMNonNullCastHelper<__covariant T>
+@interface WCNonNullCastHelper<__covariant T>
 
 - (nonnull T) asNonNull;
 
@@ -93,7 +93,7 @@
 #define BGMNN(expression) ({ \
         __typeof((expression)) value = (expression); \
         BGMAssertNonNull2(value, #expression); \
-        BGMNonNullCastHelper<__typeof((expression))>* helper; \
+        WCNonNullCastHelper<__typeof((expression))>* helper; \
         (__typeof(helper.asNonNull) __nonnull)value; \
     })
 

@@ -9,7 +9,7 @@
 #import <ScriptingBridge/ScriptingBridge.h>
 
 
-@class BGMAppOutputDevice, BGMAppApplication;
+@class WCAppOutputDevice, WCAppApplication;
 
 
 
@@ -18,7 +18,7 @@
  */
 
 // A hardware device that can play audio
-@interface BGMAppOutputDevice : SBObject
+@interface WCAppOutputDevice : SBObject
 
 @property (copy, readonly) NSString *name;  // The name of the output device.
 @property BOOL selected;  // Is this the device to be used for audio output?
@@ -26,11 +26,11 @@
 @end
 
 // The application program
-@interface BGMAppApplication : SBApplication
+@interface WCAppApplication : SBApplication
 
-- (SBElementArray<BGMAppOutputDevice *> *) outputDevices;
+- (SBElementArray<WCAppOutputDevice *> *) outputDevices;
 
-@property (copy) BGMAppOutputDevice *selectedOutputDevice;  // The device to be used for audio output
+@property (copy) WCAppOutputDevice *selectedOutputDevice;  // The device to be used for audio output
 
 @end
 

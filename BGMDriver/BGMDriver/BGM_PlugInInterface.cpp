@@ -33,10 +33,10 @@
 
 //  Local Includes
 #include "BGM_Types.h"
-#include "BGM_Object.h"
-#include "BGM_PlugIn.h"
-#include "BGM_Device.h"
-#include "BGM_NullDevice.h"
+#include "WC_Object.h"
+#include "WC_PlugIn.h"
+#include "WC_Device.h"
+#include "WC_NullDevice.h"
 
 
 #pragma mark COM Prototypes
@@ -99,47 +99,47 @@ static AudioServerPlugInDriverRef			gAudioServerPlugInDriverRef				= &gAudioServ
 static UInt32								gAudioServerPlugInDriverRefCount		= 1;
 
 // TODO: This name is a bit misleading because the devices are actually owned by the plug-in.
-static BGM_Object& BGM_LookUpOwnerObject(AudioObjectID inObjectID)
+static WC_Object& BGM_LookUpOwnerObject(AudioObjectID inObjectID)
 {
     switch(inObjectID)
     {
         case kObjectID_PlugIn:
-            return BGM_PlugIn::GetInstance();
+            return WC_PlugIn::GetInstance();
             
         case kObjectID_Device:
         case kObjectID_Stream_Input:
         case kObjectID_Stream_Output:
         case kObjectID_Volume_Output_Main:
         case kObjectID_Mute_Output_Main:
-            return BGM_Device::GetInstance();
+            return WC_Device::GetInstance();
 
         case kObjectID_Device_UI_Sounds:
         case kObjectID_Stream_Input_UI_Sounds:
         case kObjectID_Stream_Output_UI_Sounds:
         case kObjectID_Volume_Output_Main_UI_Sounds:
-            return BGM_Device::GetUISoundsInstance();
+            return WC_Device::GetUISoundsInstance();
 
         case kObjectID_Device_Null:
         case kObjectID_Stream_Null:
-            return BGM_NullDevice::GetInstance();
+            return WC_NullDevice::GetInstance();
     }
     
     DebugMsg("BGM_LookUpOwnerObject: unknown object");
     Throw(CAException(kAudioHardwareBadObjectError));
 }
 
-static BGM_AbstractDevice& BGM_LookUpDevice(AudioObjectID inObjectID)
+static WC_AbstractDevice& BGM_LookUpDevice(AudioObjectID inObjectID)
 {
     switch(inObjectID)
     {
         case kObjectID_Device:
-            return BGM_Device::GetInstance();
+            return WC_Device::GetInstance();
 
         case kObjectID_Device_UI_Sounds:
-            return BGM_Device::GetUISoundsInstance();
+            return WC_Device::GetUISoundsInstance();
 
         case kObjectID_Device_Null:
-            return BGM_NullDevice::GetInstance();
+            return WC_NullDevice::GetInstance();
     }
 
     DebugMsg("BGM_LookUpDevice: unknown device");
@@ -167,7 +167,7 @@ void*	BGM_Create(CFAllocatorRef inAllocator, CFUUIDRef inRequestedTypeUUID)
     {
 		theAnswer = gAudioServerPlugInDriverRef;
         
-        BGM_PlugIn::GetInstance();
+        WC_PlugIn::GetInstance();
     }
     return theAnswer;
 }
@@ -282,12 +282,12 @@ static OSStatus	BGM_Initialize(AudioServerPlugInDriverRef inDriver, AudioServerP
                 "BGM_Initialize: bad driver reference");
 		
 		// Store the AudioServerPlugInHostRef.
-		BGM_PlugIn::GetInstance().SetHost(inHost);
+		WC_PlugIn::GetInstance().SetHost(inHost);
         
         // Init/activate the devices.
-        BGM_Device::GetInstance();
-        BGM_Device::GetUISoundsInstance();
-        BGM_NullDevice::GetInstance();
+        WC_Device::GetInstance();
+        WC_Device::GetUISoundsInstance();
+        WC_NullDevice::GetInstance();
 	}
 	catch(const CAException& inException)
 	{
@@ -347,7 +347,7 @@ static OSStatus	BGM_AddDeviceClient(AudioServerPlugInDriverRef inDriver, AudioOb
 	{
 		theAnswer = inException.GetError();
 	}
-    catch(BGM_InvalidClientException)
+    catch(WC_InvalidClientException)
     {
         theAnswer = kAudioHardwareIllegalOperationError;
     }
@@ -383,7 +383,7 @@ static OSStatus	BGM_RemoveDeviceClient(AudioServerPlugInDriverRef inDriver, Audi
 	{
 		theAnswer = inException.GetError();
     }
-    catch(BGM_InvalidClientException)
+    catch(WC_InvalidClientException)
     {
         theAnswer = kAudioHardwareIllegalOperationError;
     }
@@ -511,7 +511,7 @@ static OSStatus	BGM_IsPropertySettable(AudioServerPlugInDriverRef inDriver, Audi
 		ThrowIfNULL(inAddress, CAException(kAudioHardwareIllegalOperationError), "BGM_IsPropertySettable: no address");
 		ThrowIfNULL(outIsSettable, CAException(kAudioHardwareIllegalOperationError), "BGM_IsPropertySettable: no place to put the return value");
         
-        BGM_Object& theAudioObject = BGM_LookUpOwnerObject(inObjectID);
+        WC_Object& theAudioObject = BGM_LookUpOwnerObject(inObjectID);
 		if(theAudioObject.HasProperty(inObjectID, inClientProcessID, *inAddress))
 		{
 			*outIsSettable = theAudioObject.IsPropertySettable(inObjectID, inClientProcessID, *inAddress);
@@ -549,7 +549,7 @@ static OSStatus	BGM_GetPropertyDataSize(AudioServerPlugInDriverRef inDriver, Aud
 		ThrowIfNULL(inAddress, CAException(kAudioHardwareIllegalOperationError), "BGM_GetPropertyDataSize: no address");
 		ThrowIfNULL(outDataSize, CAException(kAudioHardwareIllegalOperationError), "BGM_GetPropertyDataSize: no place to put the return value");
         
-        BGM_Object& theAudioObject = BGM_LookUpOwnerObject(inObjectID);
+        WC_Object& theAudioObject = BGM_LookUpOwnerObject(inObjectID);
 		if(theAudioObject.HasProperty(inObjectID, inClientProcessID, *inAddress))
 		{
 			*outDataSize = theAudioObject.GetPropertyDataSize(inObjectID, inClientProcessID, *inAddress, inQualifierDataSize, inQualifierData);
@@ -588,7 +588,7 @@ static OSStatus	BGM_GetPropertyData(AudioServerPlugInDriverRef inDriver, AudioOb
 		ThrowIfNULL(outDataSize, CAException(kAudioHardwareIllegalOperationError), "BGM_GetPropertyData: no place to put the return value size");
 		ThrowIfNULL(outData, CAException(kAudioHardwareIllegalOperationError), "BGM_GetPropertyData: no place to put the return value");
 		
-        BGM_Object& theAudioObject = BGM_LookUpOwnerObject(inObjectID);
+        WC_Object& theAudioObject = BGM_LookUpOwnerObject(inObjectID);
 		if(theAudioObject.HasProperty(inObjectID, inClientProcessID, *inAddress))
 		{
 			theAudioObject.GetPropertyData(inObjectID, inClientProcessID, *inAddress, inQualifierDataSize, inQualifierData, inDataSize, *outDataSize, outData);
@@ -626,7 +626,7 @@ static OSStatus	BGM_SetPropertyData(AudioServerPlugInDriverRef inDriver, AudioOb
         ThrowIfNULL(inAddress, CAException(kAudioHardwareIllegalOperationError), "BGM_SetPropertyData: no address");
         ThrowIfNULL(inData, CAException(kAudioHardwareIllegalOperationError), "BGM_SetPropertyData: no data");
 		
-        BGM_Object& theAudioObject = BGM_LookUpOwnerObject(inObjectID);
+        WC_Object& theAudioObject = BGM_LookUpOwnerObject(inObjectID);
 		if(theAudioObject.HasProperty(inObjectID, inClientProcessID, *inAddress))
 		{
 			if(theAudioObject.IsPropertySettable(inObjectID, inClientProcessID, *inAddress))
