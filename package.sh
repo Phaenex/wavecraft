@@ -224,6 +224,7 @@ mkdir -p "pkgres"
 if [[ $packaging_operation == "repackage" ]]; then
     cp "${repackage_dir}/Resources/WavecraftIcon.png" "pkgres"
     cp "${repackage_dir}/Resources/LICENSE" "pkgres"
+    cp "${repackage_dir}/Resources/welcome.txt" "pkgres"
     cp "${repackage_dir}/Distribution" "pkg/Distribution.xml"
 else
     # The installer background image -- the real, colorful app icon, not the small monochrome
@@ -236,6 +237,10 @@ else
     # -- this is a GPL-2.0 project, so an installer that skips this step entirely isn't okay to
     # ship even though productbuild doesn't require it.
     cp "LICENSE" "pkgres/LICENSE"
+    # The <welcome> pane -- what actually explains what this installer does before the user
+    # commits to anything, instead of dropping them straight into Destination Select with no
+    # context (or the generic, unbranded default Installer.app shows when this is left out).
+    cp "pkg/welcome.txt" "pkgres/welcome.txt"
     # Populate the Distribution.xml template and copy it. It only has one template variable so far.
     sed "s/{{VERSION}}/$version/g" "pkg/Distribution.xml.template" > "pkg/Distribution.xml"
 fi

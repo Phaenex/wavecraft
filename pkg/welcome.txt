@@ -1,0 +1,13 @@
+Welcome to Wavecraft
+
+Wavecraft is a free, open-source per-app audio mixer for macOS — per-app volume, 10-band EQ, and per-app output routing, the things paid apps like SoundSource charge for.
+
+This installer will set up:
+
+  • Wavecraft, the menu bar app you'll actually use
+  • A virtual audio device that sits between your apps and your speakers, which is how per-app control is possible at all on macOS
+  • A small background helper the app uses to talk to that device
+
+You'll need to enter your admin password, and Wavecraft will restart your Mac's audio for a moment near the end of installation — any audio playing at that point may briefly cut out.
+
+Once it's done, Wavecraft opens on its own and walks you through the couple of permissions it needs, and exactly what each one is for.
