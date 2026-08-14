@@ -40,7 +40,7 @@ if [[ $(id -u) -eq 0 ]]; then
   echo ""
 fi
 
-echo "${bold}You are about to uninstall Background Music.${normal}"
+echo "${bold}You are about to uninstall Wavecraft.${normal}"
 echo "Please pause all audio before continuing."
 echo ""
 read -p "Continue (y/N)? " user_prompt
@@ -53,7 +53,7 @@ if [ "$user_prompt" == "y" ] || [ "$user_prompt" == "Y" ]; then
     # Running from the source directory.
     bash "BGMApp/BGMApp/_uninstall-non-interactive.sh"
   elif [ -f "_uninstall-non-interactive.sh" ]; then
-    # Probably running from Background Music.app/Contents/Resources.
+    # Probably running from Wavecraft.app/Contents/Resources.
     bash "_uninstall-non-interactive.sh"
   else
     echo "${bold}ERROR: Could not find _uninstall-non-interactive.sh${normal}" >&2

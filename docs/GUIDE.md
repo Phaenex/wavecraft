@@ -78,9 +78,9 @@ playing audio, and unpause it when that audio stops.
 ## Recording system audio
 
 With Wavecraft running, open **QuickTime Player > File > New Audio Recording**, click the dropdown
-next to the record button, and select **Wavecraft** (shown internally as "Background Music") as the
-input device. To record a microphone at the same time, create an aggregate device combining your
-mic with the Wavecraft device in **Audio MIDI Setup** (**/Applications/Utilities**).
+next to the record button, and select **Wavecraft** as the input device. To record a microphone at
+the same time, create an aggregate device combining your mic with the Wavecraft device in **Audio
+MIDI Setup** (**/Applications/Utilities**).
 
 ## Keyboard shortcuts
 
@@ -149,19 +149,18 @@ you'll have two nearly-identical icons in your menu bar if that one's also showi
 
 ## Launch at startup
 
-Not built into the app — add `Wavecraft.app` (installed as `Background Music.app` in
-`/Applications`) to **System Settings > General > Login Items**.
+Not built into the app — add `Wavecraft.app` (in `/Applications`) to **System Settings > General >
+Login Items**.
 
 ## AppleScript
 
-Wavecraft is scriptable — open **Script Editor** and target "Background Music" (its underlying
-app/process name; see CLAUDE.md's Icons section for why the display name and process name differ).
+Wavecraft is scriptable — open **Script Editor** and target "Wavecraft".
 Each running app exposes `volume`, `pan`, `EQ band gains` (a list of 10 numbers, lowest frequency
 first), and `output devices` (a list of output device objects, empty for no override — set more
 than one to play that app's audio through all of them at once):
 
 ```applescript
-tell application "Background Music"
+tell application "Wavecraft"
     set volume of application "Music" to 50
     set EQ band gains of application "Music" to {0, 0, 0, 0, 0, 3, 3, 0, 0, 0}
     set output devices of application "Music" to {first output device whose name is "AirPods"}

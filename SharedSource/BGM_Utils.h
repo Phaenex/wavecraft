@@ -174,7 +174,7 @@ namespace BGM_Utils
     // If function throws an exception, log an error and continue.
     //
     // Fails/stops debug builds. It's likely that if we log an error for an exception in release
-    // builds, even if it's expected (i.e. not a bug in Background Music), we'd want to know if
+    // builds, even if it's expected (i.e. not a bug in Wavecraft), we'd want to know if
     // it gets thrown during testing/debugging.
     OSStatus LogAndSwallowExceptions(const char* __nullable fileName,
                                      int lineNumber,

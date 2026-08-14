@@ -50,7 +50,7 @@ static NSInteger const kAboutPanelMenuItemTag  = 4;
     // The menu item you press to open BGMApp's main menu.
     WCStatusBarItem* statusBarItem;
 
-    // The About Background Music window
+    // The About Wavecraft window
     WCAboutPanel* aboutPanel;
 
     // Delay preferences
@@ -117,7 +117,7 @@ outputRoutingController:(WCAppOutputRoutingController*)inOutputRoutingController
         [volumeIconMenuItem setTarget:self];
         [volumeIconMenuItem setAction:@selector(useVolumeStatusBarIcon)];
 
-        // Set up the "About Background Music" menu item
+        // Set up the "About Wavecraft" menu item
         NSMenuItem* aboutMenuItem = [prefsMenu itemWithTag:kAboutPanelMenuItemTag];
         [aboutMenuItem setTarget:aboutPanel];
         [aboutMenuItem setAction:@selector(show)];

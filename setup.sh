@@ -29,10 +29,10 @@ else
     OK=0
 fi
 
-if system_profiler SPAudioDataType 2>/dev/null | grep -qi "background music"; then
-    pass "coreaudiod sees the Background Music device"
+if system_profiler SPAudioDataType 2>/dev/null | grep -qi "wavecraft"; then
+    pass "coreaudiod sees the Wavecraft device"
 else
-    fail "coreaudiod does not list a Background Music device"
+    fail "coreaudiod does not list a Wavecraft device"
     OK=0
 fi
 
@@ -43,7 +43,7 @@ else
     OK=0
 fi
 
-if [ -d "/Applications/Background Music.app" ]; then
+if [ -d "/Applications/Wavecraft.app" ]; then
     pass "App installed to /Applications"
 else
     fail "App not found in /Applications"
@@ -53,13 +53,13 @@ fi
 echo
 if [ "$OK" -eq 1 ]; then
     bold "All checks passed. Two things still need you:"
-    echo "  1. Launch it:  open -a 'Background Music'"
+    echo "  1. Launch it:  open -a 'Wavecraft'"
     echo "  2. First run will ask for Microphone permission in System Settings —"
     echo "     approve it. It's not actually listening to your mic; macOS just"
     echo "     classifies the virtual input device that way."
-    echo "  3. Set 'Background Music' as your output device (menu bar icon, or"
+    echo "  3. Set 'Wavecraft' as your output device (menu bar icon, or"
     echo "     System Settings > Sound > Output), then check that per-app"
-    echo "     sliders in the Background Music menu actually move real volume."
+    echo "     sliders in the Wavecraft menu actually move real volume."
 else
     bold "Something didn't install cleanly — see the ✗ lines above."
     echo "Check build_and_install.log in this directory for details."

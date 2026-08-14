@@ -126,7 +126,7 @@
     connectionRetries = retries;
 
     // Create the WKWebView we'll use to connect to GPMDP with WebSockets. Using a WKWebView means
-    // Background Music uses a bit more memory while connected to GPMDP, around 15 MB for me, but
+    // Wavecraft uses a bit more memory while connected to GPMDP, around 15 MB for me, but
     // saves us having to complicate the build process to add a dependency on a proper library.
     [self createWebView];
 

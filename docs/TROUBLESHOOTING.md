@@ -69,7 +69,7 @@ Don't trust "the script exited 0" alone. Check all four signs of a real install:
 ls "/Library/Audio/Plug-Ins/HAL/" | grep -i background          # driver file present
 system_profiler SPAudioDataType | grep -i "background music"    # coreaudiod actually loaded it
 launchctl print system/com.bearisdriving.BGM.XPCHelper | grep "state = running"  # NOT `launchctl list` -- see below
-ls "/Applications/Background Music.app"                          # app installed
+ls "/Applications/Wavecraft.app"                          # app installed
 ```
 
 **`launchctl list` (no `sudo`) cannot see root-owned system `LaunchDaemon`s** — it only shows the
@@ -85,8 +85,8 @@ The installed app in `/Applications` is a copy, not a symlink — rebuilding in 
 it. After changing icon assets:
 
 ```bash
-rsync -a --delete "$(xcodebuild -workspace BGM.xcworkspace -scheme 'Background Music' -configuration Release -showBuildSettings | grep -m1 'BUILT_PRODUCTS_DIR' | awk '{print $3}')/Background Music.app/" "/Applications/Background Music.app/"
-/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -f "/Applications/Background Music.app"
+rsync -a --delete "$(xcodebuild -workspace BGM.xcworkspace -scheme 'Wavecraft' -configuration Release -showBuildSettings | grep -m1 'BUILT_PRODUCTS_DIR' | awk '{print $3}')/Wavecraft.app/" "/Applications/Wavecraft.app/"
+/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -f "/Applications/Wavecraft.app"
 ```
 
 This doesn't need `sudo` — `build_and_install.sh` already `chown`s the installed app to your user.

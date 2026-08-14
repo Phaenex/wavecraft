@@ -177,7 +177,7 @@ NSString* const kAudioSystemSettingsPlist =
         if ([uid isEqualToString:@kBGMDeviceUID] ||
             [uid isEqualToString:@kBGMDeviceUID_UISounds] ||
             [uid isEqualToString:@kBGMNullDeviceUID]) {
-            // This is one of the Background Music devices, so look for a preferred device saved
+            // This is one of the Wavecraft devices, so look for a preferred device saved
             // from a previous run of BGMApp and add it instead.
             //
             // BGMApp has to set BGMDevice, and often also the Null Device for a short time, as the

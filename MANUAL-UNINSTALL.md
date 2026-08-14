@@ -2,7 +2,7 @@
 
 # Manual Uninstall
 
-- Delete `Background Music.app` from `/Applications`.
+- Delete `Wavecraft.app` from `/Applications`.
 - Delete `Background Music Device.driver` from `/Library/Audio/Plug-Ins/HAL`.
 - Pause apps that are playing audio, if you can.
 - Restart `coreaudiod`:<br>
@@ -22,7 +22,7 @@
   
 ## Troubleshooting
 
-If you still have the Background Music audio device, try using `Terminal.app` to make sure you've deleted its files:
+If you still have the Wavecraft audio device, try using `Terminal.app` to make sure you've deleted its files:
 
 ```shell
 sudo ls /Library/Audio/Plug-Ins/HAL
@@ -39,7 +39,7 @@ open an issue. Include the output of `sudo ls /Library/Audio/Plug-Ins/HAL`.
 
 ## Optional
 
-- Delete `BGMXPCHelper.xpc` from `/usr/local/libexec` or possibly `/Library/Application Support/Background Music`.
+- Delete `BGMXPCHelper.xpc` from `/usr/local/libexec` or possibly `/Library/Application Support/Wavecraft` (or, for an install from before 2026-08-13, `/Library/Application Support/Background Music`).
 - Unregister BGMXPCHelper.
   - If you're using OS X 10.11 or later:
 

@@ -24,12 +24,11 @@
 # Copyright © 2023 modue sp. z o.o.
 # Copyright © 2026 Wavecraft contributors
 #
-# Builds Wavecraft (still "Background Music" internally -- see CLAUDE.md's Icons section) and
-# packages it into a real .pkg installer, with the normal Installer.app GUI (Introduction, license,
-# progress, and a background image) rather than a Terminal script. This is the primary way to
-# distribute a prebuilt release; package_release.sh's zip is the lighter, no-GUI-installer
-# alternative for people who'd rather see exactly what's happening. Call this script with -d to use
-# the debug build configuration.
+# Builds Wavecraft and packages it into a real .pkg installer, with the normal Installer.app GUI
+# (Introduction, license, progress, and a background image) rather than a Terminal script. This is
+# the primary way to distribute a prebuilt release; package_release.sh's zip is the lighter,
+# no-GUI-installer alternative for people who'd rather see exactly what's happening. Call this
+# script with -d to use the debug build configuration.
 #
 # Unsigned by default (see the TODO on code signing below) -- this project doesn't have a paid
 # Apple Developer ID yet, so both the .pkg and the app it installs will show a Gatekeeper warning
@@ -93,7 +92,7 @@ if [[ $packaging_operation == "repackage" ]]; then
     build_status=0
 
     # Set the paths to the bundles in the expanded package that we're repackaging.
-    bgmapp_path="${repackage_dir}/Installer.pkg/Payload/Applications/Background Music.app"
+    bgmapp_path="${repackage_dir}/Installer.pkg/Payload/Applications/Wavecraft.app"
     bgmdriver_path="${repackage_dir}/Installer.pkg/Payload/Library/Audio/Plug-Ins/HAL/Background Music Device.driver"
     bgmxpchelper_path="${repackage_dir}/Installer.pkg/Scripts/BGMXPCHelper.xpc"
 elif [[ $packaging_operation == "make_debug_package" ]]; then
@@ -110,7 +109,7 @@ elif [[ $packaging_operation == "make_debug_package" ]]; then
     build_status=$?
 
     # Set the paths to the build products (i.e. the bundles).
-    bgmapp_path="BGMApp/build/Debug/Background Music.app"
+    bgmapp_path="BGMApp/build/Debug/Wavecraft.app"
     bgmdriver_path="BGMDriver/build/Debug/Background Music Device.driver"
     bgmxpchelper_path="BGMApp/build/Debug/BGMXPCHelper.xpc"
 else
@@ -119,7 +118,7 @@ else
     build_status=$?
 
     # Set the paths to the build products (i.e. the bundles). Note that these are in the archives.
-    bgmapp_path="archives/BGMApp.xcarchive/Products/Applications/Background Music.app"
+    bgmapp_path="archives/BGMApp.xcarchive/Products/Applications/Wavecraft.app"
     bgmdriver_path="archives/BGMDriver.xcarchive/Products/Library/Audio/Plug-Ins/HAL/Background Music Device.driver"
     bgmxpchelper_path="archives/BGMXPCHelper.xcarchive/Products/usr/local/libexec/BGMXPCHelper.xpc"
 fi
@@ -205,9 +204,9 @@ cp -R "$bgmxpchelper_path" "$scripts_dir"
 # Set the file/dir permissions.
 if [[ $packaging_operation != "repackage" ]]; then
     set_permissions "pkgroot"
-    chmod 755 "pkgroot/Applications/Background Music.app/Contents/MacOS/Background Music"
-    chmod 755 "pkgroot/Applications/Background Music.app/Contents/Resources/uninstall.sh"
-    chmod 755 "pkgroot/Applications/Background Music.app/Contents/Resources/_uninstall-non-interactive.sh"
+    chmod 755 "pkgroot/Applications/Wavecraft.app/Contents/MacOS/Wavecraft"
+    chmod 755 "pkgroot/Applications/Wavecraft.app/Contents/Resources/uninstall.sh"
+    chmod 755 "pkgroot/Applications/Wavecraft.app/Contents/Resources/_uninstall-non-interactive.sh"
     chmod 755 "pkgroot/Library/Audio/Plug-Ins/HAL/Background Music Device.driver/Contents/MacOS/Background Music Device"
 
     set_permissions "$scripts_dir"

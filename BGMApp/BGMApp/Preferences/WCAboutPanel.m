@@ -66,12 +66,12 @@ static NSInteger const kContributorsLabelTag = 4;
 }
 
 - (void) initAboutPanel {
-    // Set up the About Background Music window
+    // Set up the About Wavecraft window
     
     NSBundle* bundle = [NSBundle mainBundle];
     
     if (bundle == nil) {
-        NSLog(@"Background Music: WCAboutPanel::initAboutPanel: Could not find main bundle");
+        NSLog(@"Wavecraft: WCAboutPanel::initAboutPanel: Could not find main bundle");
     } else {
         // Version number label
         NSString* __nullable version =
@@ -139,7 +139,7 @@ static NSInteger const kContributorsLabelTag = 4;
 }
 
 - (void) show {
-    DebugMsg("WCAboutPanel::showAboutPanel: Opening \"About Background Music\" panel");
+    DebugMsg("WCAboutPanel::showAboutPanel: Opening \"About Wavecraft\" panel");
     
     // We have to make aboutPanel visible before calling [NSApp activateIgnoringOtherApps:YES]
     // or the app won't be activated the first time (not sure why it only happens the first

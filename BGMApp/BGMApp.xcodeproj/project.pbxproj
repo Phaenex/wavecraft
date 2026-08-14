@@ -1635,7 +1635,7 @@
 				INFOPLIST_FILE = BGMApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.bearisdriving.BGM.App;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Wavecraft;
 				STRIP_STYLE = "non-global";
 			};
 			name = DebugOpt;
@@ -1830,7 +1830,7 @@
 				INFOPLIST_FILE = BGMApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.bearisdriving.BGM.App;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Wavecraft;
 				STRIP_STYLE = "non-global";
 			};
 			name = Debug;
@@ -1861,7 +1861,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				LLVM_LTO = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.bearisdriving.BGM.App;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Wavecraft;
 				STRIP_STYLE = "non-global";
 				WARNING_CFLAGS = (
 					"-Wno-profile-instr-out-of-date",

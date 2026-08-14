@@ -70,7 +70,7 @@ None of this is started. If you want to tackle one, open an issue first so effor
   button, the "this app is routed" indicator in the main menu, the three-way routing error message
   split (does each of the three messages actually show for its intended cause?), automatic recovery
   when a routed device is unplugged mid-route, and the new AppleScript EQ/output-device properties
-  (`osascript -e 'tell application "Background Music" to get EQ band gains of application 1'` and
+  (`osascript -e 'tell application "Wavecraft" to get EQ band gains of application 1'` and
   similar — none of this has been run against the compiled `.sdef`, only checked to compile).
 - **Verify `CATapMuted` actually mutes the routed app's normal output**, not just that the tap
   receives audio (see docs/PROCESS-TAP-ROUTING.md's Phase 1 results — this was the one thing left

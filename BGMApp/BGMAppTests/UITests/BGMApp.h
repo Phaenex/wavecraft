@@ -2,7 +2,7 @@
  * BGMApp.h
  *
  * Generated with
- * sdef "/Applications/Background Music.app" | sdp -fh --basename BGMApp
+ * sdef "/Applications/Wavecraft.app" | sdp -fh --basename BGMApp
  */
 
 #import <AppKit/AppKit.h>
@@ -14,7 +14,7 @@
 
 
 /*
- * Background Music
+ * Wavecraft
  */
 
 // A hardware device that can play audio

@@ -554,7 +554,7 @@ static OSStatus BGMDeviceListenerProc(AudioObjectID inObjectID,
                 DebugMsg("WCAudioDeviceManager: WARNING! Got kAudioDeviceProcessorOverload "
                          "notification for device %u",
                          inDeviceID);
-                LogWarning("Background Music: CPU overload reported");
+                LogWarning("Wavecraft: CPU overload reported");
                 break;
 
             // These cases are dispatched to avoid causing deadlocks by triggering one of the

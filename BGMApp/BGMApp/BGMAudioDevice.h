@@ -66,8 +66,8 @@ public:
     bool               IsBGMDevice() const { return IsBGMDevice(false); };
     /*!
      @return True if this device is either the main instance of BGMDevice (the device named
-             "Background Music") or the instance used for UI sounds (the device named "Background
-             Music (UI Sounds)").
+             "Wavecraft") or the instance used for UI sounds (the device named "Wavecraft (UI
+             Sounds)").
      @throws CAException If the HAL returns an error when queried.
      */
     bool               IsBGMDeviceInstance() const { return IsBGMDevice(true); };

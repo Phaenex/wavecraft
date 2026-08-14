@@ -84,7 +84,7 @@ static CGFloat const kVolumeIconAdditionalVerticalPadding = 0.075;
             statusBarItem.button.target = self;
             statusBarItem.button.action = @selector(statusBarButtonClicked:);
 
-            // Set the accessibility label to "Background Music". (We intentionally don't set a
+            // Set the accessibility label to "Wavecraft". (We intentionally don't set a
             // title or a tooltip.)
             statusBarItem.button.accessibilityLabel =
                     [NSRunningApplication currentApplication].localizedName;

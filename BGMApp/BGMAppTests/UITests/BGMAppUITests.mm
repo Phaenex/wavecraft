@@ -74,7 +74,7 @@
     // would fail to start because of a bug in Xcode.
     app.launchArguments = @[ @"--no-persistent-data", @"--show-dock-icon" ];
 
-    // Make the "Background Music wants to use the microphone" dialog appear every time so the test
+    // Make the "Wavecraft wants to use the microphone" dialog appear every time so the test
     // doesn't need logic to handle both cases.
     // TODO: Commented out until acceptMicrophoneAuthorizationDialog work again. See below.
     // if (@available(macOS 10.15.4, *)) {
@@ -104,7 +104,7 @@
     XCTAssert([icon waitForExistenceWithTimeout:20.0]);
 }
 
-// Clicks the OK button in the "Background Music wants to use the microphone" dialog.
+// Clicks the OK button in the "Wavecraft wants to use the microphone" dialog.
 - (void) acceptMicrophoneAuthorizationDialog {
     XCUIApplication* unc =
         [[XCUIApplication alloc] initWithBundleIdentifier:@"com.apple.UserNotificationCenter"];
@@ -131,7 +131,7 @@
         [icon click];
     }
 
-    [menuItems[@"Quit Background Music"] click];
+    [menuItems[@"Quit Wavecraft"] click];
 
     // BGMApp should quit.
     XCTAssertTrue([app waitForState:XCUIApplicationStateNotRunning timeout:10.0]);
@@ -146,7 +146,7 @@
     // settings we expect.
     WCAppApplication* sbApp = [SBApplication applicationWithBundleIdentifier:@kBGMAppBundleID];
 
-    // Get macOS to show the "'Xcode' wants to control 'Background Music'" dialog before we start
+    // Get macOS to show the "'Xcode' wants to control 'Wavecraft'" dialog before we start
     // the test so it doesn't interrupt it.
     [[sbApp selectedOutputDevice] name];
 

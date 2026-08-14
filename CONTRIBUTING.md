@@ -13,9 +13,10 @@ For bug reports about `build_and_install.sh`, include `build_and_install.log` (s
 directory as the script).
 
 It can help to include logs for bugs in Wavecraft itself. They go to syslog by default, so
-Console.app can read them (search for "BGM" or "Background Music" — the underlying targets keep
-their original names; only this fork's branding and docs changed). Release builds only log errors
-and warnings by default. For more detail, install a debug build with `./build_and_install.sh -d`
+Console.app can read them (search for "Wavecraft" or "BGM" — the bundle identifier and some
+internal constants still start with `BGM`, so either term can turn up relevant lines). Release
+builds only log errors and warnings by default. For more detail, install a debug build with
+`./build_and_install.sh -d`
 and include those logs instead.
 
 If you're planning to fix or implement something yourself, say so in the issue first so we can

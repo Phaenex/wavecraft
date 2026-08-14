@@ -23,7 +23,7 @@
 //  instance of that device, which handles UI-related audio. In most cases, users of this class
 //  should be able to think of it as representing a single device.
 //
-//  BGMDevice is the device that appears as "Background Music" in programs that list the output
+//  BGMDevice is the device that appears as "Wavecraft" in programs that list the output
 //  devices, e.g. System Preferences. It receives the system's audio, processes it and sends it to
 //  BGMApp by publishing an input stream. BGMApp then plays the audio on the user's real output
 //  device.

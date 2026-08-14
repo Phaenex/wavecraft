@@ -170,7 +170,7 @@
     // use notifications instead of an NSAlert. But it probably wouldn't happen often enough to be
     // worth the effort.
     NSAlert* alert = [NSAlert new];
-    alert.messageText = @"Background Music needs permission to control GPMDP.";
+    alert.messageText = @"Wavecraft needs permission to control GPMDP.";
     alert.informativeText = @"It should be displaying a four-digit code for you to enter.";
     [alert addButtonWithTitle:@"OK"];
     [alert addButtonWithTitle:@"Cancel"];
@@ -255,8 +255,8 @@
     NSString* errorMsg = @"Google Play Music Desktop Player Version Not Supported";
     NSString* troubleshootingMsg =
             [NSString stringWithFormat:
-             @"GPMDP reported its API version as \"%@\", which Background Music doesn't support "
-             "yet. Background Music might not be able to control GPMDP properly.\n\n"
+             @"GPMDP reported its API version as \"%@\", which Wavecraft doesn't support "
+             "yet. Wavecraft might not be able to control GPMDP properly.\n\n"
              "Feel free to open an issue about this at %s",
              reportedAPIVersion,
              kBGMIssueTrackerURL];

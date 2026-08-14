@@ -125,7 +125,7 @@ UInt64 StartBGMAppPlayThroughSync(bool inIsForUISoundsDevice)
         //
         // TODO: It's possible that the output device is just taking a really long time to start. Is there some way we could check for
         //       that, rather than timing out?
-        NSLog(@"BGM_XPCHelper::StartBGMAppPlayThroughSync: Timed out waiting for the Background Music app to start the output device");
+        NSLog(@"BGM_XPCHelper::StartBGMAppPlayThroughSync: Timed out waiting for the Wavecraft app to start the output device");
         
         theAnswer = kBGMXPC_Timeout;
     }

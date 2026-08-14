@@ -169,7 +169,7 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
         // On macOS 10.14+ we need to get the user's permission to use input devices before we can
         // use BGMDevice for playthrough (see WCPlayThrough), so we wait until they've given it
         // before making BGMDevice the default device. This way, if the user is playing audio when
-        // they open Background Music, we won't interrupt it while we're waiting for them to click
+        // they open Wavecraft, we won't interrupt it while we're waiting for them to click
         // OK.
         if (showedSetupWindow) {
             // The Setup window's own Microphone row already explains this and has a button that
@@ -352,13 +352,13 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
     return YES;
 }
 
-// Sets the "Background Music" virtual audio device (BGMDevice) as the user's default audio device.
+// Sets the "Wavecraft" virtual audio device (BGMDevice) as the user's default audio device.
 - (void) setBGMDeviceAsDefault {
     NSError* error = [audioDevices setBGMDeviceAsOSDefault];
 
     if (error) {
         [self showSetDeviceAsDefaultError:error
-                                  message:@"Could not set the Background Music device as your"
+                                  message:@"Could not set the Wavecraft device as your"
                                            "default audio device."
                           informativeText:@"You might be able to change it yourself."];
     }
@@ -523,7 +523,7 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
     //
     // TODO: Check whether the driver files are in /Library/Audio/Plug-Ins/HAL? Might even want to
     //       offer to install them if not.
-    [self showErrorMessage:@"Could not find the Background Music virtual audio device."
+    [self showErrorMessage:@"Could not find the Wavecraft virtual audio device."
            informativeText:@"Make sure you've installed Background Music Device.driver to "
                             "/Library/Audio/Plug-Ins/HAL and restarted coreaudiod (e.g. \"sudo "
                             "killall coreaudiod\")."
@@ -573,7 +573,7 @@ static NSString* const kOptShowDockIcon      = @"--show-dock-icon";
             [alert setInformativeText:[NSString stringWithFormat:@"%s%s%@ (%lu)",
                                        "Make sure you have BGMXPCHelper installed. There are instructions in the "
                                        "README.md file.\n\n"
-                                       "Background Music might still work, but it won't work as well as it could.",
+                                       "Wavecraft might still work, but it won't work as well as it could.",
                                        "\n\nDetails:\n",
                                        [error localizedDescription],
                                        [error code]]];

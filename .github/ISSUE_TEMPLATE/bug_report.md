@@ -33,7 +33,7 @@ assignees: ''
 **Debug logs**
 > If you think we might not be able to reproduce the bug on our own machines, it can help to
 > install a debug build (`./build_and_install.sh -d`) and include its logs from Console.app
-> (search for "BGM" or "Background Music"). This takes a little effort, so feel free to leave it
+> (search for "Wavecraft" or "BGM"). This takes a little effort, so feel free to leave it
 > out at first.
 
 [Debug logs attached here]
@@ -51,5 +51,5 @@ assignees: ''
 >    or output-routing features this fork adds), it may already be a known upstream issue — check
 >    [upstream Background Music's issues](https://github.com/kyleneideck/BackgroundMusic/issues)
 >    too. Known upstream workarounds:
->     - Background Music currently only supports audio devices with two channels. Bluetooth devices often only have one.
+>     - Wavecraft currently only supports audio devices with two channels. Bluetooth devices often only have one.
 >     - Volumes having no effect for certain apps: Microsoft Teams ([workaround](https://github.com/kyleneideck/BackgroundMusic/issues/268#issuecomment-604977210)), Zoom ([workaround](https://github.com/kyleneideck/BackgroundMusic/issues/396#issuecomment-741992157)), Discord ([workaround](https://github.com/kyleneideck/BackgroundMusic/issues/210#issuecomment-507048957), [see also](https://github.com/kyleneideck/BackgroundMusic/issues/267#issuecomment-617327850)), Chrome (sometimes)

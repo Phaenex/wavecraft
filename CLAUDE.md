@@ -32,10 +32,10 @@ driver. `BGM.xcworkspace` builds all three.
 ```bash
 xcodebuild -workspace BGM.xcworkspace -scheme "Background Music Device" -configuration Release -destination 'platform=macOS' build
 xcodebuild -workspace BGM.xcworkspace -scheme "BGMXPCHelper" -configuration Release -destination 'platform=macOS' build
-xcodebuild -workspace BGM.xcworkspace -scheme "Background Music" -configuration Release -destination 'platform=macOS' build
+xcodebuild -workspace BGM.xcworkspace -scheme "Wavecraft" -configuration Release -destination 'platform=macOS' build
 
 # Unit tests (no sudo needed, safe to run anytime):
-xcodebuild -workspace BGM.xcworkspace -scheme "Background Music" -configuration Debug -destination 'platform=macOS' -only-testing:BGMAppUnitTests test
+xcodebuild -workspace BGM.xcworkspace -scheme "Wavecraft" -configuration Debug -destination 'platform=macOS' -only-testing:BGMAppUnitTests test
 xcodebuild -workspace BGM.xcworkspace -scheme "Background Music Device" -configuration Debug -destination 'platform=macOS' -only-testing:BGMDriverTests test
 
 # Icon assets (measures real pixel dimensions, doesn't just trust filenames):
@@ -81,16 +81,18 @@ DerivedData isn't installed until this script (or a manual copy) puts it in plac
 ```bash
 system_profiler SPAudioDataType | grep -A5 "Wavecraft"
 launchctl print system/com.bearisdriving.BGM.XPCHelper | grep "state = running"
-ps aux | grep "Background Music" | grep -v grep
+ps aux | grep "Wavecraft" | grep -v grep
 ```
 
-Two different names here on purpose, not a typo: the CoreAudio device's own display name
-(`kDeviceName` in `BGM_Device.h`) was renamed to "Wavecraft", but the `.app` bundle, its
-executable, `CFBundleName`, and the bundle identifier were all deliberately left as "Background
-Music"/`com.bearisdriving.BGM.*` — see `CFBundleDisplayName`'s addition to `Info.plist` and
-docs/LESSONS.md for why. So `ps` (which reports the real executable name) still needs to match
-"Background Music", while `system_profiler` (which reports the device's own display string) now
-needs "Wavecraft".
+As of 2026-08-13 (see CHANGELOG.md's "Changed" entry), both of these genuinely say "Wavecraft" --
+the `.app` bundle, its executable, and `CFBundleName` were renamed from "Background Music" to
+"Wavecraft" via the app target's `PRODUCT_NAME`, matching the CoreAudio device's own display name
+(`kDeviceName` in `WC_Device.h`), renamed earlier the same session. The bundle identifier
+(`com.bearisdriving.BGM.*`) and launchd/XPC service labels stayed unchanged either way -- see
+docs/LESSONS.md for the reasoning. `ps`/`system_profiler` needing the *same* string now is new;
+before this rename they intentionally needed two different ones, which is why this note used to
+warn about that -- if you're reading an old note or a stale doc still saying that, it's talking
+about the state before 2026-08-13.
 
 The device should show up in `SPAudioDataType`, the XPC helper should report `state = running`,
 and the menu bar app should be running. **Don't use plain `launchctl list` for the XPC helper** —

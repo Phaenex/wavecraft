@@ -163,9 +163,9 @@ private:
     static pthread_once_t       sStaticInitializer;
     static WC_NullDevice*      sInstance;
 
-    #define kNullDeviceName     "Background Music Null Device"
+    #define kNullDeviceName     "Wavecraft Null Device"
     #define kNullDeviceManufacturerName \
-                                "Background Music contributors"
+                                "Wavecraft contributors"
 
     CAMutex                     mStateMutex;
     CAMutex                     mIOMutex;

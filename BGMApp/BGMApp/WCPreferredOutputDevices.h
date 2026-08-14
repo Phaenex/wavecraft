@@ -20,7 +20,7 @@
 //  Copyright © 2018 Kyle Neideck
 //
 //  Tries to change BGMApp's output device when the user plugs in or unplugs an audio device, in the
-//  same way macOS would change its default device if Background Music wasn't running.
+//  same way macOS would change its default device if Wavecraft wasn't running.
 //
 //  For example, if you plug in some USB headphones, make them your default device and then unplug
 //  them, macOS will change its default device to the previous default device. Then, if you plug

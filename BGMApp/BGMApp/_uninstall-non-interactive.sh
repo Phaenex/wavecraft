@@ -38,18 +38,22 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin; export PATH
 bold=$(tput bold)
 normal=$(tput sgr0)
 
-app_path="/Applications/Background Music.app"
+app_path="/Applications/Wavecraft.app"
 driver_path="/Library/Audio/Plug-Ins/HAL/Background Music Device.driver"
 xpc_path1="/usr/local/libexec/BGMXPCHelper.xpc"
-xpc_path2="/Library/Application Support/Background Music/BGMXPCHelper.xpc"
+xpc_path2="/Library/Application Support/Wavecraft/BGMXPCHelper.xpc"
+# The backup install location safe_install_dir.sh uses was itself renamed alongside this app --
+# still checked here (not just the new path above) so an existing install from before that rename
+# still gets fully cleaned up, not just new ones.
+xpc_path2_legacy="/Library/Application Support/Background Music/BGMXPCHelper.xpc"
 
 # Check that files/directories are at most this big before we delete them, just to be safe. Note that the bundles can
 # include debug symbols, e.g. if you use build_and_install.sh, which makes them a lot bigger.
 max_size_mb_for_rm=30
 
-file_paths=("${app_path}" "${driver_path}" "${xpc_path1}" "${xpc_path2}")
+file_paths=("${app_path}" "${driver_path}" "${xpc_path1}" "${xpc_path2}" "${xpc_path2_legacy}")
 
-bgmapp_process_name="Background Music"
+bgmapp_process_name="Wavecraft"
 
 launchd_plist_label="com.bearisdriving.BGM.XPCHelper"
 launchd_plist="/Library/LaunchDaemons/${launchd_plist_label}.plist"
@@ -61,7 +65,7 @@ user_group_name="_BGMXPCHelper"
 # We move files to this temp directory and then move the directory to the user's trash at the end of the script.
 # Unfortunately, this means that if the user tries to use the "put back" feature the files will just go back to the
 # temp directory.
-trash_dir="$(mktemp -d -t UninstalledBackgroundMusicFiles)/"
+trash_dir="$(mktemp -d -t UninstalledWavecraftFiles)/"
 
 # Takes a path to a file or directory and returns false if the file/directory is larger than $max_size_mb_for_rm.
 function size_check {
@@ -76,14 +80,14 @@ if ! sudo true; then
   exit 1
 fi
 
-# Try to kill Background Music.app, in case it's running.
+# Try to kill Wavecraft.app, in case it's running.
 killall "${bgmapp_process_name}" &>/dev/null || true
 
 # TODO: Use
 #         mdfind kMDItemCFBundleIdentifier = "com.bearisdriving.BGM.App"
-#       to offer alternatives if Background Music.app isn't installed to /Applications. Or we could open it with
+#       to offer alternatives if Wavecraft.app isn't installed to /Applications. Or we could open it with
 #         open -b "com.bearisdriving.BGM.App" -- delete-yourself
-#       and have Background Music.app delete itself and close when it gets the "delete-yourself" argument. Though
+#       and have Wavecraft.app delete itself and close when it gets the "delete-yourself" argument. Though
 #       that wouldn't be backwards compatible.
 
 # Remove the files defined in file_paths
@@ -98,7 +102,7 @@ for path in "${file_paths[@]}"; do
   fi
 done
 
-echo "Removing Background Music launchd service."
+echo "Removing Wavecraft launchd service."
 sudo launchctl list | grep "${launchd_plist_label}" >/dev/null && \
   (sudo launchctl bootout system "${launchd_plist}" &>/dev/null || \
     # Try older versions of the command in case the user has an old version of launchctl.
@@ -106,24 +110,24 @@ sudo launchctl list | grep "${launchd_plist_label}" >/dev/null && \
     sudo launchctl unload "${launchd_plist}" >/dev/null) || \
   echo "  Service does not exist."
 
-echo "Removing Background Music launchd service configuration file."
+echo "Removing Wavecraft launchd service configuration file."
 if [ -e "${launchd_plist}" ]; then
   sudo mv -f "${launchd_plist}" "${trash_dir}"
 fi
 
 # Be paranoid about user_group_name because we really don't want to delete every user account.
 if ! [[ -z ${user_group_name} ]] && [[ "${user_group_name}" != "" ]]; then
-  echo "Removing Background Music user."
+  echo "Removing Wavecraft user."
   dscl . -read /Users/"${user_group_name}" &>/dev/null && \
     sudo dscl . -delete /Users/"${user_group_name}" 1>/dev/null || \
     echo "  User does not exist."
 
-  echo "Removing Background Music group."
+  echo "Removing Wavecraft group."
   dscl . -read /Groups/"${user_group_name}" &>/dev/null && \
     sudo dscl . -delete /Groups/"${user_group_name}" 1>/dev/null || \
     echo "  Group does not exist."
 else
-  echo "Warning: could not delete the Background Music user/group due to an internal error in $0." >&2
+  echo "Warning: could not delete the Wavecraft user/group due to an internal error in $0." >&2
 fi
 
 # We're done removing files, so now actually move trash_dir into the trash. And if that fails, just delete it normally.

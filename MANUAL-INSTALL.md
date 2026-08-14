@@ -25,7 +25,7 @@
                   INSTALL_PATH="$(BGMApp/BGMXPCHelper/safe_install_dir.sh)" \
                   clean install
   ```
-- Install `Background Music.app` to `/Applications` (or wherever).
+- Install `Wavecraft.app` to `/Applications` (or wherever).
 
   ```shell
   sudo xcodebuild -project BGMApp/BGMApp.xcodeproj \
@@ -46,6 +46,6 @@
   ```shell
   sudo launchctl kickstart -kp system/com.apple.audio.coreaudiod
   ```
-- Run `Background Music.app`.
+- Run `Wavecraft.app`.
 
 

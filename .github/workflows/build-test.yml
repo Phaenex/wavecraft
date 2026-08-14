@@ -45,7 +45,7 @@ jobs:
       - name: Install coreutils for actions/runner/issues/884 workaround.
         # See https://github.com/actions/runner/issues/884#issuecomment-1018851327
         run: brew install coreutils
-      - name: Build and install Background Music.
+      - name: Build and install Wavecraft.
         run: |
           # `sudo` and `tput` expect this to be set.
           export TERM=xterm-256color
@@ -62,15 +62,15 @@ jobs:
       - name: Check the BGM dirs and files were installed.
         run: |
           # These commands fail if the dir/file isn't found.
-          ls -la "/Applications/Background Music.app"
+          ls -la "/Applications/Wavecraft.app"
           ls -la "/Library/Audio/Plug-Ins/HAL/Background Music Device.driver"
           ls -la "/usr/local/libexec/BGMXPCHelper.xpc" \
-            || ls -la "/Library/Application Support/Background Music/BGMXPCHelper.xpc"
+            || ls -la "/Library/Application Support/Wavecraft/BGMXPCHelper.xpc"
           ls -la "/Library/LaunchDaemons/com.bearisdriving.BGM.XPCHelper.plist"
       - name: Close BGMApp (which the install script opened).
         run: >-
-          osascript -e 'tell application "Background Music" to quit'
-          || killall "Background Music"
+          osascript -e 'tell application "Wavecraft" to quit'
+          || killall "Wavecraft"
       - name: Skip the UI tests. (They don't work on GitHub Actions yet.)
         run: BGMApp/BGMAppTests/UITests/skip-ui-tests.py
       - name: Run the tests.
@@ -92,7 +92,7 @@ jobs:
           echo '::endgroup::'
 
           # Grant BGMApp authorization to use input devices.
-          # This is necessary for the UI tests because accepting the "Background Music would like to
+          # This is necessary for the UI tests because accepting the "Wavecraft would like to
           # use the microphone" dialog programmatically isn't reliable.
           # TODO: Commented out because we would need to generate the csreq (codesign signature)
           #       value to match the BGMApp bundle the tests will run against.
@@ -107,14 +107,14 @@ jobs:
           # TODO: Commented out in case it uses too much CPU.
           # log stream --info \
           #   --predicate 'process == "coreaudiod" or
-          #                process == "Background Music" or
+          #                process == "Wavecraft" or
           #                process == "BGMXPCHelper" or
-          #                composedMessage contains[cd] "Background Music" or
+          #                composedMessage contains[cd] "Wavecraft" or
           #                composedMessage contains "BGM"' > app.log &
           xcodebuild \
             -quiet \
             -workspace BGM.xcworkspace \
-            -scheme 'Background Music' \
+            -scheme 'Wavecraft' \
             test
           echo '::endgroup::'
       - name: Upload the test results.
@@ -127,17 +127,17 @@ jobs:
             app.log
             /Users/runner/Library/Logs/CrashReporter/*
             /Users/runner/Library/Logs/DiagnosticReports/*
-      - name: Uninstall Background Music.
+      - name: Uninstall Wavecraft.
         run: |
           # `tput` expects this to be set.
           export TERM=xterm-256color
           genv --default-signal=PIPE yes | sudo ./uninstall.sh
       - name: Check the BGM dirs and files were removed.
         run: |
-          if ls -la "/Applications/Background Music.app"; then exit 1; fi
+          if ls -la "/Applications/Wavecraft.app"; then exit 1; fi
           if ls -la "/Library/Audio/Plug-Ins/HAL/Background Music Device.driver"; then exit 1; fi
           if ls -la "/usr/local/libexec/BGMXPCHelper.xpc"; then exit 1; fi
-          if ls -la "/Library/Application Support/Background Music/BGMXPCHelper.xpc"; then
+          if ls -la "/Library/Application Support/Wavecraft/BGMXPCHelper.xpc"; then
             exit 1
           fi
           if ls -la "/Library/LaunchDaemons/com.bearisdriving.BGM.XPCHelper.plist"; then exit 1; fi

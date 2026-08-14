@@ -31,7 +31,7 @@
 # local build is -- macOS marks anything downloaded from the internet with a "quarantine" flag, and
 # Gatekeeper checks that flag before letting it run. Since this project doesn't have an Apple
 # Developer ID to sign and notarize a release (that costs $99/year -- see README.md), you'll likely
-# see a security warning the first time you try to open Background Music.app after this script
+# see a security warning the first time you try to open Wavecraft.app after this script
 # installs it. See README.md's "Installing a prebuilt release" section for exactly what that
 # warning looks like and how to get past it -- it's expected, not a sign anything went wrong.
 #
@@ -61,7 +61,7 @@ error_handler() {
 }
 trap 'error_handler ${LINENO} $? "${BASH_COMMAND}"' ERR
 
-APP_DIR="Background Music.app"
+APP_DIR="Wavecraft.app"
 DRIVER_DIR="Background Music Device.driver"
 XPC_HELPER_DIR="BGMXPCHelper.xpc"
 
@@ -92,9 +92,8 @@ echo "   loads from that one system-owned path, which is why this step needs sud
 echo "   per-user alternative."
 echo " - A small helper service gets registered with launchd, to coordinate between the driver"
 echo "   above and the app below."
-echo " - The Wavecraft app (still shows as \"Background Music\" in Finder/Activity Monitor -- only"
-echo "   this project's own branding changed, not the underlying app/driver names) gets installed"
-echo "   and opened automatically once everything else is in place."
+echo " - The Wavecraft app gets installed and opened automatically once everything else is in"
+echo "   place."
 echo
 echo "This install will place:"
 echo " - ${APP_INSTALL_PATH}/${APP_DIR}"
@@ -166,7 +165,7 @@ sudo chown -R root:wheel "${XPC_HELPER_INSTALL_DIR}/${XPC_HELPER_DIR}"
 
 # Since macOS 14.0, a quarantined launchd daemon (as opposed to a GUI app) just gets silently
 # blocked by Gatekeeper with no dialog to click through -- there's no right-click-Open or System
-# Settings entry for a background daemon the way there is for Background Music.app below. Strip it
+# Settings entry for a background daemon the way there is for Wavecraft.app below. Strip it
 # explicitly, matching pkg/postinstall's handling of this exact bundle.
 sudo xattr -dr com.apple.quarantine "${XPC_HELPER_INSTALL_DIR}/${XPC_HELPER_DIR}" 2>/dev/null || true
 
@@ -223,7 +222,7 @@ fi
 echo "Confirming the virtual audio device is available."
 DEVICE_FOUND=0
 for ATTEMPT in 1 2 3 4 5; do
-    if system_profiler SPAudioDataType 2>/dev/null | grep -q "Background Music"; then
+    if system_profiler SPAudioDataType 2>/dev/null | grep -q "Wavecraft"; then
         DEVICE_FOUND=1
         break
     fi
@@ -237,14 +236,14 @@ if [[ "${DEVICE_FOUND}" -ne 1 ]]; then
          "system_profiler after restarting coreaudiod. The driver and helper are installed, but" \
          "something's preventing coreaudiod from actually loading it." >&2
     echo "Try restarting your Mac, then check with: system_profiler SPAudioDataType | grep -A5" \
-         "'Background Music'" >&2
+         "'Wavecraft'" >&2
     exit 1
 fi
 
 sudo -k
 
 # macOS's cp preserves extended attributes by default, including the "quarantine" flag this
-# script's own downloaded copy of Background Music.app almost certainly has (anything downloaded
+# script's own downloaded copy of Wavecraft.app almost certainly has (anything downloaded
 # via a browser gets one) -- so the installed copy likely carries it too, and Gatekeeper is likely
 # to block this `open` the first time. Don't rely on `open`'s exit status to detect that: its
 # behavior around Gatekeeper blocks isn't consistent across macOS versions (older versions return

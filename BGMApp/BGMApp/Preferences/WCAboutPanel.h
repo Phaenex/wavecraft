@@ -19,7 +19,7 @@
 //
 //  Copyright © 2016 Kyle Neideck
 //
-//  This class manages the "About Background Music" window.
+//  This class manages the "About Wavecraft" window.
 //
 
 // System Includes

@@ -80,7 +80,7 @@ fi
 
 # TODO: Verify the installed files, their permissions, the _BGMXPCHelper user/group, etc.
 
-# Quit any already-running copy of Background Music before restarting coreaudiod. Otherwise it
+# Quit any already-running copy of Wavecraft before restarting coreaudiod. Otherwise it
 # survives the restart still holding CoreAudio object references from before the driver reload --
 # a stale process left running with invalid references can throw an uncaught exception (crashing)
 # the next time something touches one of them, e.g. the user moving a volume slider. This script
@@ -88,8 +88,8 @@ fi
 # their copy of the app, the same way this script later uses launchctl asuser to open it.
 quit_logged_in_user_id="$(id -u "${USER}")"
 if launchctl asuser "${quit_logged_in_user_id}" \
-        osascript -e 'tell application "Background Music" to quit' &>/dev/null; then
-    log "Quit the already-running copy of Background Music before restarting coreaudiod."
+        osascript -e 'tell application "Wavecraft" to quit' &>/dev/null; then
+    log "Quit the already-running copy of Wavecraft before restarting coreaudiod."
 fi
 
 # The extra or-clauses are fallback versions of the command that restarts coreaudiod. Apparently
@@ -106,7 +106,7 @@ if (sudo launchctl kickstart -k system/com.apple.audio.coreaudiod &>/dev/null ||
     ); then
     sleep 2
 else
-    # Distinct from "Background Music device not found" below -- that message covers both "the
+    # Distinct from "Wavecraft device not found" below -- that message covers both "the
     # restart itself failed" and "the restart worked but the driver still isn't loading" as if
     # they were the same problem, which makes debugging a real report harder than it needs to be.
     log "Every method of restarting coreaudiod failed. Continuing anyway, but the audio device" \
@@ -132,22 +132,22 @@ while [[ $retries -gt 0 ]]; do
     fi
 
     # "BGMDevice" is the UID, which is a stable identifier. device_list doesn't include the UIDs, so
-    # we have to check for BGMDevice's name.
-    if [[ "$device_list" =~ "Background Music" ]] || \
+    # we have to check for the device's display name ("Wavecraft") instead.
+    if [[ "$device_list" =~ "Wavecraft" ]] || \
         [[ "$input_device_list" =~ "BGMDevice" ]]; then
-        log "Background Music device is installed and available."
+        log "Wavecraft device is installed and available."
         # Break out of the loop.
         retries=0
     else
         retries=$((retries - 1))
         if [[ $retries -gt 0 ]]; then
-            log "Background Music device not found. Trying again in 3 seconds..."
+            log "Wavecraft device not found. Trying again in 3 seconds..."
             sleep 3
         else
             # TODO: We might be able to use <installation-check> to show error messages in the
             #       installer GUI instead of just logging them. See
             #       <https://developer.apple.com/library/archive/documentation/DeveloperTools/Reference/DistributionDefinitionRef/Chapters/Distribution_XML_Ref.html#//apple_ref/doc/uid/TP40005370-CH100-SW12>.
-            log "Background Music device not found. Installation failed."
+            log "Wavecraft device not found. Installation failed."
             log "Audio devices:"
             log "$device_list"
             log "Audio input devices:"
@@ -170,13 +170,13 @@ while [[ $did_open_bgmapp != "true" ]] && [[ $retries -gt 0 ]]; do
     retries=$((retries - 1))
 
     # Try opening BGMApp using its bundle ID first so the installer can declare it as "relocatable".
-    # That way, if the user moves BGMApp and then installs a newer version of Background Music, the
+    # That way, if the user moves BGMApp and then installs a newer version of Wavecraft, the
     # installer will try to find the old version of BGMApp and put the new one in the same place.
     #
     # Use launchctl to make sure we don't run BGMApp as the installer user.
     #
     # TODO: If they have multiple copies of BGMApp, this might open one of the old ones.
-    log "Opening Background Music.app by bundle ID"
+    log "Opening Wavecraft.app by bundle ID"
     if launchctl asuser "${logged_in_user_id}" \
             open -b com.bearisdriving.BGM.App; then
         did_open_bgmapp=true
@@ -184,22 +184,22 @@ while [[ $did_open_bgmapp != "true" ]] && [[ $retries -gt 0 ]]; do
 
     if [[ $did_open_bgmapp != "true" ]]; then
         dest_volume_no_trailing_slash="${dest_volume/%\//}"
-        log "Opening ${dest_volume_no_trailing_slash}/Applications/Background Music.app"
+        log "Opening ${dest_volume_no_trailing_slash}/Applications/Wavecraft.app"
         if launchctl asuser "${logged_in_user_id}" \
-                open "${dest_volume_no_trailing_slash}/Applications/Background Music.app"; then
+                open "${dest_volume_no_trailing_slash}/Applications/Wavecraft.app"; then
             did_open_bgmapp=true
         fi
     fi
 
     if [[ $did_open_bgmapp != "true" ]]; then
-        log "Opening Background Music.app using AppleScript"
-        if osascript -e 'tell application "Background Music" to activate'; then
+        log "Opening Wavecraft.app using AppleScript"
+        if osascript -e 'tell application "Wavecraft" to activate'; then
             did_open_bgmapp=true
         fi
     fi
 
     if [[ $did_open_bgmapp != "true" ]]; then
-        log "Failed to open Background Music.app. Will retry shortly."
+        log "Failed to open Wavecraft.app. Will retry shortly."
         sleep 1
     fi
 done
@@ -208,13 +208,13 @@ done
 # fail the install -- but do make sure the user actually finds out, rather than seeing Installer's
 # normal "installation was successful" screen with no menu bar icon and no explanation why.
 if [[ $did_open_bgmapp != "true" ]]; then
-    log "Failed to open Background Music.app. Giving up."
+    log "Failed to open Wavecraft.app. Giving up."
 
     if [ "$COMMAND_LINE_INSTALL" != "1" ]; then
         osascript <<EOT || true
             tell application id "com.apple.systemuiserver"
                 display alert "Wavecraft installed, but didn't open automatically" \
-                    message "Everything installed correctly, but Wavecraft couldn't be launched automatically. Open it yourself from the Applications folder -- look for \"Background Music\" (Wavecraft's internal name hasn't changed)." \
+                    message "Everything installed correctly, but Wavecraft couldn't be launched automatically. Open it yourself from the Applications folder." \
                     as warning
             end tell
 EOT

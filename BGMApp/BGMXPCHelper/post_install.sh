@@ -119,13 +119,13 @@ if [[ "$(dscl . -search /Users RecordName ${HELPER_USER})" == "" ]]; then
 
     # Create the group.
     sudo dscl . -create /Groups/${HELPER_USER} PrimaryGroupID ${HELPER_GID}
-    sudo dscl . -create /Groups/${HELPER_USER} RealName "Background Music XPC Helper Group"
+    sudo dscl . -create /Groups/${HELPER_USER} RealName "Wavecraft XPC Helper Group"
     sudo dscl . -create /Groups/${HELPER_USER} Password '*'
 
     # Create the user.
     sudo dscl . -create /Users/${HELPER_USER} UniqueID ${HELPER_UID}
     sudo dscl . -create /Users/${HELPER_USER} PrimaryGroupID ${HELPER_GID}
-    sudo dscl . -create /Users/${HELPER_USER} RealName "Background Music XPC Helper"
+    sudo dscl . -create /Users/${HELPER_USER} RealName "Wavecraft XPC Helper"
     sudo dscl . -create /Users/${HELPER_USER} Password '*'
     sudo dscl . -create /Users/${HELPER_USER} UserShell /usr/bin/false
     sudo dscl . -create /Users/${HELPER_USER} NFSHomeDirectory /var/empty

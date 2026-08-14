@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "1CB8B3351BBA75EF000E2DD1"
-               BuildableName = "Background Music.app"
+               BuildableName = "Wavecraft.app"
                BlueprintName = "Background Music"
                ReferencedContainer = "container:BGMApp.xcodeproj">
             </BuildableReference>
@@ -36,7 +36,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "1CB8B3351BBA75EF000E2DD1"
-            BuildableName = "Background Music.app"
+            BuildableName = "Wavecraft.app"
             BlueprintName = "Background Music"
             ReferencedContainer = "container:BGMApp.xcodeproj">
          </BuildableReference>
@@ -57,7 +57,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "1CB8B3351BBA75EF000E2DD1"
-            BuildableName = "Background Music.app"
+            BuildableName = "Wavecraft.app"
             BlueprintName = "Background Music"
             ReferencedContainer = "container:BGMApp.xcodeproj">
          </BuildableReference>
@@ -105,7 +105,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "1CB8B3351BBA75EF000E2DD1"
-            BuildableName = "Background Music.app"
+            BuildableName = "Wavecraft.app"
             BlueprintName = "Background Music"
             ReferencedContainer = "container:BGMApp.xcodeproj">
          </BuildableReference>
@@ -151,7 +151,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "1CB8B3351BBA75EF000E2DD1"
-            BuildableName = "Background Music.app"
+            BuildableName = "Wavecraft.app"
             BlueprintName = "Background Music"
             ReferencedContainer = "container:BGMApp.xcodeproj">
          </BuildableReference>

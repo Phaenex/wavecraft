@@ -206,7 +206,7 @@
 }
 
 - (BOOL) shouldBeIncludedInMenu:(NSRunningApplication*)app {
-    // Ignore hidden apps and Background Music itself.
+    // Ignore hidden apps and Wavecraft itself.
     // TODO: Would it be better to only show apps that are registered as HAL clients?
     BOOL isHidden = app.activationPolicy != NSApplicationActivationPolicyRegular &&
                     app.activationPolicy != NSApplicationActivationPolicyAccessory;

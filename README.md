@@ -212,11 +212,15 @@ locally-built copy is trusted from the start.
 
 # Run / Configure
 
-Run `Applications > Wavecraft.app` (the built app bundle is still internally named "Background
-Music.app" — none of the underlying Xcode targets, bundle identifiers, or launchd labels were
-renamed, only this fork's own branding and docs). It sets itself as your system's default output
-device on launch and puts an icon in the menu bar — click it for volume/EQ/routing controls per
-app, and it reverts your default output device on quit.
+Run `Applications > Wavecraft.app`. It sets itself as your system's default output device on
+launch and puts an icon in the menu bar — click it for volume/EQ/routing controls per app, and it
+reverts your default output device on quit.
+
+(The underlying Xcode target, bundle identifier, and launchd labels are still named
+`com.bearisdriving.BGM.*`/"Background Music" internally — renaming those would cost every existing
+install its granted Microphone/Accessibility permissions for no user-visible benefit, since nobody
+outside the code ever sees them. Everything you actually see — the app itself, Finder, system
+permission dialogs, the audio device's name in Sound settings — says "Wavecraft".)
 
 Once installed, each app's row in the menu also has EQ sliders and an output-device picker under
 its "show more controls" arrow, alongside the existing volume and pan controls. See

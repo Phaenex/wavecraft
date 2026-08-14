@@ -122,7 +122,7 @@ COREAUDIOD_PLIST="/System/Library/LaunchDaemons/com.apple.audio.coreaudiod.plist
 # TODO: Should (can?) we use xcodebuild to get these from the Xcode project rather than duplicating
 #       them?
 APP_PATH="/Applications"
-APP_DIR="Background Music.app"
+APP_DIR="Wavecraft.app"
 DRIVER_PATH="/Library/Audio/Plug-Ins/HAL"
 DRIVER_DIR="Background Music Device.driver"
 # XPC_HELPER_OUTPUT_PATH is set below because it depends on the system (when installing).
@@ -133,7 +133,7 @@ ARCHIVES_DIR="archives"
 
 GENERAL_ERROR_MSG="Internal script error. Probably a bug in this script."
 BUILD_FAILED_ERROR_MSG="A build command failed. Probably a compilation error."
-BGMAPP_FAILED_TO_START_ERROR_MSG="Background Music (${APP_PATH}/${APP_DIR}) didn't seem to start \
+BGMAPP_FAILED_TO_START_ERROR_MSG="Wavecraft (${APP_PATH}/${APP_DIR}) didn't seem to start \
 up. It might just be taking a while.
 
 If it didn't install correctly, you'll need to open the Sound control panel in System Settings \
@@ -394,7 +394,7 @@ handle_check_xcode_failure() {
     # They need to agree to the Xcode license.
     if [[ $1 -eq ${CHECK_XCODE_ERR_LICENSE_NOT_ACCEPTED} ]]; then
         echo "$(tput setaf 9)ERROR$(tput sgr0): You need to agree to the Xcode license before you" \
-             "can build Background Music. Run this command and then try again:" >&2
+             "can build Wavecraft. Run this command and then try again:" >&2
         echo "    sudo ${XCODEBUILD} -license" >&2
         echo >&2
     fi
@@ -402,7 +402,7 @@ handle_check_xcode_failure() {
     # Xcode version is probably too old.
     if [[ $1 -eq ${CHECK_XCODE_ERR_OLD_VERSION} ]]; then
         echo "$(tput setaf 11)WARNING$(tput sgr0): Your version of Xcode (${XCODE_VERSION}) may" \
-             "not be recent enough to build Background Music. If you have a newer version" \
+             "not be recent enough to build Wavecraft. If you have a newer version" \
              "installed, you can set the Xcode command line tools to use it with" >&2
         echo "    sudo /usr/bin/xcode-select --switch /the/path/to/your/Xcode.app" >&2
         echo >&2
@@ -452,7 +452,7 @@ handle_check_xcode_failure_no_xcode() {
         echo "and then run this installer again." >&2
     else
         echo "$(tput setaf 9)ERROR$(tput sgr0): Unfortunately, Xcode (~9GB) is required to" \
-             "build Background Music, but ${XCODEBUILD} doesn't appear to be usable. If you" \
+             "build Wavecraft, but ${XCODEBUILD} doesn't appear to be usable. If you" \
              "do have Xcode installed, try telling the Xcode command line tools where to find" \
              "it with" >&2
         echo "    sudo /usr/bin/xcode-select --switch /the/path/to/your/Xcode.app" >&2
@@ -509,7 +509,7 @@ log_debug_info() {
     # background.
 
     (disable_error_handling
-        echo "Background Music Build Log" >> ${LOG_FILE}
+        echo "Wavecraft Build Log" >> ${LOG_FILE}
         echo "----" >> ${LOG_FILE}
         echo "Build script args: $*" >> ${LOG_FILE}
         echo "System details:" >> ${LOG_FILE}
@@ -581,9 +581,8 @@ if [[ "${XCODEBUILD_ACTION}" == "install" ]]; then
     echo "   sudo; there's no per-user alternative."
     echo " - A small helper service gets registered with launchd, to coordinate between the"
     echo "   driver above and the app below."
-    echo " - The Wavecraft app (still shows as \"Background Music\" in Finder/Activity Monitor --"
-    echo "   only this project's own branding changed, not the underlying app/driver names) gets"
-    echo "   installed and opened automatically once everything else is in place."
+    echo " - The Wavecraft app gets installed and opened automatically once everything else is"
+    echo "   in place."
     echo
     echo "The first time it opens, it'll explain and then ask for \"Microphone\" access -- that's"
     echo "expected. It doesn't listen to your microphone; macOS just classifies the virtual audio"
@@ -596,10 +595,10 @@ if [[ "${XCODEBUILD_ACTION}" == "install" ]]; then
     echo " - /Library/LaunchDaemons/com.bearisdriving.BGM.XPCHelper.plist"
     echo
 elif [[ "${XCODEBUILD_ACTION}" == "archive" ]]; then
-    echo "$(bold_face Building and archiving Background Music...)"
+    echo "$(bold_face Building and archiving Wavecraft...)"
     echo
 else
-    echo "$(bold_face Building Background Music...)"
+    echo "$(bold_face Building Wavecraft...)"
     echo
 fi
 
@@ -720,7 +719,7 @@ if [[ "${CLEAN}" != "" ]]; then
         clean "Background Music Device"
         clean "PublicUtility"
         clean "BGMXPCHelper"
-        clean "Background Music"
+        clean "Wavecraft"
         # Also delete the build dirs as files/dirs left in them can make the install step fail and,
         # if you're using Xcode 10, the commands above will have cleaned the DerivedData dir but not
         # the build dirs. I think this is a separate Xcode bug. See
@@ -820,7 +819,7 @@ echo "[3/3] ${ACTIONING} $(bold_face ${APP_DIR}) to $(bold_face ${APP_PATH})" \
      | tee -a ${LOG_FILE}
 
 (disable_error_handling
-    ${SUDO} "${XCODEBUILD}" -scheme "Background Music" \
+    ${SUDO} "${XCODEBUILD}" -scheme "Wavecraft" \
                             -configuration ${CONFIGURATION} \
                             -enableAddressSanitizer ${ENABLE_ASAN_APP} \
                             -enableUndefinedBehaviorSanitizer ${ENABLE_UBSAN_APP} \
@@ -837,7 +836,7 @@ echo "[3/3] ${ACTIONING} $(bold_face ${APP_DIR}) to $(bold_face ${APP_PATH})" \
 show_spinner "${BUILD_FAILED_ERROR_MSG}"
 
 if [[ "${XCODEBUILD_ACTION}" == "install" ]]; then
-    # Fix Background Music.app owner/group.
+    # Fix Wavecraft.app owner/group.
     #
     # We have to run xcodebuild as root to install BGMXPCHelper because it installs to directories
     # owned by root. But that means the build directory gets created by root, and since BGMApp uses
@@ -852,20 +851,20 @@ if [[ "${XCODEBUILD_ACTION}" == "install" ]]; then
     # deleted easily after installing.
     sudo chown -R "$(whoami):admin" "BGMApp/build" "BGMDriver/build"
 
-    # Quit any already-running copy of Background Music before restarting coreaudiod. Otherwise it
+    # Quit any already-running copy of Wavecraft before restarting coreaudiod. Otherwise it
     # survives the restart still holding CoreAudio object references from before the driver
     # reload -- `open` below just refocuses an already-running instance instead of starting a
     # fresh one against the newly installed driver, so the stale process keeps going with
     # invalid references and can throw an uncaught exception (crashing) the next time something
     # touches one of them, e.g. the user moving a volume slider.
-    if ps -Ao ucomm= | grep 'Background Music' > /dev/null; then
-        echo "Quitting the already-running copy of Background Music before restarting coreaudiod." \
+    if ps -Ao ucomm= | grep 'Wavecraft' > /dev/null; then
+        echo "Quitting the already-running copy of Wavecraft before restarting coreaudiod." \
              | tee -a ${LOG_FILE}
 
-        osascript -e 'tell application "Background Music" to quit' &>/dev/null
+        osascript -e 'tell application "Wavecraft" to quit' &>/dev/null
 
         for i in 1 2 3 4 5; do
-            if ! (ps -Ao ucomm= | grep 'Background Music' > /dev/null); then
+            if ! (ps -Ao ucomm= | grep 'Wavecraft' > /dev/null); then
                 break
             fi
             sleep 1
@@ -895,7 +894,7 @@ if [[ "${XCODEBUILD_ACTION}" == "install" ]]; then
 
     # Open BGMApp. We have to change the default audio device after restarting coreaudiod and this
     # is the easiest way.
-    echo "Launching Background Music."
+    echo "Launching Wavecraft."
 
     ERROR_MSG="${BGMAPP_FAILED_TO_START_ERROR_MSG}"
     open "${APP_PATH}/${APP_DIR}"
@@ -903,9 +902,9 @@ if [[ "${XCODEBUILD_ACTION}" == "install" ]]; then
     # Ignore script errors from this point.
     disable_error_handling
 
-    # Wait up to 5 seconds for Background Music to start.
+    # Wait up to 5 seconds for Wavecraft to start.
     (trap 'exit 1' TERM
-        while ! (ps -Ao ucomm= | grep 'Background Music' > /dev/null); do
+        while ! (ps -Ao ucomm= | grep 'Wavecraft' > /dev/null); do
             sleep 1
         done) &
     show_spinner "${BGMAPP_FAILED_TO_START_ERROR_MSG}" 5
@@ -929,7 +928,7 @@ elif [[ "${XCODEBUILD_ACTION}" == "archive" ]]; then
     # able to figure out why Xcode isn't doing this automatically.
     cp -r "BGMDriver/build/Release/Background Music Device.driver.dSYM" "$DRIVER_PATH/dSYMs"
     cp -r "BGMApp/build/Release/BGMXPCHelper.xpc.dSYM" "$XPC_HELPER_OUTPUT_PATH/dSYMs"
-    mv "$APP_PATH/Products/Applications/Background Music.app/Contents/MacOS/Background Music.dSYM" \
+    mv "$APP_PATH/Products/Applications/Wavecraft.app/Contents/MacOS/Wavecraft.dSYM" \
        "$APP_PATH/dSYMs"
 fi
 

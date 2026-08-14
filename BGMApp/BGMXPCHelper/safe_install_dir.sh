@@ -145,7 +145,7 @@ fi
 # These are just for readability and to save keystrokes. If you change them, you'll have to change
 # other parts of the code as well.
 INSTALL_DIR="/usr/local/libexec"
-BACKUP_INSTALL_DIR="/Library/Application Support/Background Music"
+BACKUP_INSTALL_DIR="/Library/Application Support/Wavecraft"
 
 # Create the installation directory if it doesn't exist already.
 if [[ ! -e /usr/local ]]; then
@@ -174,7 +174,7 @@ else
     check_dir "/Library/Application Support"
     if [[ ${DIR_IS_SAFE} -ne 1 ]]; then fail; fi
 
-    # Add a "Background Music" directory to /Library/Application Support.
+    # Add a "Wavecraft" directory to /Library/Application Support.
     # (Check whether it exists first so we don't sudo unless we need to.)
     if [[ ! -e "${BACKUP_INSTALL_DIR}" ]]; then
         sudo mkdir "${BACKUP_INSTALL_DIR}"

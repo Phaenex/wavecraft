@@ -20,7 +20,7 @@ not a browser) — not eyeballing the code and assuming it's fine.
       `.app`'s — see CLAUDE.md's "Verifying after install" for why these differ)
 - [ ] `launchctl print system/com.bearisdriving.BGM.XPCHelper | grep "state = running"` — **not**
       plain `launchctl list` (see docs/TROUBLESHOOTING.md for why that gives a false negative)
-- [ ] `ps aux | grep "Background Music"` shows the app running
+- [ ] `ps aux | grep "Wavecraft"` shows the app running
 - [ ] Menu bar shows the new four-bar icon, not the old three-ring one — if it's still the old one,
       the install picked up a stale build; re-run the script
 - [ ] First-run explanation dialog appears *before* the system Microphone prompt, reads clearly,
@@ -161,7 +161,7 @@ Every control, once, confirming it does what the code says it does:
       up in the list and audio actually plays there (see TODO.md's AirPlay entry: the filter code
       has no AirPlay exclusion, confirmed by reading it, but never tested against real hardware)
 - [ ] AppleScript: from Script Editor, get and set `volume`, `pan`, `EQ band gains`, and
-      `output devices` of a running app via `tell application "Background Music"` — confirm each
+      `output devices` of a running app via `tell application "Wavecraft"` — confirm each
       round-trips correctly and that setting `output devices` to a one-item list actually starts a
       route (audible, and visible via the route indicator) the same as using the pop-up would, and
       that setting it to a two-item list plays through both at once
@@ -182,7 +182,7 @@ Every control, once, confirming it does what the code says it does:
 
 Nothing in this fork should have made stock Background Music functionality worse:
 
-- [ ] Recording system audio via QuickTime (select Wavecraft/"Background Music" as input device)
+- [ ] Recording system audio via QuickTime (select Wavecraft as input device)
       still works
 - [ ] An aggregate device combining a real mic + the Wavecraft device still records both
 - [ ] Volume above 50% still clips as documented (confirms nothing changed the known clipping

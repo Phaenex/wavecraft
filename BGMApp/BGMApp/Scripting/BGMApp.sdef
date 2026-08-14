@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE dictionary SYSTEM "file://localhost/System/Library/DTDs/sdef.dtd">
 <dictionary>
-    <suite name="Background Music" code="BGMs" description="Background Music specific classes">
+    <suite name="Wavecraft" code="BGMs" description="Wavecraft specific classes">
              <!-- TODO: Figure out why Script Editor returns output device objects as
-                      «class» "Built-in Output" of application "Background Music"
+                      «class» "Built-in Output" of application "Wavecraft"
                   instead of
-                      device "Built-in Output" of application "Background Music" -->
+                      device "Built-in Output" of application "Wavecraft" -->
         <class name="output device"
                code="aDev"
                description="A hardware device that can play audio"

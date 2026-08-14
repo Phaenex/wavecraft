@@ -12,12 +12,12 @@ the virtual device to the real output device and a few other things. The virtual
 
 ## Summary
 
-From the user's perspective, BGMDevice appears as one input device and one output device, both named "Background Music".
+From the user's perspective, BGMDevice appears as one input device and one output device, both named "Wavecraft".
 They're shown in `System Settings > Sound` along with the real audio devices.
 
 When you start BGMApp, it sets BGMDevice as your system's default output device so the system (i.e. Core Audio) will
 start sending all<sup id="a2">[2](#f2)</sup> your audio data to BGMDriver. BGMDriver plays that audio on BGMDevice's
-input stream, and the user can record it by selecting the Background Music device in QuickTime the same way they'd select
+input stream, and the user can record it by selecting the Wavecraft device in QuickTime the same way they'd select
 a microphone.
 
 So that you can still hear the audio, BGMApp starts listening to BGMDevice's input stream and playing the audio out of
@@ -50,7 +50,7 @@ Nothing](http://www.rossbencina.com/code/real-time-audio-programming-101-time-wa
 
 ## BGMDriver
 
-The BGMDriver project is an audio driver for a virtual audio device named "Background Music", which we use to intercept
+The BGMDriver project is an audio driver for a virtual audio device named "Wavecraft", which we use to intercept
 the audio playing on the user's system. The driver processes the audio data to apply per-app volumes, see if the music
 player is playing, etc. and then writes the audio to BGMDevice's input stream. It's essentially a loopback device with a
 few extra features.
@@ -194,7 +194,7 @@ From [main.m](BGMApp/BGMXPCHelper/main.m):
 
 ### Building
 
-Build and install/run BGMXPCHelper and `Background Music.app` either inside Xcode or with something like
+Build and install/run BGMXPCHelper and `Wavecraft.app` either inside Xcode or with something like
 ```shell
 sudo xcodebuild -project BGMApp/BGMApp.xcodeproj \
                 -target BGMXPCHelper \
@@ -205,14 +205,14 @@ sudo xcodebuild -project BGMApp/BGMApp.xcodeproj \
 sudo chown -R $(whoami):staff BGMApp/build  # Fix build dir ownership
 xcodebuild -project BGMApp/BGMApp.xcodeproj \
            -configuration Debug
-open "BGMApp/build/Debug/Background Music.app"
+open "BGMApp/build/Debug/Wavecraft.app"
 ```
 
 You might have to delete `BGMApp/build` first if you're using `xcodebuild` and run into permissions problems.
 
 To test with Address Sanitizer, you might have to set the environment var `ASAN_OPTIONS=detect_odr_violation=0` to work
 around [Issue #647](https://github.com/google/sanitizers/issues/647). (In Xcode, go `Product` > `Scheme` > `Edit
-Scheme...`, select the Background Music scheme, and add the environment var in Run > Arguments.)
+Scheme...`, select the Wavecraft scheme, and add the environment var in Run > Arguments.)
 
 ## Wavecraft's additions
 

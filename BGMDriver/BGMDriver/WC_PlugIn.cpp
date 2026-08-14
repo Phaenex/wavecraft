@@ -174,7 +174,7 @@ void	WC_PlugIn::GetPropertyData(AudioObjectID inObjectID, pid_t inClientPID, con
 		case kAudioObjectPropertyManufacturer:
 			//	This is the human readable name of the maker of the plug-in.
 			ThrowIf(inDataSize < sizeof(CFStringRef), CAException(kAudioHardwareBadPropertySizeError), "WC_PlugIn::GetPropertyData: not enough space for the return value of kAudioObjectPropertyManufacturer");
-			*reinterpret_cast<CFStringRef*>(outData) = CFSTR("Background Music contributors");
+			*reinterpret_cast<CFStringRef*>(outData) = CFSTR("Wavecraft contributors");
 			outDataSize = sizeof(CFStringRef);
 			break;
 			
