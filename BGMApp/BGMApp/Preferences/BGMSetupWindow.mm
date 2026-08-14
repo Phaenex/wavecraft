@@ -80,8 +80,11 @@
 }
 
 - (void) buildRows {
+    [setupContentView addHeaderWithTitle:@"Welcome to Wavecraft"
+                                 subtitle:@"Setup & Permissions"];
+
     [setupContentView addIntroText:
-        @"Wavecraft needs a couple of things from macOS to work fully, and one common surprise "
+        @"A couple of things from macOS get Wavecraft fully working, and one common surprise "
          "isn’t a permission at all. Here’s what each is for."];
 
     microphoneRow = [setupContentView

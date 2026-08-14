@@ -50,6 +50,11 @@ typedef NS_ENUM(NSInteger, BGMSetupRowStatus) {
 
 @interface BGMSetupWindowContentView : NSView
 
+// The app icon plus a title/subtitle, at the very top of the window -- establishes this as
+// Wavecraft's own window rather than a generic system dialog. Always call this first, before
+// addIntroText:/addRowWithTitle:....
+- (void) addHeaderWithTitle:(NSString*)title subtitle:(NSString*)subtitle;
+
 // A plain wrapping paragraph at the top of the window, above any rows -- for the one-sentence
 // explanation of what this window is, not a row's own explanation of what it needs.
 - (void) addIntroText:(NSString*)text;

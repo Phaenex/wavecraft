@@ -36,6 +36,20 @@ static CGFloat const kInnerRowSpacing = 6;
 // Extra spacing added after a row's last element, on top of kInnerRowSpacing, so rows read as
 // distinct groups instead of one undifferentiated list.
 static CGFloat const kBetweenRowsExtraSpacing = 14;
+static CGFloat const kHeaderIconSize = 56;
+
+// The amber from the app icon's four-bar mark (sampled directly from
+// Images.xcassets/AppIcon.appiconset/appicon_512.png, not eyeballed) -- the one accent color this
+// project already uses consistently everywhere else it has visual identity (the README's
+// comparison table, the "how it works" diagram), reused here rather than introducing a new one.
+// Only applied to this window's own action buttons -- everything else (background, body text)
+// stays on system colors so the window still respects the user's light/dark mode setting.
+static NSColor* BGMBrandAmberColor(void) {
+    return [NSColor colorWithSRGBRed:(232.0 / 255.0)
+                                green:(176.0 / 255.0)
+                                 blue:(75.0 / 255.0)
+                                alpha:1.0];
+}
 
 @implementation BGMSetupWindowRow
 
@@ -84,6 +98,46 @@ static CGFloat const kBetweenRowsExtraSpacing = 14;
     }
 
     return self;
+}
+
+- (void) addHeaderWithTitle:(NSString*)title subtitle:(NSString*)subtitle {
+    CGFloat const rowContentWidth = kContentWidth - (kContentPadding * 2);
+
+    NSImageView* iconView = [NSImageView new];
+    iconView.image = NSApp.applicationIconImage;
+    iconView.translatesAutoresizingMaskIntoConstraints = NO;
+    [NSLayoutConstraint activateConstraints:@[
+        [iconView.widthAnchor constraintEqualToConstant:kHeaderIconSize],
+        [iconView.heightAnchor constraintEqualToConstant:kHeaderIconSize],
+    ]];
+
+    NSTextField* titleLabel = [NSTextField labelWithString:title];
+    titleLabel.font = [NSFont boldSystemFontOfSize:20];
+    titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
+
+    NSTextField* subtitleLabel = [NSTextField labelWithString:subtitle];
+    subtitleLabel.font = [NSFont systemFontOfSize:[NSFont smallSystemFontSize]];
+    subtitleLabel.textColor = [NSColor secondaryLabelColor];
+    subtitleLabel.translatesAutoresizingMaskIntoConstraints = NO;
+
+    NSStackView* titleStack = [NSStackView stackViewWithViews:@[titleLabel, subtitleLabel]];
+    titleStack.orientation = NSUserInterfaceLayoutOrientationVertical;
+    titleStack.alignment = NSLayoutAttributeLeading;
+    titleStack.spacing = 2;
+    titleStack.translatesAutoresizingMaskIntoConstraints = NO;
+
+    NSStackView* headerRow = [NSStackView stackViewWithViews:@[iconView, titleStack]];
+    headerRow.orientation = NSUserInterfaceLayoutOrientationHorizontal;
+    headerRow.alignment = NSLayoutAttributeCenterY;
+    headerRow.spacing = 14;
+    headerRow.translatesAutoresizingMaskIntoConstraints = NO;
+
+    [rowStack addArrangedSubview:headerRow];
+    [NSLayoutConstraint activateConstraints:@[
+        [headerRow.widthAnchor constraintEqualToConstant:rowContentWidth],
+    ]];
+
+    [rowStack setCustomSpacing:(kInnerRowSpacing + kBetweenRowsExtraSpacing) afterView:headerRow];
 }
 
 - (void) addIntroText:(NSString*)text {
@@ -154,6 +208,7 @@ static CGFloat const kBetweenRowsExtraSpacing = 14;
         button = [NSButton buttonWithTitle:BGMNN(buttonTitle) target:nil action:nil];
         BGMNN(button).bezelStyle = NSBezelStyleRounded;
         BGMNN(button).controlSize = NSControlSizeSmall;
+        BGMNN(button).bezelColor = BGMBrandAmberColor();
         BGMNN(button).translatesAutoresizingMaskIntoConstraints = NO;
 
         [rowStack addArrangedSubview:BGMNN(button)];
