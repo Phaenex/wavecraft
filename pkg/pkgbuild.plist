@@ -5,7 +5,14 @@
     <dict>
       <key>RootRelativeBundlePath</key>      <string>Applications/Wavecraft.app</string>
       <key>BundleHasStrictIdentifier</key>   <false/>
-      <key>BundleIsRelocatable</key>         <true/>
+      <!-- Was <true/> -- relocatable meant Installer resolved this component's actual install
+           location by looking up the bundle ID in Launch Services' own (cached, not live)
+           registration database, not by the RootRelativeBundlePath above. A leftover pre-rename
+           "Background Music.app" (same bundle ID) was still registered there, so every install
+           kept landing on that old path/name regardless of what preinstall did to clean it up
+           first -- confirmed on a real install, see docs/LESSONS.md. false forces installation at
+           the literal path above, every time, no bundle-ID lookup involved. -->
+      <key>BundleIsRelocatable</key>         <false/>
       <key>BundleIsVersionChecked</key>      <false/>
       <key>BundleOverwriteAction</key>       <string>upgrade</string>
     </dict>

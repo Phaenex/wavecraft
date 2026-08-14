@@ -192,7 +192,13 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
   copy from before this session's rename kept absorbing every new install's payload under its old
   name. `pkg/preinstall` now removes any old-named bundle with a matching bundle ID before install;
   `_uninstall-non-interactive.sh` also checks the old path so a plain uninstall cleans it up too.
-  See [docs/LESSONS.md](docs/LESSONS.md)'s "relocatable pkg component" entry.
+  **Update, same day**: that fix didn't actually work — confirmed on a second real install, still
+  landing at the old path. Real fix: `pkg/pkgbuild.plist`'s app component is no longer relocatable
+  at all (`BundleIsRelocatable: false`, matching the driver component's existing setting), removing
+  Launch-Services-based placement resolution entirely rather than trying to out-race it from a
+  script. `pkg/postinstall`'s launch step also now tries the explicit install path before bundle-ID
+  lookup. See [docs/LESSONS.md](docs/LESSONS.md)'s "relocatable pkg component" entry and its
+  same-day follow-up.
 - A device-wide crash on first real install: `Device_GetPropertyDataSize`'s case for
   `kAudioObjectPropertyCustomPropertyInfoList` had gone stale at 7 entries after
   `kAudioDeviceCustomPropertyAppEQ` became the 8th custom property, silently making AppEQ

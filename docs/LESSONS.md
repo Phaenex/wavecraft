@@ -973,3 +973,33 @@ to reproduce exactly the symptom the whole `WCSetupWindow` rearchitecture existe
   reproduces, suspect a *second*, unrelated mechanism before re-reading the same fix again --
   `ps -p <pid> -o command` (the actual running executable's real path, not an assumption about
   where it "should" be) is what actually broke this open.
+
+**Follow-up, same day: the `preinstall`-only fix above did not actually work.** A second real
+install, with that fix confirmed present in the built `.pkg` (`pkgutil --expand-full`, not
+assumed), *still* landed at the old `/Applications/Background Music.app` path -- confirmed again
+via `ps`, and via the folder's own modification time matching the install that had just run (so
+`preinstall` almost certainly did remove it, and Installer's own relocatable-component placement
+logic then recreated a folder at that same old path anyway). The likely mechanism: Installer
+resolves a relocatable component's actual install location during its own planning phase, via
+Launch Services' bundle-ID registration -- a cache, not a live filesystem check -- which may be
+consulted before `preinstall` runs, or may simply not reflect a deletion that happens moments
+before the payload write. Either way, a `preinstall`-side cleanup cannot reliably win a race
+against that resolution. **The actual fix: stop the app component from being relocatable at all**
+(`BundleIsRelocatable: false` in `pkg/pkgbuild.plist`, matching what the driver component already
+correctly used) -- this removes Launch-Services-based location resolution from the picture
+entirely, forcing installation at the literal `RootRelativeBundlePath` every time, with nothing
+left to race. The `preinstall` cleanup step stays (now genuinely effective, since there's no
+placement ambiguity for it to lose to) so a leftover old-named copy doesn't sit there as a
+confusing duplicate. `pkg/postinstall`'s app-launch step was also reordered to try the explicit
+install path *before* bundle-ID lookup (previously the other way around, specifically written to
+cooperate with the relocatable behavior that no longer exists) -- bundle-ID lookup can still
+resolve to any bundle sharing that ID, explicit path cannot.
+
+**How to apply, revised:** don't trust that a `preinstall`/`postinstall` script can out-race or
+override a `pkgbuild` component-plist placement decision (`BundleIsRelocatable`,
+`BundleHasStrictIdentifier`) -- those keys control *where Installer decides to put something*,
+which can be resolved before, or independently of, when scripts run. If a component's install
+location must be deterministic (a fixed path, not "wherever a same-bundle-ID app happens to already
+be registered"), set that directly in the component plist, don't try to steer it from a script.
+Reserve script-side cleanup for genuinely orthogonal jobs (removing an old *duplicate*, not
+un-recreating one) once the placement mechanism can't fight back against them.

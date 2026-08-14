@@ -171,12 +171,22 @@ None of this is started. If you want to tackle one, open an issue first so effor
   TCC's cached display name for it — the same caching mechanism as the already-documented
   `CFBundleDisplayName` Microphone bug — is stale for every permission service checked against it,
   not just Microphone. No code bug in `updateAccessibilityRow`/`AXIsProcessTrustedWithOptions`.
-  Now fixed at the source (`pkg/preinstall` removes the old-named bundle before install, so a
-  fresh `/Applications/Wavecraft.app` actually gets created) — still needs, after the next real
-  install: (1) confirm the app actually ends up at `/Applications/Wavecraft.app` this time (`ps -p
-  <pid> -o command`, not just Installer.app's success screen); (2) `tccutil reset Accessibility
-  com.bearisdriving.BGM.App` (and possibly Microphone too, to fully clear old records), run by a
-  human; (3) confirm both badges reflect a live grant afterward.
+  **Second update, same day**: the `pkg/preinstall`-only fix above did *not* actually work — a
+  second real install still landed at the old path, confirmed again via `ps`. Root cause revised
+  (see docs/LESSONS.md's follow-up on the same entry): `BundleIsRelocatable: true` on the app
+  component means Installer resolves the real install location via Launch Services' bundle-ID
+  registration during its own planning, which a `preinstall`-side deletion can't reliably race
+  against. Real fix: `BundleIsRelocatable: false` in `pkg/pkgbuild.plist` (matching what the driver
+  component already used), removing bundle-ID-based placement entirely so the component always
+  installs at the literal path. `pkg/postinstall`'s launch step also reordered to try the explicit
+  path before bundle-ID lookup. **Still needs, after the next real install** (now genuinely
+  untested — this exact combination has never been run for real): (1) confirm the app actually
+  ends up at `/Applications/Wavecraft.app` this time (`ps -p <pid> -o command`, not just
+  Installer.app's success screen, and not just "it opened" since a stale copy opening looks
+  identical from the outside); (2) confirm the old `/Applications/Background Music.app` is
+  actually gone afterward; (3) `tccutil reset Accessibility com.bearisdriving.BGM.App` (and
+  possibly Microphone too, to fully clear old records), run by a human; (4) confirm both badges
+  reflect a live grant afterward.
 - **`BGMAppUITests` fails locally, 3/3 tests, all with `Element StatusItem ... is not hittable`**
   (found 2026-08-14 running `xcodebuild test` on the `Wavecraft` scheme, which runs both
   `BGMAppUnitTests` and `BGMAppUITests` — `BGMAppUnitTests` itself is unaffected, 47/47 still

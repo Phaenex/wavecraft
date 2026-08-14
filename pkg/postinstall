@@ -169,24 +169,27 @@ retries=5
 while [[ $did_open_bgmapp != "true" ]] && [[ $retries -gt 0 ]]; do
     retries=$((retries - 1))
 
-    # Try opening BGMApp using its bundle ID first so the installer can declare it as "relocatable".
-    # That way, if the user moves BGMApp and then installs a newer version of Wavecraft, the
-    # installer will try to find the old version of BGMApp and put the new one in the same place.
+    # Try the explicit install path first, not the bundle ID -- the app component is no longer
+    # relocatable (see pkg/pkgbuild.plist), specifically so it always installs at this exact path,
+    # so this is now the unambiguous, guaranteed-correct option. Opening by bundle ID instead
+    # (below, now just a fallback) resolves through Launch Services, which can point at *any*
+    # bundle registered under this ID -- including a leftover copy from before this app was
+    # renamed from "Background Music.app". That's not hypothetical: a real install hit exactly
+    # this, launching a stale copy instead of the one this installer had just placed. See
+    # docs/LESSONS.md for the full story.
     #
     # Use launchctl to make sure we don't run BGMApp as the installer user.
-    #
-    # TODO: If they have multiple copies of BGMApp, this might open one of the old ones.
-    log "Opening Wavecraft.app by bundle ID"
+    dest_volume_no_trailing_slash="${dest_volume/%\//}"
+    log "Opening ${dest_volume_no_trailing_slash}/Applications/Wavecraft.app"
     if launchctl asuser "${logged_in_user_id}" \
-            open -b com.bearisdriving.BGM.App; then
+            open "${dest_volume_no_trailing_slash}/Applications/Wavecraft.app"; then
         did_open_bgmapp=true
     fi
 
     if [[ $did_open_bgmapp != "true" ]]; then
-        dest_volume_no_trailing_slash="${dest_volume/%\//}"
-        log "Opening ${dest_volume_no_trailing_slash}/Applications/Wavecraft.app"
+        log "Opening Wavecraft.app by bundle ID"
         if launchctl asuser "${logged_in_user_id}" \
-                open "${dest_volume_no_trailing_slash}/Applications/Wavecraft.app"; then
+                open -b com.bearisdriving.BGM.App; then
             did_open_bgmapp=true
         fi
     fi
