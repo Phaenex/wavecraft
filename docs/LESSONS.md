@@ -1074,3 +1074,38 @@ constraint and still overlaps its neighbor, because centering and fixed-size wra
 clipping. This class of bug is invisible to `xcodebuild`, invisible to unit tests, and only ever
 shows up in a real screenshot -- exactly why the standing rule here is to actually look at new UI
 on a real screen before calling it done, not just confirm it compiles.
+
+## Replacing NSMenu with NSStackView silently dropped NSMenu's free scrolling
+
+**The trap:** the whole point of the `NSMenu` -> `NSPanel` rearchitecture (see the "NSMenu
+custom-view controls" entry) was fixing real, confirmed bugs -- and it did. But nobody asked "what
+did `NSMenu` do for free that a plain `NSStackView` doesn't?" until being told directly to keep
+digging rather than call the fix-and-ship cycle done after one reported bug (the row-height
+overlap, previous entry) got fixed. `NSMenu` automatically scrolls when its items don't fit the
+screen -- scroll arrows appear at the top/bottom, standard, invisible behavior nobody thinks about
+because it always works. `WCMainPanelContentView`'s "Your Apps" list -- one row per running app
+producing audio, completely unbounded -- was a plain `NSStackView` added directly to the panel's
+outer stack, sized purely by `fittingSize`, with no scroll view and no cap anywhere. Same for
+`WCMainPanel`'s positioning: it computed a Y coordinate from content height with no floor, meaning
+a tall enough panel would compute a position that put part of itself below the visible screen.
+
+**What was actually true:** this wasn't a corner case. A user with a working desktop -- browser,
+editor, terminal, chat client, a few background apps -- routinely has 8-10+ things producing or
+capable of producing audio, which is exactly the population a per-app volume mixer exists to
+serve. Every one of them gets a row. Nothing in the build, the unit tests, or even the first real
+screenshot (which happened to be taken with a normal number of apps open) would ever surface this
+-- it only shows up once someone's app count crosses whatever their specific screen height allows,
+silently, with no error and no visual glitch at the boundary -- rows past the edge just aren't
+reachable, and there's no scrollbar to notice is missing because there was never one there to look
+for.
+
+**How to apply:** when replacing a system control (`NSMenu`, `NSTableView`, anything with decades
+of accumulated free behavior) with a custom-built equivalent, explicitly enumerate what the
+original provided beyond its headline behavior -- keyboard navigation, accessibility, scrolling,
+overflow handling, whatever isn't the *reason* for the replacement -- and check each one, not just
+the specific thing the replacement was built to fix. A rewrite naturally gets scrutinized for
+whether it fixed the target bug; it does not naturally get scrutinized for what it silently
+stopped doing. Fixed here: the apps section wrapped in its own `NSScrollView` with a capped height
+(recomputed before every show, since rows are added/removed live as apps launch and quit -- a
+static one-time measurement would go stale), plus a defensive floor on the panel's Y position so
+even content taller than the cap accounts for can't push it below the visible screen.

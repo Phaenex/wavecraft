@@ -131,9 +131,17 @@ None of this is started. If you want to tackle one, open an issue first so effor
   time (a real user screenshot, not a build/test claim) — it does open and show. It also revealed
   a real bug on sight: the master output volume row rendered on top of the Auto-pause row above
   it (a fixed-height row container forcing a 47pt view into 22pt — see docs/LESSONS.md's "ported
-  XIB view" entry). Fixed, but **not yet reconfirmed on a real screen** — needs a fresh install to
-  check. Everything else in this entry's list is still exactly as unverified as before; seeing one
-  real bug on first contact is a reason for more scrutiny of the rest, not less.
+  XIB view" entry). Fixed. A follow-up code-level audit (prompted directly by "keep digging, idk
+  how it passed so many times already" — not something a passing build implied on its own) found
+  a second, more significant gap: the "Your Apps" list had no scroll view and no height cap at
+  all, unlike the `NSMenu` it replaced, which scrolls automatically. A user with enough apps open
+  to produce audio (the exact target audience) would get a panel silently extending off-screen
+  with unreachable rows. Fixed with a capped, scrollable apps section (see docs/LESSONS.md's
+  "silently dropped NSMenu's free scrolling" entry) plus a screen-position floor as backup.
+  **Neither fix has been seen on a real screen yet** — both were build/test verified only; a
+  screenshot attempt got interrupted by cross-talk between a debug test build and the real
+  install (see below). Everything else in this entry's original list is still exactly as
+  unverified as before.
 - **Verify `WCSetupWindow` (added 2026-08-13, "Setup & Permissions" — see CHANGELOG.md).**
   Update 2026-08-14: a real install-free Debug launch (built via `./build_and_install.sh -b -d`,
   run directly from `BGMApp/build/Debug/Wavecraft.app` without installing the driver, so no sudo
@@ -167,6 +175,22 @@ None of this is started. If you want to tackle one, open an issue first so effor
   `Ice` is still running on this dev machine and still does exactly this, so the third row's copy
   addresses a real, currently-reproducible condition on this machine, though whether the copy
   itself actually resolves a real user's confusion in the moment is still unconfirmed.
+- **UNRESOLVED, needs a human to reproduce cleanly: `WCSetupWindow` reportedly closes right after
+  clicking "Grant Access" on the Microphone row**, before the user gets to Accessibility (reported
+  2026-08-14). Not yet diagnosed with confidence — the report came in while a debug test build and
+  the real installed app were both in play at different points, and it was never pinned down which
+  one exhibited it. Leading hypothesis, not confirmed: `WCXPCListener`'s connection error path
+  (`WCAppDelegate::showXPCHelperErrorMessage:`) runs a modal `NSAlert` the moment
+  `continueLaunchAfterInputDevicePermissionGranted` executes (i.e. immediately after Microphone is
+  granted) if BGMXPCHelper isn't reachable — which it wouldn't be on an ad-hoc debug launch that
+  never went through a real privileged install, but *should* be reachable on a real one. If this
+  turns out to reproduce on the **real** installed app too, it's a real, more serious bug — that
+  error path firing during ordinary first-launch setup, not just a debug-testing artifact, would
+  mean XPC helper connection issues silently derail the whole onboarding flow. Needs: reproduce
+  specifically on `/Applications/Wavecraft.app` (not any local debug build), confirm which window
+  actually closes (the modal alert appearing and simply being mistaken for "the window closed" is
+  the null hypothesis), and check Console.app / this app's own logs for "Error connecting to
+  BGMXPCHelper" at the time it happens.
 - **Accessibility permission shows under a stale "Background Music.app" entry in System
   Settings, and toggling it does nothing for the real app** (found 2026-08-14 on the user's real
   `.pkg` install). **Update, same day, root cause now confirmed** (see docs/LESSONS.md's

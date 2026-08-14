@@ -196,6 +196,17 @@ releases](https://github.com/kyleneideck/BackgroundMusic/releases) for that.
   shrink a view, so roughly 12.5pt of it overflowed each edge. Fixed by sizing the row from the
   view's own actual frame height instead of the shared row-height constant. See
   [docs/LESSONS.md](docs/LESSONS.md)'s "ported XIB view forced into a fixed-height row" entry.
+- The main panel's "Your Apps" list had no scroll view and no height cap at all — unlike the
+  `NSMenu` it replaced, which scrolls automatically once content exceeds the screen. A user with
+  enough apps open to produce audio (not a rare case for a per-app volume mixer's actual audience)
+  would get a panel silently extending past the bottom of the screen with unreachable rows past
+  the edge, no error, no visible glitch at the boundary. Found via a direct code-level audit
+  prompted by "keep digging" rather than a specific report — not something a passing build or a
+  screenshot with a normal number of apps open would ever surface. Fixed with a capped,
+  independently-scrolling apps section, recomputed before every show since rows change live as
+  apps launch and quit, plus a screen-position floor on the panel itself as a second layer of
+  defense. See [docs/LESSONS.md](docs/LESSONS.md)'s "silently dropped NSMenu's free scrolling"
+  entry.
 - A real `.pkg` install was silently installing into the old, pre-rename `/Applications/Background
   Music.app` folder instead of creating `/Applications/Wavecraft.app` — confirmed via the running
   process's actual executable path, not assumed. Root cause: `pkg/pkgbuild.plist`'s relocatable

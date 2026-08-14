@@ -138,6 +138,12 @@ static CGFloat const kGapBelowStatusItem = 4;
 
     NSRect buttonFrameInScreen = [buttonWindow convertRectToScreen:inButton.frame];
 
+    // Rows can have been added/removed, or the "System & Other Apps" disclosure toggled, since the
+    // last time this panel was shown -- recompute the (capped) apps-scroll-view height against
+    // what's actually there right now before measuring fittingSize, or it'd be sized from stale
+    // content.
+    [self.mainContentView updateAppsScrollViewHeight];
+
     // Fit the panel's current content, then position it hanging below the status item, right-
     // aligned with it (matches where an NSMenu opened from the same button would appear).
     NSSize contentSize = self.mainContentView.fittingSize;
@@ -145,6 +151,18 @@ static CGFloat const kGapBelowStatusItem = 4;
 
     CGFloat panelX = NSMaxX(buttonFrameInScreen) - contentSize.width;
     CGFloat panelY = NSMinY(buttonFrameInScreen) - kGapBelowStatusItem - contentSize.height;
+
+    // Defense in depth beyond the apps-scroll-view cap above: even with that cap, a very small
+    // display (or a status item positioned unusually low) could still compute a panelY that puts
+    // part of the panel below the visible screen, with no way to scroll to it -- everything below
+    // the apps section (Output Device, Preferences, Quit) has no cap of its own. Clamp to the
+    // status item's screen's visible frame so the panel's bottom edge never goes further than
+    // that, even if it means sitting slightly higher than "immediately below the status item."
+    NSScreen* __nullable screen = buttonWindow.screen ?: NSScreen.mainScreen;
+    if (screen) {
+        CGFloat minY = NSMinY(screen.visibleFrame);
+        panelY = MAX(panelY, minY);
+    }
 
     [self setFrame:NSMakeRect(panelX, panelY, contentSize.width, contentSize.height)
             display:YES];

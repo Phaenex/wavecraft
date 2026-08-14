@@ -71,6 +71,14 @@ static CGFloat const kBGMMainPanelRowHeight = 22;
 // Hidden unless you hold Option while clicking the status bar icon -- see WCDebugLoggingMenuItem.
 @property (nonatomic, readonly) NSButton* debugLoggingButton;
 
+// Recomputes the scrollable apps section's height from its current content (yourAppsStack +
+// disclosure button + systemAndOtherAppsStack, whatever's currently visible), capped at a fixed
+// maximum -- see the .mm file for why this exists and can't just be a static constraint set up
+// once at construction time. Must be called before the panel is shown, any time rows might have
+// been added/removed/revealed since the last show (in practice: always, right before showing --
+// WCMainPanel does this).
+- (void) updateAppsScrollViewHeight;
+
 // Adds a thin horizontal divider as the next arranged subview of rowStack. Exposed so
 // WCAppDelegate can lay sections out in the same order the old NSMenu had them, without every
 // caller re-implementing "what a separator looks like".
