@@ -237,6 +237,25 @@ None of this is started. If you want to tackle one, open an issue first so effor
   `tccutil reset`/genuinely-fresh-permission-state question this whole update chain is about —
   needs the *correctly-invoked* `./uninstall.sh` (no `sudo` prefix) run for real before anything
   in this bullet can be marked confirmed.
+  **Fifth update, same day**: `./uninstall.sh` run correctly this time (no `sudo`) and its output
+  confirmed `tccutil reset` genuinely works — real "Successfully reset Microphone/Accessibility
+  approval status" lines printed (Microphone 4×, Accessibility 3×, plausibly one per stale record
+  left behind by the session's many different test builds sharing this bundle ID, now all
+  cleared). The `tccutil`/`tput` half of this saga is resolved and evidence-backed.
+- **`WCSetupWindow` didn't visibly appear after a fresh install** (reported 2026-08-14, right
+  after the `tccutil` fix above was confirmed). Evidence gathered, not fully diagnosed: `defaults
+  read com.bearisdriving.BGM.App LastShownSetupWindowVersion` afterward showed the *current*
+  version already recorded — that key is only ever set immediately before `WCSetupWindow` calls
+  `-show` (see `showOnFirstLaunchIfNeeded`), so the code path to show it did run; this is not "the
+  window never triggered." The app was confirmed running (`ps`) with a fresh install timestamp.
+  So the window was constructed and *told* to come to front, but the user never saw it. Leading
+  hypothesis, not confirmed: `Installer.app` itself grabs focus back for its own "Summary" page
+  right around the same time `postinstall` launches the app, and could be winning that race even
+  though `WCSetupWindow::show` calls `activateIgnoringOtherApps:YES`. Needs: reproduce again and
+  check *immediately* (within a second or two of Installer's Summary page appearing) whether the
+  Setup window is sitting behind it rather than genuinely absent; if confirmed, the fix is likely
+  either a short deliberate delay before showing, or re-asserting front/active status once
+  Installer.app itself is known to have finished and stepped aside.
 - **`pkg/postinstall` could hang indefinitely on `./ListInputDevices`** (found 2026-08-14 on a
   real install — confirmed via `ps`, 6+ minutes stuck where a normal call takes milliseconds, not
   just slow). Root cause: `AVCaptureDevice`'s device-discovery APIs, called as root from a
