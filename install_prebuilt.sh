@@ -21,7 +21,7 @@
 #
 # Copyright © 2026 Wavecraft contributors
 #
-# Installs a PREBUILT copy of Wavecraft (Background Music.app, Background Music Device.driver, and
+# Installs a PREBUILT copy of Wavecraft (Wavecraft.app, Background Music Device.driver, and
 # BGMXPCHelper.xpc) -- the ones sitting alongside this script, not something this script builds
 # itself. This is what you get from a GitHub Release download, for people who don't have Xcode and
 # don't want to build from source. If you cloned the actual source repo instead, use

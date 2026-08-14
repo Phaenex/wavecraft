@@ -40,7 +40,7 @@ VERSION="${1:-$(date +%Y-%m-%d)}"
 STAGING_DIR="release-staging/Wavecraft-${VERSION}"
 OUTPUT_ZIP="Wavecraft-${VERSION}-macOS.zip"
 
-APP_BUILD_PATH="BGMApp/build/Release/Background Music.app"
+APP_BUILD_PATH="BGMApp/build/Release/Wavecraft.app"
 XPC_BUILD_PATH="BGMApp/build/Release/BGMXPCHelper.xpc"
 DRIVER_BUILD_PATH="BGMDriver/build/Release/Background Music Device.driver"
 

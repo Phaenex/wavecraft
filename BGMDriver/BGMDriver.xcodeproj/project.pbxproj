@@ -456,7 +456,7 @@
 			attributes = {
 				CLASSPREFIX = BGM_;
 				LastUpgradeCheck = 0900;
-				ORGANIZATIONNAME = "Background Music contributors";
+				ORGANIZATIONNAME = "Wavecraft contributors";
 				TargetAttributes = {
 					1C8034D91BDD073B00668E00 = {
 						CreatedOnToolsVersion = 7.0.1;

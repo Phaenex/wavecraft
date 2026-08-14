@@ -1080,7 +1080,7 @@
 					New,
 				);
 				LastUpgradeCheck = 0900;
-				ORGANIZATIONNAME = "Background Music contributors";
+				ORGANIZATIONNAME = "Wavecraft contributors";
 				TargetAttributes = {
 					1CB8B3351BBA75EF000E2DD1 = {
 						CreatedOnToolsVersion = 6.4;
